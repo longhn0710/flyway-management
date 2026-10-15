@@ -1,0 +1,34 @@
+{
+  "id": "795bdb669cab4220aa26a250cdb94aa1",
+  "nav": [
+    "history\nLịch sử chạy",
+    "play_circle\nChạy migration",
+    "dataset\nDatabase & Schema",
+    "badge\nTài khoản thực thi",
+    "manage_accounts\nNgười dùng & Quyền",
+    "vpn_key\nService Accounts",
+    "settings\nCài đặt"
+  ],
+  "inputs": [
+    {
+      "label": "Khởi tạo migration trên PROD",
+      "checked": false,
+      "disabled": false
+    },
+    {
+      "label": "Tải lên bundle PROD",
+      "checked": false,
+      "disabled": false
+    },
+    {
+      "label": "Xem nhật ký kiểm toán (Audit Read-only)",
+      "checked": true,
+      "disabled": false
+    },
+    {
+      "label": "Tải mã nguồn SQL",
+      "checked": false,
+      "disabled": false
+    }
+  ]
+}

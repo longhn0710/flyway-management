@@ -1,0 +1,183 @@
+[
+  {
+    "key": "S01",
+    "id": "8212d91a138c444bb97ed5b9745d88be",
+    "name": "projects/12852677200871379262/screens/8212d91a138c444bb97ed5b9745d88be",
+    "title": "S01 — Đăng nhập Flyway Manager",
+    "width": "2560",
+    "height": "2048",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2ViNjIzODkzZDJiNDRmMjc4MTZjOGYyN2QyMjA3MzJhEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1WLm_dR1rXK6tYeIWWbrPmutd7V6i-Qh6aiJVJYt_iSneVi8HzxXpYmgf3f0yMu8eMxF0QQqdWWmAEnXRE7qd-IqDOgsbZ4ZjPmHQLOojCiJQ96siXCy5U5jtzHP7wVjc3It9TWzF1KH-YinVXYp8JLESpR1OoL9gk8L3xsEDC2EEUflV7j11sLvZHxGqCTGsgSuMxNi8bWteo2I4wwg25X_P5G1gtoNX0pyUjeCngVued80slaMgxDl9E",
+    "supersedes": "813619bff82c42489a6485c5c5b0b723",
+    "priorIds": [
+      "a450fc19c6a747b6bab8c2254b6620b1",
+      "813619bff82c42489a6485c5c5b0b723"
+    ],
+    "review": "REVIEWED: direct screen + native1440 image/HTML; no overflow; zero visible text below12px"
+  },
+  {
+    "key": "S02",
+    "id": "747c44cb45fb44a98caa448e38528cbe",
+    "name": "projects/12852677200871379262/screens/747c44cb45fb44a98caa448e38528cbe",
+    "title": "S02 — Lịch sử chạy (Run History)",
+    "width": "2560",
+    "height": "2048",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzYyYTJmOWI5ZTQyODRmZWI4NmM1YTE5MzBhYTcxMWQ0EgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1XDHeEZXUqKrJjWMr7pt-VcSvNki4q5PqgIoYFUJVsqZy-x54gcYSsng4c0Qg4zaguNF76mijsbwdWYSfpZMUyfXEv_vnEarwK_eH76Q7ibWBo03wqsG1EBvu9S0n-Fvs1xykERT7v3cqiK5ARqaRoyTw-hT5fHx_GU8u99GfgaSXnwV3JVGuMSWQdq29svgPL2TaeWCdOoJePVpPyDlc7Ahmy8fLdLtUJSF1w7zqVoridIq1M-rn2-CwTV",
+    "supersedes": "7593d563f5594a01b9047ff314145c99",
+    "priorIds": [
+      "e3c44e3042ab44bfb722268c2cf45b42",
+      "ff73349ee99c49909030a02943915a38",
+      "7593d563f5594a01b9047ff314145c99"
+    ],
+    "review": "Final narrowfix: RUN-1043timestamp11px; page-sizeselect clipped; align RUN-1047 actor/API/artifact/date andRUN-1048 artifact/date with linkedfixtures"
+  },
+  {
+    "key": "S03",
+    "id": "e748a7f71c0c4bfb925753cebb6b721b",
+    "name": "projects/12852677200871379262/screens/e748a7f71c0c4bfb925753cebb6b721b",
+    "title": "S03 — Chạy migration / Chọn mục tiêu & tải bundle",
+    "width": "2560",
+    "height": "3174",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzEzYzlkZDA5N2I3NzRhNzFiODdiODViYWNmNGRmZGMzEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UY1WVdLKxDgx7DtKFHY8OVLV7lHMdlgpGpFQ1JMGg-KFL_6aWziMv5yR7yqJOS9nYdH-xnO9g-kp9SwUIxbD9BVXAnr2QaUrlk5Udrld9tXyWZyc--Hk0EregrSC2tNvGU76CRZQyXRgBvbx-EKmVirkW8a7Pu9FI_OiHntJtGc7y8jtcHwTM27F7BilBcZ0fiGzwUG2rEhvMnvp4DwGyIrKtJjcqRafdj-Fmu4FeAWVkCqMnHOdrg8Y4B",
+    "review": "REVIEWED: direct screen+native1440 image/HTML; semantic corrections verified; no overflow; all rendered text>=12px",
+    "supersedes": "87b08a1135bc42d293e4fc6b65bef238",
+    "priorIds": [
+      "e3c0d04855e2424ba13886b5b2c5db76",
+      "87b08a1135bc42d293e4fc6b65bef238"
+    ]
+  },
+  {
+    "key": "S04",
+    "id": "d2ea2697893e4bda865aa19cb743d858",
+    "name": "projects/12852677200871379262/screens/d2ea2697893e4bda865aa19cb743d858",
+    "title": "S04 — Chạy migration / Kiểm tra & xác nhận",
+    "width": "2560",
+    "height": "2826",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzZkNmFmYjliZmQ5MjRkMTlhMDE5OWE0ZGJkNGRmMzA5EgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1U6sOmtWcsVoy5Vz4mAzhqHF0475FThOO3gqceW2s5PnTGG8pfj9LLM0stQGhogKfF3czoi_TmseNON38El_Ra3HkmjavbcbRS05MkORvVgq9KBRH1Gk6ASaO_MkTdyrwAVDXkYEEpL3yygZkXlw9QFaox4XWn18KctnVxgCM3t77IpybfypxwaOByZrYVLhMcECnf5uEebuZkTUKdKuo95YK6p8XmiU8svObc68CYQzge0sNnSZtnIXdE",
+    "review": "REVIEWED: direct screen+native1440 image/HTML; semantic corrections verified; no overflow; all rendered text>=12px",
+    "supersedes": "d825bb85b15b4619b2dbc180bf0185a3",
+    "priorIds": [
+      "97fc3e795af7429c8d313b3afd094f50",
+      "d825bb85b15b4619b2dbc180bf0185a3"
+    ]
+  },
+  {
+    "key": "S05",
+    "id": "2c700bbcbc82435ea67b3a3aa7f57075",
+    "name": "projects/12852677200871379262/screens/2c700bbcbc82435ea67b3a3aa7f57075",
+    "title": "S05 — Chi tiết lần chạy / RUNNING",
+    "width": "2560",
+    "height": "2360",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzQzZTUxMDM3ZjgzNTRlNTViMWE1NjBjNDFjZTllNTdmEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1XZhduoO_KaMV5N5RsWyfVO66emhtE3B2Y8xDAERYiQ6I-clssCN2sRM4g_-0-1kTZvR6SbT_HRwIDSYK_-bKzJEgS6anoF6v5b3O8YjAYYXbUcDDlK8vWkmJJ3R520ZnAUAm2t4PMwUdVJyIxRDdjrmDzqD3ALN1W6C0JWyi7-PtiM4BVLgSxuYqBSDGD5xiXdCx9xV_SppYLPG1Sfj5YZnljSddicDUocDaKRC_aMQ772wp1zeGaXwS-Q",
+    "review": "Final narrowfix: 4steppertexts10/11px, elapsed42s, validate16combinedfiles, plaintextsearchhint; toolbar fixed/nooverflow",
+    "supersedes": "b3fd22c0aa14460096c4b64d0f979e51",
+    "priorIds": [
+      "b3fd22c0aa14460096c4b64d0f979e51"
+    ]
+  },
+  {
+    "key": "S06",
+    "id": "84663b2d072b4f92888426c6d6d143a1",
+    "name": "projects/12852677200871379262/screens/84663b2d072b4f92888426c6d6d143a1",
+    "title": "S06 — Chi tiết lần chạy / FAILED và audit auto-repair",
+    "width": "2560",
+    "height": "3586",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzJkMDdiODhmMjAwZDQwZDlhMWI5ZTViNWM2NTE3NDhjEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1W-ZzPjEYedfsaMVRsDdRw2bvYvQE4P8lHrAVeSuG0GLDW_aPTfxYaTPELVxxZrqgMLcFYLqmWex-lbEXtnHQnpG1KRM6T6mcyaKeyATK-XXS-q6_AoWnrwVFn9cKOlMuczVogHLHLLUisNaSf3EOgPMpFgx6Qq908ca3McJQbgl3K_Sp4u0kT4efIJVLkXsM3HRB6D6Dkd5q3mj987ynYUsc5X-ymoVihf4C17JI3b1hDpFEliiGMKkQ0f",
+    "review": "Final narrowfix: stackArtifactID+longfilename toavoidlabelcollision; removegrep/regexhint; failure/repairguards andfonts reviewed",
+    "supersedes": "a15b86908cb1442f8046f3a6e1da063d",
+    "priorIds": [
+      "a15b86908cb1442f8046f3a6e1da063d"
+    ]
+  },
+  {
+    "key": "S07",
+    "id": "7eb10aa292864089b33e2c08e141c062",
+    "name": "projects/12852677200871379262/screens/7eb10aa292864089b33e2c08e141c062",
+    "title": "S07 — Database & Schema / Danh sách Database",
+    "width": "2560",
+    "height": "2048",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2YwMzU0ODM3NDgxZTQzMDVhYjUyMGIwYzdkMGU4NTViEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1VLlW5Njt3XoIAYYc2kGDfNpiWC-Yai_-TkYKpt_b4vdlSFxOCNHbruH4C9OINtNWI8koZep5DNt4b6CreWIeQzRHtSBFSnvNymm75xZPHhQiopSOakDtjuqz3eeWbH9l27s4gnEdZRoTgv8gXbFi_JM9-4IbghPTvazBxcZrsnry-UZY9IJmGyJxGmTL3QpzyL6e2KXT_Lfw2fE072-hZUuEBqoh8yWCQ7KQKWrHkaEC4qDSZYD2QN5Tg",
+    "review": "Final one-cell regression: CORE_BANKING history location replaced by UAT; restore CORE_BANKING.flyway_schema_history. Native1440/fonts0, shell and hidden registration form reviewed",
+    "supersedes": "1952458c390f4fa2a6f7c9212024791c",
+    "priorIds": [
+      "493613690acb41109f63a067211df4da",
+      "1952458c390f4fa2a6f7c9212024791c"
+    ]
+  },
+  {
+    "key": "S08",
+    "id": "1f32eadf60014e0d8c995a6fff31e8bd",
+    "name": "projects/12852677200871379262/screens/1f32eadf60014e0d8c995a6fff31e8bd",
+    "title": "S08 — Chi tiết Database / Schemas & Cấu hình Flyway",
+    "width": "2560",
+    "height": "4052",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U5ZjQxMDg5MDExYzQ1OWRiZjI2OGNiZDEwMmYzN2NlEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1UReY7uZU6DjqIyMQeJEQg4BeWA2iSGmO7q3qNBQhjl0W76WqyssRJZl3ntanz3uciWU2KuTcF4t1T9loM_2vB3w2dPvngoC7qHkXbXRqYAkp7HGdbKNToaVNI7z1twTzDDFiT6nQby_A-BHgzIjqC3g4DEUuTu74iw9kvAcrErYRs0bB0WXsnc9P_gukEBbB0u6oEJqWNUGxqkKAIerigwOSo_46Pf_fvox3NedajhYTn5WtU4VNU2lKsi",
+    "review": "REVIEWED: native1440/HTML/image, fonts0/nooverflow; explicit history owner/table+alternative account; guarded repair policy; no container/path/TLS-version claim",
+    "supersedes": "2e49db1ffb2f44019e655f773e776f44",
+    "priorIds": [
+      "3a96a2084dd9453a82aff3de914dfa8a",
+      "2e49db1ffb2f44019e655f773e776f44"
+    ]
+  },
+  {
+    "key": "S09",
+    "id": "9cf3e291289c4c3a93fadd2f6e7f5c59",
+    "name": "projects/12852677200871379262/screens/9cf3e291289c4c3a93fadd2f6e7f5c59",
+    "title": "S09 — Tài khoản thực thi Oracle / Quản lý thông tin xác thực & ánh xạ Schema",
+    "width": "2560",
+    "height": "3650",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2I3NjVjMDY4MThlZjRiYTFhNjJhMDdlZDg4OWU0YThmEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1VroL9BHFFDd529m7HMc7qxH5zN4lMySmafcZ4YUeXwZP3I3IAaDzJHjHo8eZmAGOtse-grwas6Q1WZUVZ5f5i7gbYxcXqwJLGgQ_6d9J5geqh7tTsS9C1f6ujxk0h3BaDW3IMAUC8kM1Cs5D5F_aSgYEcBcHxxN8_G9TbJ6RpBfTX9XX5f2HVobngM08sfU8O1dTva65HMH9xmnBNGPHf-wYDZpD5mxNs6v3ssoWINC1EiwgT5YSGvyFX9",
+    "review": "Final tiny style: two breadcrumb slashes10px to12; moveSettingsbelowServiceAccounts; write-only credentials/mappings/source/native1440 reviewed",
+    "supersedes": "ca779e4cd9cc4818a7ffbf6b6dccc1c4",
+    "priorIds": [
+      "ca779e4cd9cc4818a7ffbf6b6dccc1c4"
+    ]
+  },
+  {
+    "key": "S10",
+    "id": "795bdb669cab4220aa26a250cdb94aa1",
+    "name": "projects/12852677200871379262/screens/795bdb669cab4220aa26a250cdb94aa1",
+    "title": "S10 — Người dùng & Quyền / Phân quyền RBAC Scoped (Fixed Layout)",
+    "width": "2560",
+    "height": "2870",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzUxMDJkMDgzZmY1NjQ1MDliOTE4MGEzZmZiMWJlYjRiEgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1XMkRyc5jZt515UiDq-jKskEU3lpMlo7unK0S4ZbrwPbXh5rhZY0bqNPmDqgFynHvcUY-lwSY_c6aJkFmvASiv1iPsdPis17DAnywayNqpZTqeMo7fG1WjiJ1KvKi0QmgpPcoO0xU86-URyJVCgJPRBETR0Xdj6J4hs4KqYnc_Ma1_i2AxJZ_G-9pRXWO9o1vWLksp1M72qBtnJM2l_nxIoFgmN_SiEcXcEF_FuTtJ7i8kWA9zCoBzC6Dau",
+    "review": "Final CSSfix: actualDOMsingle7nav but justify-between places nav atbottom(y738); usejustify-start. PROD header/scope rows fixed; GUID/filters/scopes/fonts0 reviewed. Uniqueviewport provescurrentstate.",
+    "supersedes": "3f256edb661947589d74c5934bb06f1e",
+    "priorIds": [
+      "1c7e14e8c15441858dfe304497f96326",
+      "8d3d12026ee1433cbb5c351c42fedbd8",
+      "3f256edb661947589d74c5934bb06f1e"
+    ]
+  },
+  {
+    "key": "S11",
+    "id": "9c83b377e7f7454d95b42530b21038cb",
+    "name": "projects/12852677200871379262/screens/9c83b377e7f7454d95b42530b21038cb",
+    "title": "S11 — Service Accounts / Quản lý API Token & Phân quyền Scoped",
+    "width": "2560",
+    "height": "3442",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2FhM2M1ZGU2YmVhNDRiNmY5OGE0NjllOTc0MDU3OWE0EgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1XyOZT1ho5TCzoKTvEWyxas22hXA1ufHnweGmfjQpY6PmGDtSRziYwUsUBO4gPoRN6t6NBCKW_dJN0jSL5f6smOtKBm6DlKjz3MPYRxvtW2e7RknQZYScdDBEvDwazCchhwqHCN9mTabftcDTMYSjR1lCdJQ3cDf6VQg74wZzsUBXd9p2NXYOiGqJYhsWNYv2_Th__IWJct7ISvcAHsG6uwtUHOZep164CeV-gts0zb4xlWtxojeN9-BMoP",
+    "review": "Pendingrefine: tokenhashnotAES; stableIDs/exact202URLs/per-runSSE/HTTPvsjobfailure; pertokenactions; lastusedRUN1047; fonts/shell"
+  },
+  {
+    "key": "S12",
+    "id": "fdb8929f85974125ad8513f39c7d9fba",
+    "name": "projects/12852677200871379262/screens/fdb8929f85974125ad8513f39c7d9fba",
+    "title": "S12 — Cài đặt / Nhà cung cấp xác thực Identity Providers",
+    "width": "2560",
+    "height": "4694",
+    "html": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2MwOWI3NWM5ZjAyNTRmZDBhMjNhY2U0NDEyMTJiY2M3EgsSBxD0yKPB8hkYAZIBJAoKcHJvamVjdF9pZBIWQhQxMjg1MjY3NzIwMDg3MTM3OTI2Mg&filename=&opi=96797242",
+    "screenshot": "https://lh3.googleusercontent.com/aida/AEtjO1VZusimCD9np_bf3FHY4OG6UyjC6Y7crmJ1nFJTtHS7VhrF12S7TNXHzjMrFP6L50CYjnTDd0nAJxLFpOWvmaVmJE5Ez1hDaX6DmrAkiuwin-3YLxDNyCVkWngUR02HAP12wM2ELlUNwQsYcdmjzmBSYBAT9kqemOTwM9BoZ192O_qFT5n4LkHmOtiqGVQHJHrf9r1LHoRsfHqoSMYev6CQ119k0hej2JgAB9OoU742hJY7FEZ9VCsLIk9N",
+    "review": "Pendingrefine: noFIPS/globalPROD/forced90dayexpiry/hashparams; SQLiteauth; directLDAPbindNOsavedLDAPpasswords; optionalproviders+PKCE/recovery; fonts"
+  }
+]

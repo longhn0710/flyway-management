@@ -1,0 +1,179 @@
+{
+  "projectId": "12852677200871379262",
+  "expectedCanonicalCount": 12,
+  "verifiedCanonicalCount": 12,
+  "canonicalWidths": [
+    1440
+  ],
+  "instances": [
+    {
+      "id": "012264a171224fbc9d67e15b3ddb6f40",
+      "sourceScreen": "projects/12852677200871379262/screens/97fc3e795af7429c8d313b3afd094f50",
+      "y": 2996,
+      "width": 1440,
+      "height": 1552,
+      "label": "[Superseded] S04 — Chạy migration / Kiểm tra & xác nhận",
+      "hidden": true
+    },
+    {
+      "id": "3b13a6d5efed47d5817bd957a0f927d9",
+      "sourceScreen": "projects/12852677200871379262/screens/1952458c390f4fa2a6f7c9212024791c",
+      "y": 4130,
+      "width": 1440,
+      "height": 1000,
+      "label": "S07 — Database & Schema / Danh sách Database"
+    },
+    {
+      "id": "4f8305c75dec47a4b73d1426636ad286",
+      "sourceScreen": "projects/12852677200871379262/screens/2c700bbcbc82435ea67b3a3aa7f57075",
+      "x": 1536,
+      "y": 2376,
+      "width": 1440,
+      "height": 1068,
+      "label": "S05 — Chi tiết lần chạy / RUNNING"
+    },
+    {
+      "id": "50b232361d26410ca2eecb7d6fec3a86",
+      "sourceScreen": "projects/12852677200871379262/screens/2e49db1ffb2f44019e655f773e776f44",
+      "x": 1536,
+      "y": 4130,
+      "width": 1440,
+      "height": 1681,
+      "label": "S08 — Chi tiết Database / Schemas & Cấu hình Flyway"
+    },
+    {
+      "id": "5b6c363b27bb43c6b74f7eaf2810d622",
+      "sourceScreen": "projects/12852677200871379262/screens/a15b86908cb1442f8046f3a6e1da063d",
+      "x": 3072,
+      "y": 2996,
+      "width": 1440,
+      "height": 1718,
+      "label": "[Superseded] S06 — Chi tiết lần chạy / FAILED và audit auto-repair",
+      "hidden": true
+    },
+    {
+      "id": "5ede1fed9b2b4c53be1ff0254328034e",
+      "sourceScreen": "projects/12852677200871379262/screens/747c44cb45fb44a98caa448e38528cbe",
+      "x": 1536,
+      "y": 700,
+      "width": 1440,
+      "height": 1056,
+      "label": "S02 — Lịch sử chạy (Run History)"
+    },
+    {
+      "id": "65daeb1bcbb04443aae915077a6d98b2",
+      "sourceScreen": "projects/12852677200871379262/screens/e3c0d04855e2424ba13886b5b2c5db76",
+      "x": 3072,
+      "y": 796,
+      "width": 1440,
+      "height": 1799,
+      "label": "[Superseded] S03 — Chạy migration / Chọn mục tiêu & tải bundle",
+      "hidden": true
+    },
+    {
+      "id": "6de7073f42c64c099508b6ccf013900b",
+      "sourceScreen": "projects/12852677200871379262/screens/8212d91a138c444bb97ed5b9745d88be",
+      "y": 700,
+      "width": 1440,
+      "height": 1000,
+      "label": "S01 — Đăng nhập Flyway Manager"
+    },
+    {
+      "id": "745311bd4ca4416883be6da478571923",
+      "sourceScreen": "projects/12852677200871379262/screens/ff73349ee99c49909030a02943915a38",
+      "x": 1536,
+      "y": 796,
+      "width": 1440,
+      "height": 1152,
+      "label": "[Superseded] S02 — Lịch sử chạy (Run History)",
+      "hidden": true
+    },
+    {
+      "id": "83547d0657714ca6aa22c30c63e6fb60",
+      "sourceScreen": "projects/12852677200871379262/screens/e748a7f71c0c4bfb925753cebb6b721b",
+      "x": 3072,
+      "y": 700,
+      "width": 1440,
+      "height": 1548,
+      "label": "S03 — Chạy migration / Chọn mục tiêu & tải bundle"
+    },
+    {
+      "id": "a450fc19c6a747b6bab8c2254b6620b1",
+      "sourceScreen": "projects/12852677200871379262/screens/a450fc19c6a747b6bab8c2254b6620b1",
+      "y": 796,
+      "width": 1280,
+      "height": 990,
+      "label": "[Superseded] S01 — Đăng nhập Flyway Manager",
+      "hidden": true
+    },
+    {
+      "id": "ac00ad3c580e4e4c82cba61533cf3935",
+      "sourceScreen": "projects/12852677200871379262/screens/1c7e14e8c15441858dfe304497f96326",
+      "y": 6192,
+      "width": 1440,
+      "height": 1556,
+      "label": "S10 — Người dùng & Quyền / Phân quyền RBAC Scoped"
+    },
+    {
+      "id": "assets_12038184256015313756",
+      "width": 960,
+      "height": 540,
+      "sourceAsset": "assets/12038184256015313756",
+      "type": "DESIGN_SYSTEM_INSTANCE"
+    },
+    {
+      "id": "bc197d3989ca4cecb95fae3e783ebe8c",
+      "sourceScreen": "projects/12852677200871379262/screens/fdb8929f85974125ad8513f39c7d9fba",
+      "x": 3072,
+      "y": 6192,
+      "width": 1440,
+      "height": 2640,
+      "label": "S12 — Cài đặt / Nhà cung cấp xác thực Identity Providers"
+    },
+    {
+      "id": "c90fa3f244cd40b495da4071c5a28cc6",
+      "sourceScreen": "projects/12852677200871379262/screens/ca779e4cd9cc4818a7ffbf6b6dccc1c4",
+      "x": 3072,
+      "y": 4130,
+      "width": 1440,
+      "height": 1934,
+      "label": "S09 — Tài khoản thực thi Oracle / Quản lý thông tin xác thực & ánh xạ Schema"
+    },
+    {
+      "id": "ce67eb6763a449f8817982d17a8c139e",
+      "sourceScreen": "projects/12852677200871379262/screens/d2ea2697893e4bda865aa19cb743d858",
+      "y": 2376,
+      "width": 1440,
+      "height": 1370,
+      "label": "S04 — Chạy migration / Kiểm tra & xác nhận"
+    },
+    {
+      "id": "f639edc3c22545d4b9c28f441781ff2f",
+      "sourceScreen": "projects/12852677200871379262/screens/84663b2d072b4f92888426c6d6d143a1",
+      "x": 3072,
+      "y": 2376,
+      "width": 1440,
+      "height": 1626,
+      "label": "S06 — Chi tiết lần chạy / FAILED và audit auto-repair"
+    },
+    {
+      "id": "fa680df72eef4392b113140f4e56f961",
+      "sourceScreen": "projects/12852677200871379262/screens/9c83b377e7f7454d95b42530b21038cb",
+      "x": 1536,
+      "y": 6192,
+      "width": 1440,
+      "height": 1936,
+      "label": "S11 — Service Accounts / Quản lý API Token & Phân quyền Scoped"
+    },
+    {
+      "id": "fdc137f616f64e0c938b4c5775da476c",
+      "sourceScreen": "projects/12852677200871379262/screens/b3fd22c0aa14460096c4b64d0f979e51",
+      "x": 1536,
+      "y": 2996,
+      "width": 1440,
+      "height": 1254,
+      "label": "[Superseded] S05 — Chi tiết lần chạy / RUNNING",
+      "hidden": true
+    }
+  ]
+}

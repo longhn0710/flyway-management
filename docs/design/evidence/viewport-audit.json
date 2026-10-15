@@ -1,0 +1,143 @@
+{
+  "S01": {
+    "id": "8212d91a138c444bb97ed5b9745d88be",
+    "sourceHtmlSha256": "3fe52a652b408e0ec03bd496c61ccf22e7105dd335fadbdfad8a53adbe45302d",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1440,
+    "bodyFont": "16px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S01-1440.png"
+  },
+  "S02": {
+    "id": "747c44cb45fb44a98caa448e38528cbe",
+    "sourceHtmlSha256": "0528a4d9b77aad27b0bbba81e0494240f25240a5ec34d663ff184fe2ce6ecd23",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "14px",
+    "smallTextCount": 1,
+    "smallTextExamples": [
+      {
+        "text": "2025-05-18 16:30:22",
+        "size": 11
+      }
+    ],
+    "screenshot": "S02-1440.png"
+  },
+  "S03": {
+    "id": "e748a7f71c0c4bfb925753cebb6b721b",
+    "sourceHtmlSha256": "9f1c8e5e7812f9ea01e8661ed18fd2fdb8d51be170e9502600f7e3df663adc92",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "13px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S03-1440.png"
+  },
+  "S04": {
+    "id": "d2ea2697893e4bda865aa19cb743d858",
+    "sourceHtmlSha256": "36315eefc23f33ed8122879e8e303a41003a20f45daba298a0cab31d3f4d5dde",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S04-1440.png"
+  },
+  "S05": {
+    "id": "2c700bbcbc82435ea67b3a3aa7f57075",
+    "sourceHtmlSha256": "87310f4818d5cd84cf1caedad88d46bb2898e33446f3f82e1312376bb35fe96c",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 4,
+    "smallTextExamples": [
+      {
+        "text": "Hoàn tất",
+        "size": 10
+      },
+      {
+        "text": "Xếp hàng lease stream 0.4s",
+        "size": 11
+      },
+      {
+        "text": "Hợp lệ",
+        "size": 10
+      },
+      {
+        "text": "14 scripts kiểm tra thành công",
+        "size": 11
+      }
+    ],
+    "screenshot": "S05-1440.png"
+  },
+  "S06": {
+    "id": "84663b2d072b4f92888426c6d6d143a1",
+    "sourceHtmlSha256": "d16185d1c328e1a300dd43306f8999ad9fbe5589a4f3d957acae86efaf5689a2",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S06-1440.png"
+  },
+  "S07": {
+    "id": "7eb10aa292864089b33e2c08e141c062",
+    "sourceHtmlSha256": "6c47d12c3da648999cac2e3f12122e1510f10102015585696e16f62bbe74e821",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S07-1440.png"
+  },
+  "S08": {
+    "id": "1f32eadf60014e0d8c995a6fff31e8bd",
+    "sourceHtmlSha256": "b077f29847b33172932307244afa78a1fd9b6c829303b0edd3de289a5c8374e3",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S08-1440.png"
+  },
+  "S09": {
+    "id": "9cf3e291289c4c3a93fadd2f6e7f5c59",
+    "sourceHtmlSha256": "18cc56837b66093c9fbb6a0c230b286a605f3e37f1dd9a24bb5599d0edd71528",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "16px",
+    "smallTextCount": 2,
+    "smallTextExamples": [
+      {
+        "text": "/",
+        "size": 10
+      },
+      {
+        "text": "/",
+        "size": 10
+      }
+    ],
+    "screenshot": "S09-1440.png"
+  },
+  "S10": {
+    "id": "795bdb669cab4220aa26a250cdb94aa1",
+    "sourceHtmlSha256": "0950366fd091f5ce7d15f163ca8e6602fe2254af97ef52f7ce466caa5025b538",
+    "viewport": 1440,
+    "pageWidth": 1440,
+    "mainWidth": 1224,
+    "bodyFont": "14px",
+    "smallTextCount": 0,
+    "smallTextExamples": [],
+    "screenshot": "S10-1440.png"
+  }
+}
