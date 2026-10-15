@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Users as UsersIcon, Fingerprint } from "lucide-react";
-import { users } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { users } = fixtures;
 import ScopeEditor from "../components/ScopeEditor";
 import {
   Panel,

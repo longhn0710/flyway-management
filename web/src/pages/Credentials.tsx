@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { KeyRound, Plus, Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { accounts } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { accounts } = fixtures;
 import {
   Panel,
   PageHeading,

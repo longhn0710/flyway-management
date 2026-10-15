@@ -22,7 +22,9 @@ import ServiceAccounts from "./pages/ServiceAccounts";
 import Authentication from "./pages/Authentication";
 import { PageHeading, Button, Notice } from "./components/ui";
 const client = new QueryClient();
-function PreviewGate() {
+// This only selects the demo experience. It is not authentication or an
+// authorization boundary; every business API must enforce identity and RBAC.
+function PreviewExperienceGate() {
   const location = useLocation();
   return sessionStorage.getItem("fm-preview") === "true" ? (
     <Outlet />
@@ -70,7 +72,7 @@ export default function App() {
           <DraftProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route element={<PreviewGate />}>
+              <Route element={<PreviewExperienceGate />}>
                 <Route element={<Shell />}>
                   <Route index element={<Navigate to="/runs" replace />} />
                   <Route path="/runs" element={<History />} />

@@ -42,7 +42,11 @@ func NewRouter(options RouterOptions) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	r.Use(middleware.RequestID, middleware.RealIP, recoverer(logger))
+	// Preview is a client-side demo choice only. The Phase 1 business routes are
+	// deliberately unavailable; when implemented they must be registered behind
+	// server-side authentication and RBAC. Never accept caller-supplied identity
+	// or bearer credentials without server-side verification.
+	r.Use(middleware.RequestID, securityHeaders, recoverer(logger))
 	r.Use(requestLogger(logger))
 	r.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -100,6 +104,17 @@ func NewRouter(options RouterOptions) http.Handler {
 
 func isAPIPath(requestPath string) bool {
 	return requestPath == "/api" || strings.HasPrefix(requestPath, "/api/")
+}
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func recoverer(logger *slog.Logger) func(http.Handler) http.Handler {
@@ -213,6 +228,7 @@ func schemaVersion(db *database.DB) int {
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)

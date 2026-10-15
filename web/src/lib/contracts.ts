@@ -86,7 +86,8 @@ export async function getHealth(signal?: AbortSignal): Promise<Health> {
 export interface BundleFile {
   name: string;
   size: number;
-  checksum?: string;
+  /** Computed in this browser for display only; never a server validation result. */
+  localChecksum?: string;
 }
 export interface MigrationDraft {
   targetId: string;

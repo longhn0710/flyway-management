@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -11,7 +11,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useDraft } from "../lib/draft";
-import { targets, accounts, manifest } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
 import type { BundleFile } from "../lib/contracts";
 import {
   Panel,
@@ -23,6 +23,7 @@ import {
   KeyValues,
   Check,
 } from "../components/ui";
+const { targets, accounts, manifest } = fixtures;
 export function Guardrails() {
   return (
     <>
@@ -84,18 +85,33 @@ export default function Migration() {
     [busy, setBusy] = useState(false),
     [mode, setMode] = useState("archive");
   const input = useRef<HTMLInputElement>(null),
+    selectionId = useRef(0),
     navigate = useNavigate(),
     target = targets.find((t) => t.id === draft.targetId)!;
+  useEffect(() => {
+    return () => {
+      selectionId.current += 1;
+    };
+  }, []);
+  function clearBundle() {
+    selectionId.current += 1;
+    setBusy(false);
+    setError("");
+    setDraft((current) => ({ ...current, files: [], fixture: false }));
+  }
   async function selectFiles(files: FileList | null) {
     if (!files?.length) return;
+    const currentSelection = ++selectionId.current;
     const selected = Array.from(files),
       total = selected.reduce((s, f) => s + f.size, 0);
     setError("");
     if (selected.length > 100 || total > 25 * 1024 * 1024) {
+      setBusy(false);
       setError("Giới hạn xem trước: tối đa 100 tệp, tổng 25 MB.");
       return;
     }
     if (selected.some((f) => !/\.(sql|zip|tar|tar\.gz|tgz)$/i.test(f.name))) {
+      setBusy(false);
       setError(
         "Chỉ chọn SQL, ZIP, TAR, TAR.GZ hoặc TGZ. Nội dung chưa được xác minh bởi máy chủ.",
       );
@@ -110,20 +126,24 @@ export default function Migration() {
           return {
             name: f.webkitRelativePath || f.name,
             size: f.size,
-            checksum: Array.from(new Uint8Array(digest), (b) =>
+            localChecksum: Array.from(new Uint8Array(digest), (b) =>
               b.toString(16).padStart(2, "0"),
             ).join(""),
           };
         }),
       );
-      setDraft({ ...draft, files: metadata, fixture: false });
+      if (currentSelection === selectionId.current)
+        setDraft((current) => ({ ...current, files: metadata, fixture: false }));
     } catch {
-      setError("Không thể đọc tệp cục bộ. Hãy chọn lại.");
+      if (currentSelection === selectionId.current)
+        setError("Không thể đọc tệp cục bộ. Hãy chọn lại.");
     } finally {
-      setBusy(false);
+      if (currentSelection === selectionId.current) setBusy(false);
     }
   }
   function sample() {
+    selectionId.current += 1;
+    setBusy(false);
     setDraft({
       ...draft,
       fixture: true,
@@ -314,9 +334,7 @@ export default function Migration() {
                   </strong>
                   <Button
                     variant="ghost"
-                    onClick={() =>
-                      setDraft({ ...draft, files: [], fixture: false })
-                    }
+                    onClick={clearBundle}
                   >
                     <Trash2 size={14} />
                     Xóa
@@ -343,8 +361,10 @@ export default function Migration() {
                     <span className="small muted">
                       {file.size.toLocaleString()} bytes
                     </span>
-                    {file.checksum && (
-                      <code className="checksum">SHA-256: {file.checksum}</code>
+                    {file.localChecksum && (
+                      <code className="checksum">
+                        SHA-256 cục bộ: {file.localChecksum}
+                      </code>
                     )}
                   </div>
                 ))}
@@ -448,8 +468,10 @@ export function Review() {
                     <Badge>
                       {draft.fixture ? "Fixture" : "Metadata cục bộ"}
                     </Badge>
-                    {f.checksum && (
-                      <code className="checksum">{f.checksum}</code>
+                    {f.localChecksum && (
+                      <code className="checksum">
+                        SHA-256 cục bộ: {f.localChecksum}
+                      </code>
                     )}
                   </div>
                 ))}

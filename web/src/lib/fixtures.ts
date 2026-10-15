@@ -5,7 +5,7 @@ import type {
   RunStatus,
   RepairStatus,
 } from "./contracts";
-export const targets: DatabaseTarget[] = [
+const targets: DatabaseTarget[] = [
   {
     id: "db-uat-finance",
     name: "ORA_UAT_FINANCE",
@@ -56,7 +56,7 @@ const repair: RepairStatus[] = [
   "NOT_APPLICABLE",
   "NOT_APPLICABLE",
 ];
-export const runs: MigrationRun[] = statuses.map((status, i) => ({
+const runs: MigrationRun[] = statuses.map((status, i) => ({
   id: `RUN-${1048 - i}`,
   source: [1, 2, 3, 6, 10].includes(i) ? "API" : "WEB",
   status,
@@ -90,7 +90,7 @@ export const runs: MigrationRun[] = statuses.map((status, i) => ({
   duration: i === 0 ? "42s" : i === 1 ? "36s" : i === 4 ? "—" : `${24 + i}s`,
   version: i === 0 ? "V3.1.1" : i === 1 ? "V3.2.0" : "V1.9",
 }));
-export const accounts = [
+const accounts = [
   {
     id: "acc-deploy-admin",
     name: "DEPLOY_ADMIN",
@@ -113,7 +113,7 @@ export const accounts = [
     rotated: "2025-05-01 11:00:45",
   },
 ];
-export const users = [
+const users = [
   {
     id: "usr_admin_01",
     name: "Nguyễn Minh Anh",
@@ -151,20 +151,20 @@ export const users = [
     active: false,
   },
 ];
-export const manifest = [
+const manifest = [
   "migrations/V3.1__create_table_settlement_ledger.sql",
   "migrations/V3.1.1__add_index_settlement_tx_id.sql",
   "migrations/V3.2__create_sp_reconcile_daily.sql",
   "views/R__refresh_summary_views.sql",
 ];
-export interface LogLine {
+interface LogLine {
   sequence: number;
   time: string;
   level: "INFO" | "WARN" | "ERROR";
   source: "stdout" | "stderr" | "event";
   message: string;
 }
-export function logsFor(run: MigrationRun): LogLine[] {
+function logsFor(run: MigrationRun): LogLine[] {
   const failed = run.status === "FAILED";
   const rows: [LogLine["level"], LogLine["source"], string][] = failed
     ? [
@@ -260,3 +260,14 @@ export function logsFor(run: MigrationRun): LogLine[] {
     message,
   }));
 }
+
+// Keep preview records behind one explicitly named boundary. These collections
+// are browser-only demo content and must never be merged with API responses.
+export const previewFixtures = {
+  targets,
+  runs,
+  accounts,
+  users,
+  manifest,
+  logsFor,
+} as const;

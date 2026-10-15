@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Database, ChevronDown } from "lucide-react";
 import { Badge, Check, Notice, SearchBox } from "./ui";
-import { targets } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { targets } = fixtures;
 export default function ScopeEditor({ viewer = false }: { viewer?: boolean }) {
   const [q, setQ] = useState(""),
     [grants, setGrants] = useState<Record<string, boolean>>({

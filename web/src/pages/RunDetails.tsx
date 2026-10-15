@@ -10,7 +10,8 @@ import {
   Terminal,
   CheckCircle2,
 } from "lucide-react";
-import { logsFor, runs } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { logsFor, runs } = fixtures;
 import {
   Panel,
   PageHeading,

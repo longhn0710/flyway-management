@@ -68,6 +68,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	if addr, ok := listener.Addr().(*net.TCPAddr); ok && !addr.IP.IsLoopback() {
+		logger.Warn("server is listening on a non-loopback interface; Phase 1 preview and API are unauthenticated, so expose only on a trusted LAN with network controls; do not expose to the internet", "address", listener.Addr().String())
+	}
 	serveErr := make(chan error, 1)
 	go func() {
 		logger.Info("server listening", "address", listener.Addr().String(), "installation_id", db.InstallationID)

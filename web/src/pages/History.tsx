@@ -6,7 +6,8 @@ import type {
   Updater,
 } from "@tanstack/react-table";
 import { Play, Columns3, RotateCcw } from "lucide-react";
-import { runs, targets } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { runs, targets } = fixtures;
 import type { MigrationRun } from "../lib/contracts";
 import {
   PageHeading,

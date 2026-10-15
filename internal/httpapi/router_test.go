@@ -56,6 +56,9 @@ func TestHealthAndSystemMetadata(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET %s status = %d, body: %s", target, rec.Code, rec.Body.String())
 		}
+		if rec.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("GET %s may be cached", target)
+		}
 		var result struct {
 			Data map[string]any `json:"data"`
 		}
@@ -143,6 +146,53 @@ func TestStaticAssetsSPAAndMissingAssets(t *testing.T) {
 	}
 	if rec := request(handler, http.MethodPost, "/runs/123"); rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("POST SPA route status = %d", rec.Code)
+	}
+}
+
+func TestSecurityHeadersCoverHTMLAssetsAPIErrorsAndPanic(t *testing.T) {
+	handler := testRouter(t)
+	for _, target := range []string{"/", "/assets/app.js", "/api/v1/health", "/api/v1/missing", "/assets/missing.js"} {
+		rec := request(handler, http.MethodGet, target)
+		assertSecurityHeaders(t, target, rec)
+	}
+	panicHandler := securityHeaders(recoverer(slog.New(slog.NewTextHandler(io.Discard, nil)))(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("test") })))
+	rec := httptest.NewRecorder()
+	panicHandler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/panic", nil))
+	assertSecurityHeaders(t, "/panic", rec)
+}
+
+func assertSecurityHeaders(t *testing.T, target string, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	for header, want := range map[string]string{
+		"X-Content-Type-Options": "nosniff",
+		"X-Frame-Options":        "DENY",
+		"Referrer-Policy":        "no-referrer",
+	} {
+		if got := rec.Header().Get(header); got != want {
+			t.Errorf("%s header %s = %q, want %q", target, header, got, want)
+		}
+	}
+	csp := rec.Header().Get("Content-Security-Policy")
+	if !strings.Contains(csp, "default-src 'self'") || !strings.Contains(csp, "style-src 'self' 'unsafe-inline'") || !strings.Contains(csp, "frame-ancestors 'none'") {
+		t.Errorf("%s has incompatible or incomplete CSP %q", target, csp)
+	}
+}
+
+func TestPreviewOrAuthorizationHeadersDoNotEnableBusinessRoutes(t *testing.T) {
+	handler := testRouter(t)
+	for _, headers := range []map[string]string{
+		{"Authorization": "Bearer attacker-controlled", "X-Forwarded-User": "admin"},
+		{"X-Preview": "true", "X-Authenticated-User": "admin", "X-Role": "admin"},
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/migration-runs", nil)
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotImplemented || !strings.Contains(rec.Body.String(), `"code":"NOT_IMPLEMENTED"`) {
+			t.Fatalf("untrusted headers enabled business API: %d %s", rec.Code, rec.Body.String())
+		}
 	}
 }
 

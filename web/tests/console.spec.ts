@@ -16,6 +16,37 @@ async function preview(page: Page) {
   await page.getByRole("button", { name: "Mở console minh họa" }).click();
   await expect(page).toHaveURL("/runs");
 }
+async function controlSlowFileReads(page: Page) {
+  await page.addInitScript(() => {
+    const original = File.prototype.arrayBuffer;
+    const browserWindow = window as Window & { __slowFilePending?: boolean };
+    browserWindow.__slowFilePending = false;
+    File.prototype.arrayBuffer = function () {
+      if (this.name !== "slow.sql") return original.call(this);
+      browserWindow.__slowFilePending = true;
+      return new Promise<ArrayBuffer>((resolve) => {
+        window.addEventListener(
+          "release-slow-file-read",
+          () => {
+            browserWindow.__slowFilePending = false;
+            original.call(this).then(resolve);
+          },
+          { once: true },
+        );
+      });
+    };
+  });
+}
+async function waitForSlowFileRead(page: Page) {
+  await page.waitForFunction(
+    () => (window as Window & { __slowFilePending?: boolean }).__slowFilePending,
+  );
+}
+async function releaseSlowFileRead(page: Page) {
+  await page.evaluate(() =>
+    window.dispatchEvent(new Event("release-slow-file-read")),
+  );
+}
 test("login separates providers and preview from unavailable authentication", async ({
   page,
 }) => {
@@ -83,7 +114,7 @@ test("local upload metadata, draft review, no execution requests", async ({
     mimeType: "text/plain",
     buffer: Buffer.from("CREATE TABLE example (id NUMBER);"),
   });
-  await expect(page.getByText(/SHA-256:/)).toBeVisible();
+  await expect(page.getByText(/SHA-256 cục bộ:/)).toBeVisible();
   await expect(page.getByText("CHƯA XÁC MINH BỞI MÁY CHỦ")).toBeVisible();
   await page
     .getByRole("button", { name: "Tiếp tục: Kiểm tra & xác nhận" })
@@ -95,6 +126,102 @@ test("local upload metadata, draft review, no execution requests", async ({
   await page.getByRole("link", { name: "Quay lại chọn bundle" }).click();
   await expect(page.getByText("V1__create_table.sql")).toBeVisible();
   expect(mutations).toEqual([]);
+});
+test("latest local bundle selection wins over an older pending checksum read", async ({
+  page,
+}) => {
+  await controlSlowFileReads(page);
+  await preview(page);
+  await page.goto("/runs/new");
+  const input = page.locator("input[type=file]");
+  await input.setInputFiles({
+    name: "slow.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 1;"),
+  });
+  await waitForSlowFileRead(page);
+  await input.setInputFiles({
+    name: "latest.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 2;"),
+  });
+  await expect(page.getByText("latest.sql")).toBeVisible();
+  await expect(page.getByText("slow.sql")).toHaveCount(0);
+  await releaseSlowFileRead(page);
+  await expect(page.getByText("latest.sql")).toBeVisible();
+  await expect(page.getByText("slow.sql")).toHaveCount(0);
+
+  await input.setInputFiles({
+    name: "slow.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 3;"),
+  });
+  await waitForSlowFileRead(page);
+  await page.getByLabel("Target Schema", { exact: false }).selectOption("PAYMENT");
+  await releaseSlowFileRead(page);
+  await expect(page.getByText("slow.sql")).toBeVisible();
+  await expect(page.getByLabel("Target Schema", { exact: false })).toHaveValue(
+    "PAYMENT",
+  );
+
+  await input.setInputFiles({
+    name: "slow.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 4;"),
+  });
+  await waitForSlowFileRead(page);
+  await page.getByRole("button", { name: "Dùng bundle minh họa" }).click();
+  await releaseSlowFileRead(page);
+  await expect(page.getByText("FIXTURE · Minh họa")).toBeVisible();
+  await expect(page.getByText("slow.sql")).toHaveCount(0);
+});
+test("clearing bundle invalidates pending checksum work", async ({ page }) => {
+  await controlSlowFileReads(page);
+  await preview(page);
+  await page.goto("/runs/new");
+  const input = page.locator("input[type=file]");
+  await input.setInputFiles({
+    name: "baseline.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 0;"),
+  });
+  await expect(page.getByText("baseline.sql")).toBeVisible();
+  await input.setInputFiles({
+    name: "slow.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 1;"),
+  });
+  await waitForSlowFileRead(page);
+  await page.getByRole("button", { name: "Xóa" }).click();
+  await releaseSlowFileRead(page);
+  await expect(page.getByText("baseline.sql")).toHaveCount(0);
+  await expect(page.getByText("slow.sql")).toHaveCount(0);
+  await expect(page.getByText("1 tệp cục bộ")).toHaveCount(0);
+});
+test("unmounting migration invalidates pending read before a newer draft", async ({
+  page,
+}) => {
+  await controlSlowFileReads(page);
+  await preview(page);
+  await page.goto("/runs/new");
+  const input = page.locator("input[type=file]");
+  await input.setInputFiles({
+    name: "slow.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 1;"),
+  });
+  await waitForSlowFileRead(page);
+  await page.getByRole("link", { name: "Lịch sử chạy" }).click();
+  await page.getByRole("link", { name: "Chạy migration" }).click();
+  await page.locator("input[type=file]").setInputFiles({
+    name: "newer.sql",
+    mimeType: "text/plain",
+    buffer: Buffer.from("SELECT 2;"),
+  });
+  await expect(page.getByText("newer.sql")).toBeVisible();
+  await releaseSlowFileRead(page);
+  await expect(page.getByText("newer.sql")).toBeVisible();
+  await expect(page.getByText("slow.sql")).toHaveCount(0);
 });
 test("fixture bundle review and schema selection preserve distinct history", async ({
   page,

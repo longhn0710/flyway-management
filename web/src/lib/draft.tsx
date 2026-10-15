@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import type { MigrationDraft } from "./contracts";
 const initial: MigrationDraft = {
   targetId: "db-uat-finance",
@@ -9,7 +16,7 @@ const initial: MigrationDraft = {
 };
 const DraftContext = createContext<{
   draft: MigrationDraft;
-  setDraft: (draft: MigrationDraft) => void;
+  setDraft: Dispatch<SetStateAction<MigrationDraft>>;
 }>({ draft: initial, setDraft: () => {} });
 export function DraftProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState(initial);

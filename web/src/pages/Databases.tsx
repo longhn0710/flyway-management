@@ -8,7 +8,8 @@ import {
   Database,
   ArrowLeft,
 } from "lucide-react";
-import { targets, runs } from "../lib/fixtures";
+import { previewFixtures as fixtures } from "../lib/fixtures";
+const { targets, runs } = fixtures;
 import {
   Panel,
   PageHeading,
