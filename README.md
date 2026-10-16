@@ -135,3 +135,5 @@ The Docker image contains the approved complete Flyway 13.10.3 runtime and needs
 no runtime download. CI verifies the application before publishing a versioned
 GHCR image; GitOps pins its digest. See [external browser acceptance](deploy/acceptance/README.md)
 for the HTTPS browser harness, which never submits migrations.
+
+Phase 4 deployment results and immutable revisions: [homelab acceptance](docs/phase4-homelab-acceptance.md).

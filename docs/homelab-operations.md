@@ -23,7 +23,24 @@ kubectl --context k8s-admin-public -n argocd get application flyway-manager
 curl --fail https://flyway-manager.apps.drgdevlab.com/api/v1/health
 ```
 
-Log in and open Run Migration to check authenticated `/api/v1/runtime`:
+Check authenticated runtime readiness without printing session material:
+
+```bash
+python3 - <<'PYTHON'
+import http.cookiejar, json, pathlib, urllib.request
+base = 'https://flyway-manager.apps.drgdevlab.com'
+c = json.loads((pathlib.Path.home()/'.local/share/flyway-manager/phase4/admin-credentials.json').read_text())
+client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+request = urllib.request.Request(base+'/api/v1/auth/login', data=json.dumps(dict(provider='local', username=c['username'], password=c['password'])).encode(), headers={'Origin':base, 'Content-Type':'application/json'})
+with client.open(request, timeout=30) as response:
+    assert response.status == 200
+with client.open(base+'/api/v1/runtime', timeout=30) as response:
+    runtime = json.load(response)['data']
+print(json.dumps({key: runtime[key] for key in ('ready','version','integrity','dependency','blockers')}))
+PYTHON
+```
+
+The Run Migration screen shows the same authenticated `/api/v1/runtime`:
 `ready=true`, version `13.10.3`, integrity `verified`, bundled Java/JDBC available.
 Readiness/liveness probe SQLite/server health; runtime verification remains a
 separate authenticated check and pre-execution gate. No Flyway credentials or
@@ -98,20 +115,31 @@ found no configured independent Longhorn backup target.
 
 ## Isolated restore rehearsal
 
+The accepted Phase 4 image is:
+
+```bash
+FWM_IMAGE=ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f
+FWM_RESTORE="$HOME/flyway-manager-restore-rehearsal"
+install -d -m 700 "$FWM_RESTORE/data" "$FWM_RESTORE/keys"
+sudo install -o 10001 -g 10001 -m 600 "$HOME/backups/flyway-manager/phase4-final/manager.db" "$FWM_RESTORE/data/manager.db"
+sudo install -o 10001 -g 10001 -m 600 "$HOME/backups/flyway-manager/phase4-final-keys/master.key" "$FWM_RESTORE/keys/master.key"
+sudo chown 10001:10001 "$FWM_RESTORE/data" "$FWM_RESTORE/keys"
+```
+
 Use the exact source image digest. Create fresh disposable data/key directories,
 copy the snapshot as `data/manager.db` and the original key as `keys/master.key`.
 Set both directories to UID/GID 10001 with mode 0700, files 0600. Run with
 `--network none`, no ports, no Flyway config and an explicit external key:
 
 ```bash
-docker run -d --name flyway-manager-restore --network none --read-only \
+docker run -d --name flyway-manager-restore-rehearsal --network none --read-only \
   --cap-drop=ALL --security-opt=no-new-privileges --memory=3g --cpus=2 \
   --tmpfs /tmp:rw,nosuid,nodev,size=128m \
   -v "$FWM_RESTORE/data:/data/manager" -v "$FWM_RESTORE/keys:/run/keys:ro" \
   -e FLYWAY_MANAGER_MASTER_KEY_FILE=/run/keys/master.key \
   "$FWM_IMAGE"
-docker logs flyway-manager-restore
-FWM_RESTORE_PID=$(docker inspect -f '{{.State.Pid}}' flyway-manager-restore)
+docker logs flyway-manager-restore-rehearsal
+FWM_RESTORE_PID=$(docker inspect -f '{{.State.Pid}}' flyway-manager-restore-rehearsal)
 sudo nsenter -t "$FWM_RESTORE_PID" -n curl --fail http://127.0.0.1:8080/api/v1/health
 ```
 
@@ -130,6 +158,27 @@ promote the digest through the repository workflow. Argo performs the rollout.
 Check active jobs, take/export a DB+key backup, and review schema compatibility
 before changing the image. Recreate ensures the old Manager stops first.
 
+For a reviewed image upgrade, edit only `image.digest` in the isolated GitOps
+checkout, then validate and publish the focused change:
+
+```bash
+cd /home/longhn0710/workspace/flyway-manager-gitops
+# Set image.digest in flyway-manager/values.yaml to the reviewed published digest.
+helm lint flyway-manager
+helm template flyway-manager flyway-manager --namespace flyway-manager > /tmp/flyway-manager-reviewed.yaml
+git diff -- flyway-manager/values.yaml
+git add flyway-manager/values.yaml
+git commit -m "deploy(flyway-manager): promote reviewed image"
+git push origin HEAD:master
+kubectl --context k8s-admin-public -n argocd get application flyway-manager
+kubectl --context k8s-admin-public -n flyway-manager rollout status deployment/flyway-manager --timeout=240s
+```
+
+Confirm the Deployment's image equals the new digest before trusting rollout
+status; an old revision can still be healthy while Argo fetches Git. The
+previous accepted compatible digest is
+`sha256:8437685899bd0154a9964268db51487b7394e47d5a515ad20ee54f88236a813e`.
+
 For application rollback, revert only the GitOps image digest to the previously
 accepted image through the same workflow. First verify it understands the
 current SQLite migration ledger; do not run an incompatible older binary or
@@ -140,3 +189,16 @@ The SQLite PVC uses a Longhorn RWO block filesystem with normal local locking,
 not an NFS SQLite data directory. Application process locking adds a second
 single-owner check. Longhorn Retain and no-prune preserve the data volume;
 neither is a backup guarantee.
+
+To return specifically to the previous accepted image while preserving the
+later ingress calibration, review the inverse of the image-only promotion:
+
+```bash
+cd /home/longhn0710/workspace/flyway-manager-gitops
+git show c5e503b4756051e3c49864b5caf2bef216dd3d08 -- flyway-manager/values.yaml
+git revert --no-edit c5e503b4756051e3c49864b5caf2bef216dd3d08
+git push origin HEAD:master
+```
+
+Use this only after the quiet-window backup and compatibility review described
+above; it changes the application image and leaves Oracle history intact.

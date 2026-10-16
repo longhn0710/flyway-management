@@ -1,0 +1,838 @@
+{
+  "report": "../phase4-homelab-acceptance.md",
+  "environment": {
+    "class": "non-production homelab",
+    "url": "https://flyway-manager.apps.drgdevlab.com",
+    "architecture": "linux/amd64",
+    "replicas": 1,
+    "deployment_strategy": "Recreate",
+    "storage": {
+      "class": "longhorn-workers",
+      "size": "5Gi",
+      "access_mode": "ReadWriteOnce",
+      "filesystem": "ext4",
+      "retention": "Retain"
+    },
+    "flyway_version": "13.10.3",
+    "flyway_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c",
+    "master_key_storage": "Kubernetes Secret independent of SQLite"
+  },
+  "final_revision": {
+    "source_commit": "d27e2542dd8e469b31112298a77b6b83cd5ce1e4",
+    "image_digest": "sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+    "version": "phase4-d27e2542dd8e469b31112298a77b6b83cd5ce1e4",
+    "gitops_commit": "1d7d285010eace3bf54b39cddb7ce57c6e1bc124",
+    "rollout_and_restart_verification": "passed",
+    "final_backup_restore_verification": "passed",
+    "ci_run": "https://github.com/longhn0710/flyway-management/actions/runs/38857697034"
+  },
+  "browser": {
+    "bootstrap": "passed",
+    "login": "passed",
+    "session_cookie": {
+      "secure": true,
+      "http_only": true,
+      "same_site": "Lax"
+    },
+    "refresh_navigation_logout": "passed",
+    "protected_route_redirect": "passed",
+    "runtime": {
+      "ready": true,
+      "integrity": "verified",
+      "version": "13.10.3",
+      "dependency": "bundled Java and Oracle JDBC available"
+    },
+    "final_deployed_browser": {
+      "ok": true,
+      "results": [
+        {
+          "name": "login",
+          "ok": true,
+          "completed": true
+        },
+        {
+          "name": "session-cookie",
+          "ok": true,
+          "httpOnly": true,
+          "sameSite": "Lax",
+          "secure": true
+        },
+        {
+          "name": "runtime",
+          "ok": true,
+          "ready": true,
+          "integrity": "verified",
+          "version": "13.10.3",
+          "dependency": "bundled_java_and_oracle_jdbc_available"
+        },
+        {
+          "name": "registry-selection",
+          "ok": true,
+          "selected": true,
+          "targetActive": true,
+          "schemaActive": true,
+          "accountMapped": true,
+          "credentialConfigured": true
+        },
+        {
+          "name": "artifact-upload",
+          "ok": true,
+          "fileCount": 3,
+          "completed": true
+        },
+        {
+          "name": "migration-preflight",
+          "ok": true,
+          "verified": true,
+          "artifactId": "6sWTurRwR5pDZk9HaFu1s6",
+          "targetId": "oracle-free-lab",
+          "schemaId": "XzDgP4TnKBwcsEsmd-30BG",
+          "accountId": "NnNMPvjYMbiaJ2htNxP1Qo",
+          "runtimeVersion": "13.10.3",
+          "migrationCount": 3,
+          "expectedHistoryChecks": 3,
+          "submitted": false
+        },
+        {
+          "name": "run-history-details",
+          "ok": true,
+          "found": true,
+          "logsVisible": true,
+          "refreshed": true,
+          "status": "SUCCEEDED"
+        },
+        {
+          "name": "audit-attribution",
+          "ok": true,
+          "runSubmissionEventVisible": true,
+          "actorMatched": true
+        },
+        {
+          "name": "refresh-navigation-logout",
+          "ok": true,
+          "refreshed": true,
+          "logoutClearedSession": true,
+          "protectedRouteRedirected": true
+        }
+      ]
+    },
+    "operator": {
+      "operator_login": true,
+      "admin_navigation_hidden": true,
+      "admin_mutation_disabled": true,
+      "permission_explanation_visible": true,
+      "ungranted_streams_unavailable": true
+    }
+  },
+  "oracle_target": {
+    "id": "oracle-free-lab",
+    "host": "oracle-free.flyway-manager-oracle-lab.svc.cluster.local",
+    "port": 1521,
+    "service": "FREEPDB1",
+    "schema": "FWM_LAB",
+    "execution_account": "FWM_LAB",
+    "preflight": "VERIFIED",
+    "preflight_blockers": [],
+    "read_only_preflight_changed_oracle_state": false
+  },
+  "authorization": {
+    "ungranted_operator": "FORBIDDEN",
+    "unauthenticated": "UNAUTHENTICATED",
+    "invalid_csrf": "CSRF_REJECTED",
+    "wrong_origin": "CSRF_REJECTED",
+    "oracle_state_unchanged": true
+  },
+  "migration_acceptance": {
+    "artifact_id": "R1R9iKLBMcTsF2YZtcc-hc",
+    "run_id": "mfqqwXlgjblVDa8hyJbwfU",
+    "submission_http_status": 202,
+    "same_idempotency_key_reused_existing_run": true,
+    "status": "SUCCEEDED",
+    "actor": "homelab-admin",
+    "flyway_version": "13.10.3",
+    "exit_code": 0,
+    "repair_outcome": "SKIPPED",
+    "post_run_preflight": "VERIFIED",
+    "subprocesses": [
+      "info: exit 0",
+      "validate: exit 0",
+      "migrate: exit 0",
+      "info: exit 0",
+      "validate: exit 0"
+    ],
+    "oracle_history": [
+      {
+        "version": "1",
+        "script": "V1__isolated_lab_probe.sql",
+        "artifact_sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+        "checksum": 1105310609,
+        "preserved": true
+      },
+      {
+        "version": "2",
+        "script": "V2__manager_lab_probe.sql",
+        "artifact_sha256": "77dfe761086f9c1a6ec6d84013884254fa017d14bfad22832f78c593f5e8c935",
+        "checksum": 739407795,
+        "preserved": true
+      },
+      {
+        "version": "3",
+        "script": "V3__manager_deployed_acceptance.sql",
+        "checksum": -1554549819,
+        "row_marker": "manager-phase4-v3",
+        "installed_once": true,
+        "artifact_sha256": "02180dfccc01b328d0fed4c0b2ff3bf560960e798360d533a7b83dd30dcc2632"
+      }
+    ],
+    "unrelated_lab_guard": "unchanged-lab-canary",
+    "guard_grant_count": 0,
+    "lab_account_system_privilege_count": 2,
+    "lab_account_roles": 0
+  },
+  "telemetry_timeout": {
+    "initial_failure": "blocked vendor telemetry delayed Flyway CLI startup and preflight exceeded the HTTP request budget",
+    "oracle_state_changed": false,
+    "remediation": "disable vendor usage telemetry in the adapter",
+    "post_fix_startup_seconds": 1.9,
+    "timeout_diagnostics": "preserved with REQUEST_TIMEOUT and durable NOT_VERIFIED audit"
+  },
+  "known_limits": [
+    "Oracle 19c and 21c were not verified.",
+    "No automated independent backup destination is configured.",
+    "New Oracle destinations require a narrow network policy update.",
+    "Historical installed_on values preserve original client-zone timestamps; rank, version and checksum are canonical."
+  ],
+  "source_evidence": [
+    "/tmp/flyway-phase4/private-live/setup.json",
+    "/tmp/flyway-phase4/private-live/readonly.json",
+    "/tmp/flyway-phase4/private-live/rbac.json",
+    "/tmp/flyway-phase4/private-live/v3-preflight.json",
+    "/tmp/flyway-phase4/private-live/v3-submission.json",
+    "/tmp/flyway-phase4/private-live/v3-acceptance.json",
+    "/tmp/flyway-phase4/private-live/v3-run-observations.json",
+    "/tmp/flyway-phase4/live-bootstrap-browser-result.json",
+    "/tmp/flyway-phase4/live-v3-browser-result.json",
+    "/tmp/flyway-phase4/transport-acceptance.json",
+    "/tmp/flyway-phase4/fixed-offline-acceptance.json",
+    "/tmp/flyway-phase4/final-browser-result.json",
+    "/tmp/flyway-phase4/rbac-browser-result.json",
+    "/tmp/flyway-phase4/final-accepted-security.json",
+    "/tmp/flyway-phase4/private-live/restart-after.json",
+    "/tmp/flyway-phase4/private-live/final-backup.json",
+    "/tmp/flyway-phase4/final-restore-acceptance.json",
+    "/tmp/flyway-phase4/final-secret-scan.json"
+  ],
+  "deployment": {
+    "argocd": {
+      "health": "Healthy",
+      "name": "flyway-manager",
+      "path": "flyway-manager",
+      "project": "drgdevlab",
+      "repo": "git@github.com:devsecopslonghn/k8s-namepsace-chart.git",
+      "resolvedRevision": "1d7d285010eace3bf54b39cddb7ce57c6e1bc124",
+      "sync": "Synced",
+      "targetRevision": "master"
+    },
+    "collectedAt": "2026-10-16T06:14:50.880555+00:00",
+    "deployment": {
+      "availableReplicas": 1,
+      "desiredReplicas": 1,
+      "name": "flyway-manager",
+      "pinnedImage": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+      "readyReplicas": 1,
+      "strategy": "Recreate"
+    },
+    "ingress": {
+      "addresses": [
+        {
+          "ip": "103.162.31.149"
+        }
+      ],
+      "class": "nginx",
+      "hosts": [
+        "flyway-manager.apps.drgdevlab.com"
+      ],
+      "tls": [
+        {
+          "hosts": [
+            "flyway-manager.apps.drgdevlab.com"
+          ],
+          "secretName": null
+        }
+      ]
+    },
+    "namespace": "flyway-manager",
+    "networkPolicies": {
+      "cilium": {
+        "endpointSelector": {
+          "app.kubernetes.io/instance": "flyway-manager",
+          "app.kubernetes.io/name": "flyway-manager"
+        },
+        "ingress": [
+          {
+            "fromEntities": [
+              "host",
+              "remote-node"
+            ],
+            "ports": [
+              {
+                "port": "8080",
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ],
+        "name": "flyway-manager-host-ingress",
+        "namespace": "flyway-manager",
+        "validation": [
+          {
+            "message": "Policy validation succeeded",
+            "status": "True",
+            "type": "Valid"
+          }
+        ]
+      },
+      "manager": {
+        "egress": [
+          {
+            "ports": [
+              {
+                "port": 53,
+                "protocol": "UDP"
+              },
+              {
+                "port": 53,
+                "protocol": "TCP"
+              }
+            ],
+            "to": [
+              {
+                "namespaceSelector": {
+                  "kubernetes.io/metadata.name": "kube-system"
+                },
+                "podSelector": {
+                  "k8s-app": "kube-dns"
+                }
+              }
+            ]
+          },
+          {
+            "ports": [
+              {
+                "port": 1521,
+                "protocol": "TCP"
+              }
+            ],
+            "to": [
+              {
+                "namespaceSelector": {
+                  "kubernetes.io/metadata.name": "flyway-manager-oracle-lab"
+                },
+                "podSelector": {
+                  "app.kubernetes.io/name": "oracle-free"
+                }
+              }
+            ]
+          }
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "kubernetes.io/metadata.name": "ingress-nginx"
+                },
+                "podSelector": {
+                  "app.kubernetes.io/component": "controller",
+                  "app.kubernetes.io/instance": "ingress-nginx",
+                  "app.kubernetes.io/name": "ingress-nginx"
+                }
+              }
+            ],
+            "ports": [
+              {
+                "port": 8080,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ],
+        "name": "flyway-manager",
+        "namespace": "flyway-manager",
+        "podSelector": {
+          "app.kubernetes.io/instance": "flyway-manager",
+          "app.kubernetes.io/name": "flyway-manager"
+        },
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ]
+      },
+      "oracleLab": [
+        {
+          "egress": [
+            {
+              "ports": [
+                {
+                  "port": 53,
+                  "protocol": "UDP"
+                },
+                {
+                  "port": 53,
+                  "protocol": "TCP"
+                }
+              ],
+              "to": [
+                {
+                  "namespaceSelector": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  },
+                  "podSelector": {
+                    "k8s-app": "kube-dns"
+                  }
+                }
+              ]
+            }
+          ],
+          "ingress": [
+            {
+              "from": [
+                {
+                  "podSelector": {}
+                }
+              ],
+              "ports": [
+                {
+                  "port": 1521,
+                  "protocol": "TCP"
+                }
+              ]
+            }
+          ],
+          "name": "oracle-lab-isolation",
+          "namespace": "flyway-manager-oracle-lab",
+          "podSelector": {},
+          "policyTypes": [
+            "Ingress",
+            "Egress"
+          ]
+        },
+        {
+          "egress": [],
+          "ingress": [
+            {
+              "from": [
+                {
+                  "namespaceSelector": {
+                    "kubernetes.io/metadata.name": "flyway-manager"
+                  },
+                  "podSelector": {
+                    "app.kubernetes.io/instance": "flyway-manager",
+                    "app.kubernetes.io/name": "flyway-manager"
+                  }
+                }
+              ],
+              "ports": [
+                {
+                  "port": 1521,
+                  "protocol": "TCP"
+                }
+              ]
+            }
+          ],
+          "name": "allow-flyway-manager-1521",
+          "namespace": "flyway-manager-oracle-lab",
+          "podSelector": {
+            "app.kubernetes.io/name": "oracle-free"
+          },
+          "policyTypes": [
+            "Ingress"
+          ]
+        }
+      ],
+      "realizedCilium": {
+        "available": true,
+        "endpointId": 443,
+        "health": {
+          "bpf": "OK",
+          "connected": true,
+          "overallHealth": "OK",
+          "policy": "OK"
+        },
+        "policyEnabled": "both",
+        "realizedL4": {
+          "egress": [
+            {
+              "policies": [
+                {
+                  "kind": "NetworkPolicy",
+                  "name": "flyway-manager",
+                  "namespace": "flyway-manager"
+                }
+              ],
+              "port": 1521,
+              "protocol": "TCP"
+            },
+            {
+              "policies": [
+                {
+                  "kind": "NetworkPolicy",
+                  "name": "flyway-manager",
+                  "namespace": "flyway-manager"
+                }
+              ],
+              "port": 53,
+              "protocol": "UDP"
+            },
+            {
+              "policies": [
+                {
+                  "kind": "NetworkPolicy",
+                  "name": "flyway-manager",
+                  "namespace": "flyway-manager"
+                }
+              ],
+              "port": 53,
+              "protocol": "TCP"
+            }
+          ],
+          "ingress": [
+            {
+              "policies": [
+                {
+                  "kind": "CiliumNetworkPolicy",
+                  "name": "flyway-manager-host-ingress",
+                  "namespace": "flyway-manager"
+                },
+                {
+                  "kind": "NetworkPolicy",
+                  "name": "flyway-manager",
+                  "namespace": "flyway-manager"
+                }
+              ],
+              "port": 8080,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "state": "ready"
+      }
+    },
+    "pods": [
+      {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "environmentNames": [
+              "FLYWAY_MANAGER_CONFIG",
+              "FLYWAY_MANAGER_DATA_DIR"
+            ],
+            "image": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+            "imageID": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+            "name": "manager",
+            "probes": {
+              "livenessProbe": {
+                "failureThreshold": 3,
+                "httpGet": {
+                  "path": "/api/v1/health",
+                  "port": "http",
+                  "scheme": "HTTP"
+                },
+                "periodSeconds": 20,
+                "successThreshold": 1,
+                "timeoutSeconds": 3
+              },
+              "readinessProbe": {
+                "failureThreshold": 3,
+                "httpGet": {
+                  "path": "/api/v1/health",
+                  "port": "http",
+                  "scheme": "HTTP"
+                },
+                "periodSeconds": 10,
+                "successThreshold": 1,
+                "timeoutSeconds": 3
+              },
+              "startupProbe": {
+                "failureThreshold": 36,
+                "httpGet": {
+                  "path": "/api/v1/health",
+                  "port": "http",
+                  "scheme": "HTTP"
+                },
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "timeoutSeconds": 3
+              }
+            },
+            "ready": true,
+            "resources": {
+              "limits": {
+                "cpu": "2",
+                "memory": "3Gi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "512Mi"
+              }
+            },
+            "restartCount": 0,
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true,
+              "runAsGroup": 10001,
+              "runAsNonRoot": true,
+              "runAsUser": 10001
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/data",
+                "name": "data"
+              },
+              {
+                "mountPath": "/etc/flyway-manager",
+                "name": "config",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/run/keys",
+                "name": "runtime-key",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "imagePullSecrets": [
+          "ghcr-pull"
+        ],
+        "initContainers": [
+          {
+            "environmentNames": [],
+            "image": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+            "imageID": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f",
+            "name": "prepare-master-key",
+            "probes": {},
+            "ready": true,
+            "resources": {
+              "limits": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "requests": {
+                "cpu": "50m",
+                "memory": "32Mi"
+              }
+            },
+            "restartCount": 0,
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true,
+              "runAsGroup": 10001,
+              "runAsNonRoot": true,
+              "runAsUser": 10001
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/source",
+                "name": "source-key",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/run/keys",
+                "name": "runtime-key"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "name": "flyway-manager-6bd7f7d659-r9m6w",
+        "node": "k8s-worker2",
+        "phase": "Running",
+        "podIP": "10.244.1.90",
+        "ready": true,
+        "securityContext": {
+          "fsGroup": 10001,
+          "fsGroupChangePolicy": "OnRootMismatch",
+          "runAsGroup": 10001,
+          "runAsNonRoot": true,
+          "runAsUser": 10001,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "volumes": [
+          {
+            "name": "data",
+            "persistentVolumeClaim": "flyway-manager-data"
+          },
+          {
+            "configMap": "flyway-manager-config",
+            "name": "config"
+          },
+          {
+            "name": "source-key",
+            "secretRef": {
+              "defaultMode": 256,
+              "items": [
+                "master.key"
+              ],
+              "name": "flyway-manager-master-key"
+            }
+          },
+          {
+            "emptyDir": {
+              "medium": "Memory",
+              "sizeLimit": "1Mi"
+            },
+            "name": "runtime-key"
+          },
+          {
+            "emptyDir": {
+              "sizeLimit": "128Mi"
+            },
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "service": {
+      "clusterIP": "10.102.100.141",
+      "ports": [
+        {
+          "port": 8080,
+          "protocol": "TCP"
+        }
+      ],
+      "type": "ClusterIP"
+    },
+    "storage": {
+      "accessModes": [
+        "ReadWriteOnce"
+      ],
+      "capacity": {
+        "storage": "5Gi"
+      },
+      "claim": "flyway-manager-data",
+      "claimStatus": "Bound",
+      "pv": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "capacity": {
+          "storage": "5Gi"
+        },
+        "driver": "driver.longhorn.io",
+        "filesystem": "ext4",
+        "name": "pvc-a14f79b9-8fd1-4bb0-b19d-6c85cc2e22b1",
+        "phase": "Bound",
+        "reclaimPolicy": "Retain",
+        "replicas": "2"
+      },
+      "storageClass": "longhorn-workers",
+      "volumeMode": "Filesystem"
+    }
+  },
+  "restart": {
+    "same_session_valid": true,
+    "original_installation_id": "08c3533660b75625462d3ab3dd1f7071",
+    "oracle_state_unchanged": true,
+    "three_successful_migrations": true,
+    "credential_decryption_and_jdbc": true
+  },
+  "backup": {
+    "all_runs_terminal": true,
+    "data_file": "/home/longhn0710/backups/flyway-manager/phase4-final/manager.db",
+    "database_sha256": "654c96c1fb21275826ea078fe0ffd9d612a5ba9382fca4cd8d6365b94c586d7f",
+    "key_file": "/home/longhn0710/backups/flyway-manager/phase4-final-keys/master.key",
+    "key_matches_deployment": true,
+    "mode": "0600",
+    "sqlite_integrity": "ok"
+  },
+  "isolated_restore": {
+    "isolated_restore_health": true,
+    "original_login": true,
+    "original_installation_id": true,
+    "encrypted_credentials_decrypted_at_startup": true,
+    "registry_restored": true,
+    "run_history_restored": true,
+    "subprocess_records_restored": true,
+    "migrate_count": 1,
+    "runtime_unconfigured": true,
+    "network": "none",
+    "submitted_jobs": false
+  },
+  "https": {
+    "chain_and_hostname_verification": "passed",
+    "openssl_verify_return_code": 0,
+    "protocol": "TLSv1.3",
+    "subject": "*.apps.drgdevlab.com",
+    "issuer": "Let\u2019s Encrypt YR1",
+    "not_before": "2026-09-24T06:37:59Z",
+    "not_after": "2026-12-23T06:37:58Z",
+    "http_redirect": 308,
+    "hsts": "max-age=31536000; includeSubDomains",
+    "shared_ingress_configuration_changed": false
+  },
+  "security": {
+    "nonroot_uid": 10001,
+    "read_only_root_filesystem": true,
+    "privileged": false,
+    "capabilities_dropped": [
+      "ALL"
+    ],
+    "service_account_token_automount": false,
+    "public_authentication_required": true,
+    "ingress_limits": {
+      "requests_per_second": 20,
+      "connections": 20
+    },
+    "egress_denied_to_kubernetes_api": true,
+    "forged_forwarded_identity_rejected": true,
+    "cross_schema_query_denied": "ORA-00942",
+    "realized_policy_enforcement": "both",
+    "secret_scan": {
+      "repository_known_secret_scan": "passed",
+      "application_log_known_secret_scan": "passed",
+      "image_metadata_known_secret_scan": "passed",
+      "secret_values_printed": false,
+      "image_filesystem": {
+        "image_filesystem_known_secret_scan": "passed",
+        "bytes_scanned": 1102261760,
+        "image": "ghcr.io/longhn0710/flyway-manager@sha256:9ac6accd5a30b3e53fef554f445be90922207377d521589baaf7419d95f9821f"
+      }
+    },
+    "plaintext_backup_secrets_absent": true,
+    "master_key_secret_immutable": true
+  },
+  "quality": {
+    "command": "make check test-race test-e2e security",
+    "local": "passed",
+    "ci": "passed",
+    "browser_tests": 10,
+    "frontend_tests": 11,
+    "npm_vulnerabilities": 0,
+    "go_called_or_imported_package_vulnerabilities": 0,
+    "go_module_only_advisories": 1,
+    "helm_lint": "passed",
+    "namespaced_server_dry_run": "passed",
+    "gitleaks": "passed",
+    "native_async_race_regression_repetitions": 10
+  }
+}

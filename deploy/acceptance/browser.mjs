@@ -142,7 +142,7 @@ async function visibleLogin(page, config, credentials, bootstrapToken) {
     await page.waitForURL((url) => url.pathname === "/runs", { timeout: 30000 });
     record("login", { completed: true });
   }
-  await page.getByText(credentials.username, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await page.locator("header").getByText(credentials.username, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
   const cookies = await context.cookies(config.baseURL);
   const session = cookies.find((cookie) => cookie.name === "fm_session");
   if (!session || !session.httpOnly || session.sameSite !== "Lax") {
@@ -287,7 +287,10 @@ async function verifyExistingRun(page, config) {
     await filter.fill("migration.submit");
     const row = page.getByRole("row").filter({ hasText: config.runId });
     await row.waitFor({ state: "visible", timeout: 15000 });
-    if (config.expectedActorName) await row.getByText(config.expectedActorName, { exact: true }).waitFor({ state: "visible" });
+    if (config.expectedActorName) {
+      const actor = (await row.getByRole("cell").nth(1).innerText()).split("\n")[0];
+      if (actor !== config.expectedActorName) fail("Audit actor does not match expectedActorName", "AUDIT_ACTOR_MISMATCH");
+    }
     record("audit-attribution", { runSubmissionEventVisible: true, actorMatched: Boolean(config.expectedActorName) });
   }
 }
@@ -297,9 +300,13 @@ async function logout(page, config, credentials) {
   if (config.screenshotPath) await savePrivateScreenshot(page, config.screenshotPath);
   await page.goto(new URL("/runs", config.baseURL).toString(), { waitUntil: "domcontentloaded" });
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByText(credentials.username, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await page.locator("header").getByText(credentials.username, { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  const logoutResponse = page.waitForResponse((response) => response.url().endsWith("/api/v1/auth/logout") && response.request().method() === "POST");
   await page.getByRole("button", { name: "Đăng xuất" }).click();
-  await page.waitForURL((url) => url.pathname === "/login", { timeout: 15000 });
+  const loggedOut = await logoutResponse;
+  if (!loggedOut.ok()) fail("Logout request was rejected", `LOGOUT_HTTP_${loggedOut.status()}`);
+  await page.waitForURL((url) => url.pathname === "/login", { timeout: 15000, waitUntil: "domcontentloaded" });
+  await page.getByRole("heading", { name: "Đăng nhập hệ thống", exact: true }).waitFor({ state: "visible" });
   const remaining = (await context.cookies(config.baseURL)).some((cookie) => cookie.name === "fm_session");
   if (remaining) fail("Session cookie remains after logout", "LOGOUT_FAILED");
   await page.goto(new URL("/access/users", config.baseURL).toString(), { waitUntil: "domcontentloaded" });
