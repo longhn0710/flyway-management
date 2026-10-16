@@ -77,7 +77,7 @@ async function createFakeRuntime(scenario: "success" | "repair") {
   await mkdir(join(root, "lib"), { recursive: true });
   await mkdir(join(root, "jre", "bin"), { recursive: true });
   const version = "10.20.0";
-  const infoPending = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Pending","installedOn":"","installedBy":"","installedRank":1}],"flywayVersion":"${version}"}'`;
+  const infoPending = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","filepath":"/private/flyway-run-fixture/sql/V1__browser.sql","state":"Pending","installedOn":"","installedBy":"","installedRank":1}],"flywayVersion":"${version}"}'`;
   const infoSuccess = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Success","installedOn":"2026-10-16T00:00:00Z","installedBy":"BROWSER_DEPLOY","installedRank":1,"checksum":123}],"flywayVersion":"${version}"}'`;
   const infoFailed = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Failed","installedOn":"","installedBy":"BROWSER_DEPLOY","installedRank":1}],"flywayVersion":"${version}"}'`;
   const validateFailed = `printf '%s\\n' '{"operation":"validate","validationSuccessful":false,"invalidMigrations":[{"version":"1","filepath":"V1__browser.sql","errorDetails":{"errorCode":"FAILED_VERSIONED_MIGRATION"}}],"validateCount":1,"flywayVersion":"${version}"}'`;
@@ -286,9 +286,11 @@ async function uploadAndPreflight(page: Page, fileName = "V1__browser.sql") {
   await expect(
     page.getByRole("heading", { name: "Flyway migration preview" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("table").getByText("V1__browser.sql").first(),
-  ).toBeVisible();
+  const preview = page.getByRole("table").filter({
+    has: page.getByRole("columnheader", { name: "State", exact: true }),
+  });
+  await expect(preview.getByRole("cell", { name: "V1__browser.sql", exact: true })).toBeVisible();
+  await expect(preview).not.toContainText("/private/flyway-run-fixture");
   await page
     .getByRole("button", { name: "Review and submit migration" })
     .click();

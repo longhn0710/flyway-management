@@ -536,7 +536,7 @@ function MigrationPage() {
                   <div>
                     <h3>Flyway migration preview</h3>
                     <p className="small muted">
-                      Existing history in Flyway order, before this upload.
+                      Applied and pending migrations in Flyway order.
                     </p>
                     {preflight.info.migrations.length === 0 ? (
                       <p className="empty">No migrations are recorded yet.</p>
@@ -560,8 +560,9 @@ function MigrationPage() {
                                   <td>{migration.version || "—"}</td>
                                   <td>{migration.category || "—"}</td>
                                   <td className="mono">
-                                    {migration.filepath ||
-                                      migration.script ||
+                                    {(migration.script || migration.filepath)
+                                      ?.split(/[\\/]/)
+                                      .at(-1) ||
                                       migration.description ||
                                       "—"}
                                   </td>

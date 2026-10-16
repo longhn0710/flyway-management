@@ -244,7 +244,7 @@ async function uploadAndPreflight(page, config, sqlFiles) {
   }
   const migrations = result.info?.migrations ?? [];
   for (const expected of config.expectedMigrations ?? []) {
-    const found = migrations.find((item) => item.version === expected.version && item.script === expected.script);
+    const found = migrations.find((item) => item.version === expected.version && (item.script || String(item.filepath ?? "").split(/[\\/]/).at(-1)) === expected.script);
     if (!found || found.state !== expected.state) fail("Preflight migration history does not match expectedMigrations", "MIGRATION_HISTORY_MISMATCH");
   }
   if (submissionObserved.value) fail("Browser unexpectedly submitted a migration", "UNEXPECTED_MIGRATION_SUBMISSION");
