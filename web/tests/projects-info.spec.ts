@@ -39,7 +39,9 @@ test("Projects and native Info: real APIs, read-only refresh, RBAC, browser work
     root = join(dir, "runtime"),
     marker = join(dir, "commands");
   const base = `http://127.0.0.1:${port}`,
-    output = resolve("../docs/evidence/projects-info-20261016");
+    output = process.env.FLYWAY_MANAGER_EVIDENCE_DIR
+      ? resolve(process.env.FLYWAY_MANAGER_EVIDENCE_DIR, "projects-info")
+      : resolve("../docs/evidence/projects-info-20261016");
   await mkdir(output, { recursive: true });
   const native = {
     operation: "info",
@@ -580,7 +582,7 @@ test("Projects and native Info: real APIs, read-only refresh, RBAC, browser work
           native_states: states,
           commands: (await readFile(marker, "utf8")).trim().split("\n"),
           project_membership: true,
-        environments: ["DEV", "SIT", "UAT", "PROD"],
+          environments: ["DEV", "SIT", "UAT", "PROD"],
           archive_restore: true,
           roles: ["Admin", "Viewer"],
           schema_only_grant_instance_membership: true,

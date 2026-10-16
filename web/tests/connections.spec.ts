@@ -578,7 +578,7 @@ test("future engine preview disables connection actions and sends no API request
     await page.goto(`${server.baseURL}/instances`);
     await page.getByRole("button", { name: "Add instance" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Database engine").selectOption("PostgreSQL");
+    await dialog.getByLabel("Database engine").selectOption("MySQL");
     await expect(dialog).toContainText("Future engine");
     await expect(
       dialog.getByRole("textbox", { name: "Host", exact: true }),

@@ -261,6 +261,18 @@ function InfoView({
                     rows={[
                       ["Captured by", recorded.actor_name],
                       [
+                        "Engine / database",
+                        recorded.snapshot.target.engine === "postgresql"
+                          ? `PostgreSQL / ${recorded.snapshot.target.database_name}`
+                          : `Oracle / ${recorded.snapshot.target.service}`,
+                      ],
+                      [
+                        "TLS trust",
+                        recorded.snapshot.profile
+                          ? `${recorded.snapshot.profile.tls_mode} · CA SHA-256 ${recorded.snapshot.profile.ca_sha256} · revision ${recorded.snapshot.profile.revision}`
+                          : "Legacy Oracle transport policy",
+                      ],
+                      [
                         "Execution account",
                         `${recorded.snapshot.account.name} · ${recorded.snapshot.account.username}`,
                       ],
@@ -282,7 +294,7 @@ function InfoView({
                       ],
                       [
                         "Captured endpoint",
-                        `${recorded.snapshot.target.host}:${recorded.snapshot.target.port}/${recorded.snapshot.target.service}`,
+                        `${recorded.snapshot.target.host}:${recorded.snapshot.target.port}/${recorded.snapshot.target.database_name || recorded.snapshot.target.service}`,
                       ],
                     ]}
                   />

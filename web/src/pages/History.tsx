@@ -109,7 +109,7 @@ export default function History({
         <PageHeading
           title="Migration history"
           breadcrumb="Instances / Migration history"
-          description="Review migration and repair outcomes across the Oracle instances and allowed schemas you can access."
+          description="Review migration and repair outcomes across the database instances and allowed schemas you can access."
           actions={
             <Link className="button primary" to="/runs/new">
               Run migration
@@ -244,7 +244,13 @@ export default function History({
                       {run.target?.environment}
                       <br />
                       <span className="muted">
-                        Oracle ·{" "}
+                        {run.target?.engine === "postgresql"
+                          ? "PostgreSQL"
+                          : "Oracle"}{" "}
+                        ·{" "}
+                        {run.target?.database_name
+                          ? `${run.target.database_name} · `
+                          : ""}{" "}
                         <Link
                           to={`/instances/${encodeURIComponent(run.target_id)}`}
                         >
