@@ -195,6 +195,7 @@ test("global catalog aggregates, searches, filters and paginates multiple instan
   await expect(page.locator("tbody tr")).toHaveCount(1);
   await expect(page.getByText("1 results · Page 1 / 1")).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText("13 results · Page 1 / 2")).toBeVisible();
   await page
     .getByRole("combobox", { name: "Instance", exact: true })
     .selectOption("billing");
@@ -208,6 +209,7 @@ test("global catalog aggregates, searches, filters and paginates multiple instan
     ),
   ).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByText("13 results · Page 1 / 2")).toBeVisible();
   await page
     .getByRole("combobox", { name: "Environment", exact: true })
     .selectOption("PROD");

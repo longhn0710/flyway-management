@@ -471,6 +471,28 @@ test("controlled fake Flyway completes the real UI workflow through download and
       .trim()
       .split("\n");
     expect(commands.filter((command) => command === "migrate")).toHaveLength(1);
+    await page.getByRole("link", { name: "Flyway Info for this run" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Native migrations", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("cell", { name: "Success", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Historical Info from run", { exact: false }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Native migrations", exact: true }),
+    ).toBeVisible();
+    await page
+      .locator("summary")
+      .filter({ hasText: "Detailed diagnostics" })
+      .click();
+    await page.getByRole("link", { name: "Associated execution logs" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Searchable logs" }),
+    ).toBeVisible();
     await page.goto(`${server.baseURL}/runs`);
     await page.getByLabel("Run status").selectOption("SUCCEEDED");
     await page.getByLabel("Database target").selectOption(target.id);

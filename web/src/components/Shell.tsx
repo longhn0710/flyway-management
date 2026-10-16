@@ -21,6 +21,7 @@ import { useIdentity } from "../lib/identity-context";
 import { Button, Modal, KeyValues, Notice, Field, Badge } from "./ui";
 const nav = [
   { to: "/home", text: "Home", icon: Home },
+  { to: "/projects", text: "Projects", icon: FolderTree },
   { to: "/instances", text: "Instances", icon: Database },
   { to: "/schemas", text: "Databases / Schemas", icon: FolderTree },
   { to: "/runs/new", text: "Run Migration", icon: Play },

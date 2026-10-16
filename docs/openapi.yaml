@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Flyway Manager API
-  version: 0.4.0
+  version: 0.5.0
   description: Standalone identity, Oracle registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
     JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
     plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
@@ -473,6 +473,7 @@ paths:
           type: string
           enum:
           - DEV
+          - SIT
           - UAT
           - PROD
       responses:
@@ -2497,6 +2498,251 @@ paths:
         '409': {$ref: '#/components/responses/Error'}
         '429': {$ref: '#/components/responses/Error'}
         default: {$ref: '#/components/responses/Error'}
+  /projects:
+    get:
+      summary: List currently visible projects and authorized member references
+      operationId: list_projects
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      summary: 'Admin: create an audited project; assignment grants no permissions'
+      operationId: create_project
+      parameters: []
+      responses:
+        '201':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        default:
+          $ref: '#/components/responses/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+  /projects/{id}:
+    get:
+      summary: Read a visible project
+      operationId: get_project
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      summary: 'Admin: edit/archive/restore project; membership is read-only while archived'
+      operationId: update_project
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+        default:
+          $ref: '#/components/responses/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+  /projects/{id}/migration-runs:
+    get:
+      summary: Run history under current membership and run RBAC, globally paginated; no historical project attribution
+      operationId: project_migration_runs
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: target_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: schema_id
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: actor
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: source
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Run'
+        default:
+          $ref: '#/components/responses/Error'
+  /database-targets/{id}/schemas/{schemaID}/flyway-info:
+    get:
+      summary: Latest recorded native Info, or null; optional run selector is historical
+      operationId: get_flyway_info
+      parameters:
+      - &projects_id001
+        name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - &projects_id002
+        name: schemaID
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: run_id
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    anyOf:
+                    - $ref: '#/components/schemas/InfoCapture'
+                    - type: 'null'
+        default:
+          $ref: '#/components/responses/Error'
+  /database-targets/{id}/schemas/{schemaID}/flyway-info/refresh:
+    post:
+      summary: 'Operate: native read-only info only, pinned runtime, mapped account, immutable files, stream holds,
+        bounded time/output; failures return partial evidence'
+      operationId: refresh_flyway_info
+      parameters:
+      - *projects_id001
+      - *projects_id002
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InfoCapture'
+        default:
+          $ref: '#/components/responses/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunInput'
 components:
   securitySchemes:
     Session:
@@ -2752,6 +2998,7 @@ components:
           type: string
           enum:
           - DEV
+          - SIT
           - UAT
           - PROD
         host: &id010
@@ -3223,6 +3470,152 @@ components:
       anyOf:
       - {$ref: '#/components/schemas/DateTime'}
       - {type: string, const: ''}
+    ProjectMember:
+      type: object
+      required:
+      - target_id
+      properties:
+        target_id:
+          type: string
+        schema_id:
+          type: string
+          description: Omit for an instance scope. Membership never grants access.
+    ProjectInput:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - members
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          type: string
+          enum:
+          - active
+          - archived
+        members:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/ProjectMember'
+    Project:
+      allOf:
+      - $ref: '#/components/schemas/ProjectInput'
+      - type: object
+        required:
+        - id
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            description: Stable immutable identifier
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+    NativeFlywayInfo:
+      type:
+      - object
+      - 'null'
+      additionalProperties: true
+      properties:
+        schemaVersion: {}
+        flywayVersion:
+          type: string
+        migrations:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              category:
+                type:
+                - string
+                - 'null'
+              version:
+                type:
+                - string
+                - 'null'
+              description:
+                type:
+                - string
+                - 'null'
+              type:
+                type:
+                - string
+                - 'null'
+              installedOnUTC:
+                type:
+                - string
+                - 'null'
+              installedBy:
+                type:
+                - string
+                - 'null'
+              state:
+                type:
+                - string
+                - 'null'
+              filepath:
+                type:
+                - string
+                - 'null'
+    InfoCapture:
+      type: object
+      properties:
+        id:
+          type: string
+        target_id:
+          type: string
+        schema_id:
+          type: string
+        source_run_id:
+          type: string
+        source:
+          type: string
+        captured_at:
+          type: string
+        started_at:
+          type: string
+        artifact_id:
+          type: string
+        artifact_sha256:
+          type: string
+        runtime_version:
+          type: string
+        actor_name:
+          type: string
+        stdout:
+          type: string
+        stderr:
+          type: string
+        success:
+          type: boolean
+        exit_code:
+          type: integer
+        json:
+          $ref: '#/components/schemas/NativeFlywayInfo'
+        warnings:
+          type: array
+          items:
+            type: string
+        snapshot:
+          type: object
+          description: Immutable destination, history configuration and historical account identity; no secrets.
+          additionalProperties: true
+        files:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
   responses:
     Error:
       description: Typed API error with safe message and optional field.

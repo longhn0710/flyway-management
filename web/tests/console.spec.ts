@@ -369,10 +369,9 @@ test("authenticated routes render without overflow at reviewed viewport widths",
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  const evidenceDir = resolve(
-    process.cwd(),
-    "../docs/evidence/stitch-implementation",
-  );
+  const evidenceDir = process.env.FLYWAY_MANAGER_EVIDENCE_DIR
+    ? resolve(process.env.FLYWAY_MANAGER_EVIDENCE_DIR, "route-sweep")
+    : resolve(process.cwd(), "../docs/evidence/stitch-implementation");
   await mkdir(evidenceDir, { recursive: true });
   for (const width of [1440, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 });

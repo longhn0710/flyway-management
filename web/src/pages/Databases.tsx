@@ -107,7 +107,7 @@ export default function Databases() {
         <div className="inline">
           <span className="small muted">ENVIRONMENT:</span>
           <div className="segments">
-            {["", "UAT", "PROD", "DEV"].map((value) => (
+            {["", "DEV", "SIT", "UAT", "PROD"].map((value) => (
               <button
                 key={value}
                 aria-pressed={env === value}

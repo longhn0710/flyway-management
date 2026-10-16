@@ -32,7 +32,7 @@ export interface AuthStatus {
 export interface DatabaseTarget {
   id: string;
   name: string;
-  environment: "DEV" | "UAT" | "PROD";
+  environment: "DEV" | "SIT" | "UAT" | "PROD";
   host: string;
   port: number;
   service: string;

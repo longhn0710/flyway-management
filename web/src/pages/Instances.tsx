@@ -1,3 +1,4 @@
+import { infoHref } from "../lib/flyway-info";
 import { useState } from "react";
 import {
   Link,
@@ -185,7 +186,7 @@ export default function Instances() {
           onChange={(e) => setEnv(e.target.value)}
         >
           <option value="">Environment: All</option>
-          {["DEV", "UAT", "PROD"].map((v) => (
+          {["DEV", "SIT", "UAT", "PROD"].map((v) => (
             <option key={v}>{v}</option>
           ))}
         </select>
@@ -611,6 +612,12 @@ function SchemaList({
               <p className="muted">Registered schema · Oracle</p>
             </div>
             <div className="actions wrap">
+              <Link
+                className="button secondary"
+                to={infoHref(target.id, selected.id)}
+              >
+                Flyway Info
+              </Link>
               <RunLink target={target} schema={selected} />
               <Link
                 to={`/runs?target_id=${encodeURIComponent(target.id)}&schema_id=${encodeURIComponent(selected.id)}`}
@@ -1006,7 +1013,7 @@ export function SchemaCatalog() {
               onChange={(e) => update("environment", e.target.value)}
             >
               <option value="">Environment: All</option>
-              {["DEV", "UAT", "PROD"].map((v) => (
+              {["DEV", "SIT", "UAT", "PROD"].map((v) => (
                 <option key={v}>{v}</option>
               ))}
             </select>

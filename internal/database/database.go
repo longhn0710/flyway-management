@@ -118,7 +118,7 @@ func migrate(ctx context.Context, db *sql.DB) (int, error) {
 	return migrateFS(ctx, db, migrationFiles)
 }
 
-func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (int, error) {
+func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (version int, resultErr error) {
 	entries, err := fs.ReadDir(files, "migrations")
 	if err != nil {
 		return 0, fmt.Errorf("read migrations: %w", err)
@@ -136,13 +136,71 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (int, error) {
 		digest := sha256.Sum256(item.contents)
 		item.checksum = hex.EncodeToString(digest[:])
 	}
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("reserve SQLite migration connection: %w", err)
+	}
+	var originalForeignKeys int
+	if err = conn.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&originalForeignKeys); err != nil {
+		conn.Close()
+		return 0, err
+	}
+	var userVersion int
+	if err = conn.QueryRowContext(ctx, "PRAGMA user_version").Scan(&userVersion); err != nil {
+		conn.Close()
+		return 0, err
+	}
+	needsSITMigration := false
+	for _, item := range migrations {
+		if item.version == 7 {
+			needsSITMigration = true
+			break
+		}
+	}
+	needsSITMigration = needsSITMigration && userVersion < 7
+	var tx *sql.Tx
+	defer func() {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+		if needsSITMigration {
+			restoreCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			_, restoreErr := conn.ExecContext(restoreCtx, fmt.Sprintf("PRAGMA foreign_keys=%d", originalForeignKeys))
+			if restoreErr == nil {
+				var restored int
+				restoreErr = conn.QueryRowContext(restoreCtx, "PRAGMA foreign_keys").Scan(&restored)
+				if restoreErr == nil && restored != originalForeignKeys {
+					restoreErr = fmt.Errorf("restored value %d, expected %d", restored, originalForeignKeys)
+				}
+			}
+			if restoreErr != nil {
+				if resultErr == nil {
+					resultErr = fmt.Errorf("restore SQLite foreign key enforcement: %w", restoreErr)
+				} else {
+					resultErr = fmt.Errorf("%w; restore SQLite foreign key enforcement: %v", resultErr, restoreErr)
+				}
+			}
+		}
+		if closeErr := conn.Close(); closeErr != nil && resultErr == nil {
+			resultErr = fmt.Errorf("close SQLite migration connection: %w", closeErr)
+		}
+	}()
+	if needsSITMigration {
+		if _, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
+			return 0, fmt.Errorf("disable SQLite foreign keys for table rebuild: %w", err)
+		}
+		var disabled int
+		if err = conn.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&disabled); err != nil || disabled != 0 {
+			return 0, fmt.Errorf("SQLite foreign key enforcement could not be disabled: value=%d error=%v", disabled, err)
+		}
+	}
 	// The ledger upgrade, history checks and pending SQL share one write transaction.
 	// Failure leaves both the previous schema and ledger intact and can be retried.
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err = conn.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin schema migration: %w", err)
 	}
-	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL, name TEXT, checksum TEXT)`); err != nil {
 		return 0, fmt.Errorf("initialize migration ledger: %w", err)
 	}
@@ -244,6 +302,15 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (int, error) {
 		}
 	}
 	for _, item := range migrations[current:] {
+		if needsSITMigration && item.version == 7 {
+			var objects int
+			if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE tbl_name='database_targets' AND type IN ('index','trigger') AND sql IS NOT NULL`).Scan(&objects); err != nil {
+				return current, err
+			}
+			if objects > 0 {
+				return current, fmt.Errorf("cannot rebuild database_targets: unexpected custom indexes or triggers are attached")
+			}
+		}
 		if _, err := tx.ExecContext(ctx, string(item.contents)); err != nil {
 			return current, fmt.Errorf("apply migration %d: %w", item.version, err)
 		}
@@ -251,12 +318,36 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (int, error) {
 			return current, fmt.Errorf("record migration %d: %w", item.version, err)
 		}
 	}
+	if needsSITMigration {
+		check, checkErr := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
+		if checkErr != nil {
+			return current, fmt.Errorf("check SQLite foreign keys after migration: %w", checkErr)
+		}
+		if check.Next() {
+			var table string
+			var rowid sql.NullInt64
+			var parent string
+			var fk int
+			if e := check.Scan(&table, &rowid, &parent, &fk); e != nil {
+				check.Close()
+				return current, e
+			}
+			check.Close()
+			return current, fmt.Errorf("foreign key violation after migration in %s (parent %s, constraint %d)", table, parent, fk)
+		}
+		if e := check.Err(); e != nil {
+			check.Close()
+			return current, e
+		}
+		check.Close()
+	}
 	if _, err := tx.ExecContext(ctx, "PRAGMA user_version = "+strconv.Itoa(len(migrations))); err != nil {
 		return current, err
 	}
 	if err := tx.Commit(); err != nil {
 		return current, fmt.Errorf("commit schema migrations: %w", err)
 	}
+	tx = nil
 	return len(migrations), nil
 }
 

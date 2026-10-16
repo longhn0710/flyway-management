@@ -65,7 +65,7 @@ func (h phase2) ready(next http.Handler) http.Handler {
 		w.Header().Set("X-Request-ID", middleware.GetReqID(r.Context()))
 		w.Header().Set("Cache-Control", "no-store")
 		budget := 20 * time.Second
-		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" {
+		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" || strings.HasSuffix(r.URL.Path, "/flyway-info/refresh") {
 			budget = 50 * time.Second
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), budget)
@@ -353,6 +353,8 @@ func (h phase2) register(r chi.Router) {
 				return h.s.Schema(r.Context(), actor(r), pathID(r), chi.URLParam(r, "schemaID"))
 			}))
 			h.registerExecution(r)
+			h.registerFlywayInfo(r)
+			h.registerProjects(r)
 			h.registerConnections(r)
 
 			r.Group(func(r chi.Router) {

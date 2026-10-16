@@ -2720,3 +2720,45 @@ fieldset {
     flex: 1 1 100%;
   }
 }
+
+/* Native Info retains full-width dense tables and bounds detailed evidence. */
+.info-drawer {
+  left: auto;
+  right: 0;
+  top: 0;
+  transform: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(640px, 100vw);
+  border-radius: 0;
+}
+.text-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--accent, #087e8b);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.panel pre {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.project-scope-list {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow: auto;
+  margin-block: 12px;
+}
+.project-scope-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.project-scope-list input {
+  width: auto;
+}

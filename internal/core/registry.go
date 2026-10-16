@@ -517,8 +517,8 @@ func normalizeTarget(tid string, in TargetInput) (TargetInput, error) {
 	if !identifier.MatchString(tid) || !validText(in.Name, 200) || (!hostname.MatchString(in.Host) && net.ParseIP(in.Host) == nil) || !serviceName.MatchString(in.Service) || in.Port < 1 || in.Port > 65535 {
 		return in, invalid("target", "Valid stable ID, name, host, port (1–65535) and Oracle service/PDB are required.")
 	}
-	if in.Environment != "DEV" && in.Environment != "UAT" && in.Environment != "PROD" {
-		return in, invalid("environment", "Environment must be DEV, UAT or PROD.")
+	if in.Environment != "DEV" && in.Environment != "SIT" && in.Environment != "UAT" && in.Environment != "PROD" {
+		return in, invalid("environment", "Environment must be DEV, SIT, UAT or PROD.")
 	}
 	if in.Transport != "TCP" && in.Transport != "TCPS" {
 		return in, invalid("transport", "Transport must be TCP or TCPS.")

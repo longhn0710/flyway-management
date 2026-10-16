@@ -29,7 +29,10 @@ const states: RunStatus[] = [
   "NEEDS_REVIEW",
   "CANCELLED",
 ];
-export default function History({ targetID }: { targetID?: string } = {}) {
+export default function History({
+  targetID,
+  projectID,
+}: { targetID?: string; projectID?: string } = {}) {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const filters = {
@@ -73,8 +76,11 @@ export default function History({ targetID }: { targetID?: string } = {}) {
             : value,
       );
   const runs = useQuery({
-    queryKey: ["runs", filters, offset],
-    queryFn: () => api<Run[]>(`/migration-runs?${query.toString()}`),
+    queryKey: ["runs", projectID, filters, offset],
+    queryFn: () =>
+      api<Run[]>(
+        `${projectID ? `/projects/${encodeURIComponent(projectID)}/migration-runs` : "/migration-runs"}?${query.toString()}`,
+      ),
     refetchInterval: (query) =>
       query.state.data?.some(
         (run) =>
@@ -97,7 +103,7 @@ export default function History({ targetID }: { targetID?: string } = {}) {
   const targetRows = targets.data ?? [];
   return (
     <>
-      {targetID ? (
+      {targetID || projectID ? (
         <h2>Migration history</h2>
       ) : (
         <PageHeading

@@ -1,3 +1,4 @@
+import { infoHref } from "../lib/flyway-info";
 import { schemaHref } from "../lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -233,6 +234,14 @@ export default function RunDetails() {
                   "The execution outcome is not safe to retry automatically."}
               </Notice>
             ) : null}
+            <p>
+              <Link
+                className="button secondary"
+                to={infoHref(row.target_id, row.schema_id, row.id)}
+              >
+                Flyway Info for this run
+              </Link>
+            </p>
             <Panel
               title="Run snapshot"
               aside={

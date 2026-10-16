@@ -272,6 +272,7 @@ export default function ConnectionWizard({
               }
             >
               <option>DEV</option>
+              <option>SIT</option>
               <option>UAT</option>
               <option>PROD</option>
             </select>

@@ -30,7 +30,9 @@ test("real APIs enforce schema catalog visibility for Admin, Operator and Viewer
     schemas: string[];
     deniedStatus?: number;
   }[] = [];
-  const output = resolve("../docs/evidence/schema-catalog-20261016");
+  const output = process.env.FLYWAY_MANAGER_EVIDENCE_DIR
+    ? resolve(process.env.FLYWAY_MANAGER_EVIDENCE_DIR, "catalog-rbac")
+    : resolve("../docs/evidence/schema-catalog-20261016");
   try {
     await expect
       .poll(async () => {
