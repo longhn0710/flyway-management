@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Users as UsersIcon, Fingerprint } from "lucide-react";
-import { previewFixtures as fixtures } from "../lib/fixtures";
-const { users } = fixtures;
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Users as UsersIcon } from "lucide-react";
 import ScopeEditor from "../components/ScopeEditor";
+import {
+  api,
+  apiList,
+  ApiError,
+  type Grant,
+  type Provider,
+  type Role,
+  type User,
+  type AuditEvent,
+} from "../lib/contracts";
+import { useIdentity } from "../lib/identity-context";
 import {
   Panel,
   PageHeading,
@@ -13,293 +23,613 @@ import {
   SearchBox,
   Modal,
   Field,
-  Unavailable,
 } from "../components/ui";
+
 export default function Users() {
-  const [q, setQ] = useState(""),
-    [provider, setProvider] = useState(""),
-    [role, setRole] = useState(""),
-    [status, setStatus] = useState(""),
-    [selected, setSelected] = useState("usr_op_02"),
-    [create, setCreate] = useState(false);
-  const data = users.filter(
-      (u) =>
-        [u.name, u.email, u.id]
-          .join(" ")
-          .toLowerCase()
-          .includes(q.toLowerCase()) &&
-        (!provider || u.provider === provider) &&
-        (!role || u.role === role) &&
-        (!status || String(u.active) === status),
-    ),
-    user = users.find((u) => u.id === selected)!;
+  const identity = useIdentity();
+  const queryClient = useQueryClient();
+  const [q, setQ] = useState("");
+  const [provider, setProvider] = useState("");
+  const [role, setRole] = useState("");
+  const [status, setStatus] = useState("");
+  const [selectedID, setSelectedID] = useState("");
+  const [create, setCreate] = useState(false);
+  const users = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiList<User>("/access/users"),
+  });
+  const records = useMemo(() => users.data ?? [], [users.data]);
+  const filtered = useMemo(
+    () =>
+      records.filter(
+        (user) =>
+          [user.display_name, user.username, user.id]
+            .join(" ")
+            .toLowerCase()
+            .includes(q.toLowerCase()) &&
+          (!provider || user.provider === provider) &&
+          (!role || user.role === role) &&
+          (!status || String(user.active) === status),
+      ),
+    [records, q, provider, role, status],
+  );
+  const selected =
+    filtered.find((user) => user.id === selectedID) ?? filtered[0];
+  const canManage = identity.user.role === "Admin";
   return (
     <>
-      <Notice title="Quy tắc định danh & phân quyền:">
-        Người dùng ứng dụng đăng nhập console; tài khoản Oracle thực thi DDL.
-        API tokens được quản lý riêng tại{" "}
+      <Notice title="Identity and authorization">
+        Application identities authenticate to this console. Oracle execution
+        accounts are managed separately. API tokens are managed in{" "}
         <Link to="/access/service-accounts">Service Accounts</Link>.
       </Notice>
       <PageHeading
-        title="Người dùng & Phân quyền truy cập (Scoped RBAC)"
-        description="Kiểm soát người dùng nội bộ / ngoại vi, vai trò và quyền theo từng Database Target và Schema."
+        title="Người dùng & Quyền truy cập"
+        description="Manage local and externally bound identities, base roles, and database/schema grants."
         breadcrumb="Quản trị hệ thống / Người dùng & Quyền"
         actions={
           <>
             <Link className="button secondary" to="/settings/authentication">
               Nhà cung cấp xác thực
             </Link>
-            <Button variant="primary" onClick={() => setCreate(true)}>
+            <Button
+              variant="primary"
+              disabled={!canManage}
+              onClick={() => setCreate(true)}
+            >
               <Plus size={16} />
-              Thêm người dùng mới
+              Thêm người dùng
             </Button>
           </>
         }
       />
+      {!canManage && (
+        <Notice tone="warning">
+          Your role can view identity details only. User administration requires
+          Admin.
+        </Notice>
+      )}
       <div className="filter-bar">
         <SearchBox
           value={q}
           onChange={setQ}
-          placeholder="Tìm theo họ tên, username, email…"
+          placeholder="Tìm theo tên, username hoặc ID…"
         />
         <select
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
           aria-label="Nguồn người dùng"
         >
-          <option value="">Nguồn: Tất cả nhà cung cấp</option>
-          {["Local", "LDAP", "OIDC"].map((p) => (
-            <option key={p}>{p}</option>
-          ))}
+          <option value="">All providers</option>
+          <option value="local">Local</option>
+          <option value="ldap">LDAP</option>
+          <option value="oidc">OIDC</option>
         </select>
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
           aria-label="Vai trò"
         >
-          <option value="">Tất cả vai trò</option>
-          {["Admin", "Operator", "Viewer"].map((r) => (
-            <option key={r}>{r}</option>
+          <option value="">All roles</option>
+          {(["Admin", "Operator", "Viewer"] as Role[]).map((item) => (
+            <option key={item}>{item}</option>
           ))}
         </select>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          aria-label="Trạng thái người dùng"
+          aria-label="Trạng thái"
         >
-          <option value="">Tất cả trạng thái</option>
-          <option value="true">Hoạt động</option>
-          <option value="false">Vô hiệu hóa</option>
+          <option value="">All statuses</option>
+          <option value="true">Active</option>
+          <option value="false">Disabled</option>
         </select>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setQ("");
-            setProvider("");
-            setRole("");
-            setStatus("");
-          }}
-        >
-          Đặt lại bộ lọc
-        </Button>
       </div>
       <div className="layout-editor">
         <Panel
           title={
             <>
               <UsersIcon size={17} />
-              Danh sách tài khoản quản trị & vận hành
+              Danh sách người dùng
             </>
           }
-          aside={<small className="muted">Chọn một dòng để chỉnh sửa</small>}
+          aside={
+            <small className="muted">
+              {users.isSuccess ? `${records.length} accounts` : ""}
+            </small>
+          }
         >
-          <div className="table-scroll">
-            <table className="user-table">
-              <thead>
-                <tr>
-                  <th>Tên & Định danh</th>
-                  <th>Phương thức & Binding</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((u) => (
-                  <tr
-                    key={u.id}
-                    className={selected === u.id ? "selected" : ""}
-                  >
-                    <td>
-                      <strong>{u.name}</strong>
-                      <small className="mono block muted">{u.id}</small>
-                    </td>
-                    <td>
-                      <Badge
-                        tone={u.provider === "LDAP" ? "accent" : "neutral"}
-                      >
-                        {u.provider}
-                      </Badge>
-                      <small className="block mono muted">
-                        {u.provider === "LDAP"
-                          ? "corp-ad"
-                          : u.provider === "OIDC"
-                            ? "issuer + sub"
-                            : u.subject}
-                      </small>
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
-                          u.role === "Admin"
-                            ? "success"
-                            : u.role === "Operator"
-                              ? "accent"
-                              : "neutral"
-                        }
-                      >
-                        {u.role}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge tone={u.active ? "success" : "error"}>
-                        {u.active ? "Hoạt động" : "Vô hiệu hóa"}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button variant="ghost" onClick={() => setSelected(u.id)}>
-                        {selected === u.id ? "Đang chỉnh sửa" : "Sửa quyền"}
-                      </Button>
-                    </td>
+          {users.isPending ? (
+            <div
+              className="skeleton"
+              role="status"
+              aria-label="Loading users"
+            />
+          ) : users.isError ? (
+            <Notice tone="error">
+              {users.error instanceof ApiError && users.error.status === 403
+                ? "Access denied. User administration requires Admin."
+                : users.error.message}
+              <Button onClick={() => void users.refetch()}>Retry</Button>
+            </Notice>
+          ) : filtered.length === 0 ? (
+            <p className="empty">
+              {records.length
+                ? "No users match these filters."
+                : "No users have been added."}
+            </p>
+          ) : (
+            <div className="table-scroll">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>Name & identity</th>
+                    <th>Provider</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!data.length && (
-            <p className="empty">Không có người dùng phù hợp.</p>
+                </thead>
+                <tbody>
+                  {filtered.map((user) => (
+                    <tr
+                      key={user.id}
+                      className={selected?.id === user.id ? "selected" : ""}
+                    >
+                      <td>
+                        <strong>{user.display_name}</strong>
+                        <small className="mono block muted">
+                          {user.username} · {user.id}
+                        </small>
+                      </td>
+                      <td>
+                        <Badge
+                          tone={
+                            user.provider === "local" ? "neutral" : "accent"
+                          }
+                        >
+                          {user.provider.toUpperCase()}
+                        </Badge>
+                        <small className="mono block muted break-word">
+                          {user.issuer || "Local account"}
+                        </small>
+                      </td>
+                      <td>
+                        <Badge
+                          tone={
+                            user.role === "Admin"
+                              ? "success"
+                              : user.role === "Operator"
+                                ? "accent"
+                                : "neutral"
+                          }
+                        >
+                          {user.role}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge tone={user.active ? "success" : "error"}>
+                          {user.active ? "Active" : "Disabled"}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setSelectedID(user.id)}
+                        >
+                          Manage
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-          <div className="panel-footer">
-            {data.length} người dùng minh họa · Không có tài khoản thực
-          </div>
         </Panel>
-        <UserEditor key={user.id} user={user} />
+        {selected && (
+          <UserEditor key={selected.id} user={selected} canManage={canManage} />
+        )}
       </div>
-      <Modal
+      {canManage && <AuditHistory />}
+      <CreateUser
         open={create}
         onOpenChange={setCreate}
-        title="Thêm người dùng cục bộ"
-        description="Bản nháp thông tin người dùng. Chưa có API quản lý danh tính."
-      >
-        <form onSubmit={(e) => e.preventDefault()}>
-          <Field label="Họ và tên" required>
-            <input placeholder="Họ và tên" />
-          </Field>
-          <Field label="Username" required>
-            <input autoComplete="off" placeholder="operator_user" />
-          </Field>
-          <Field label="Email">
-            <input type="email" placeholder="operator@organization.vn" />
-          </Field>
-          <Field label="Vai trò cơ sở">
-            <select defaultValue="Viewer">
-              <option>Viewer</option>
-              <option>Operator</option>
-              <option>Admin</option>
-            </select>
-          </Field>
-          <Notice>
-            Danh tính mới không tự động nhận quyền chạy migration. Quyền
-            target/schema và PROD cần được cấp rõ ràng.
-          </Notice>
-          <Unavailable label="Tạo người dùng" />
-        </form>
-      </Modal>
+        onCreated={(user) => {
+          setSelectedID(user.id);
+          setCreate(false);
+          void queryClient.invalidateQueries({ queryKey: ["users"] });
+        }}
+      />
     </>
   );
 }
-function UserEditor({ user }: { user: (typeof users)[number] }) {
-  const [role, setRole] = useState(user.role),
-    [disable, setDisable] = useState(false);
+function UserEditor({ user, canManage }: { user: User; canManage: boolean }) {
+  const queryClient = useQueryClient();
+  const [displayName, setDisplayName] = useState(user.display_name);
+  const [role, setRole] = useState<Role>(user.role);
+  const [active, setActive] = useState(user.active);
+  const [confirm, setConfirm] = useState(false);
+  const grants = useQuery({
+    queryKey: ["user-grants", user.id],
+    queryFn: () =>
+      api<Grant[]>(`/access/users/${encodeURIComponent(user.id)}/grants`),
+  });
+  const saveUser = useMutation({
+    mutationFn: (nextActive?: boolean) =>
+      api<User>(`/access/users/${encodeURIComponent(user.id)}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          display_name: displayName,
+          role,
+          active: nextActive ?? active,
+        }),
+      }),
+    onSuccess: (updated) => {
+      setActive(updated.active);
+      setConfirm(false);
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+  const saveGrants = useMutation({
+    mutationFn: (items: Grant[]) =>
+      api<Grant[]>(`/access/users/${encodeURIComponent(user.id)}/grants`, {
+        method: "PUT",
+        body: JSON.stringify({ grants: items }),
+      }),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({
+        queryKey: ["user-grants", user.id],
+      }),
+  });
   return (
     <Panel
       title={
         <>
-          <div className="user-avatar">
-            {user.name
-              .split(" ")
-              .slice(-2)
-              .map((s) => s[0])
-              .join("")}
-          </div>
-          {user.name}
+          {user.display_name}
           <Badge>{user.id}</Badge>
         </>
       }
     >
       <div className="inset">
-        <h3>
-          <Fingerprint size={16} />
-          Ràng buộc định danh bất biến
-        </h3>
+        <h3>Stable identity binding</h3>
         <p className="small">
-          Provider:{" "}
-          <code>
-            {user.provider === "LDAP"
-              ? "corp-ad"
-              : user.provider === "OIDC"
-                ? "https://iam.bank.internal"
-                : "local"}
-          </code>
+          Provider: <code>{user.provider}</code>
         </p>
         <p className="small break-word">
-          {user.provider === "LDAP"
-            ? "objectGUID"
-            : user.provider === "OIDC"
-              ? "issuer + sub"
-              : "Subject"}
-          : <code>{user.subject}</code>
-        </p>
-        <p className="small muted">
-          DN và email là thuộc tính có thể thay đổi. Khóa định danh không dựa
-          trên email.
+          Issuer / subject:{" "}
+          <code>
+            {user.issuer || "—"} / {user.subject || "—"}
+          </code>
         </p>
       </div>
-      <Field label="Vai trò cơ sở (Base Role)">
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option>Admin</option>
-          <option>Operator</option>
-          <option>Viewer</option>
+      <Field label="Display name" required>
+        <input
+          value={displayName}
+          maxLength={120}
+          onChange={(e) => setDisplayName(e.target.value)}
+          disabled={!canManage}
+        />
+      </Field>
+      <Field label="Base role">
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as Role)}
+          disabled={!canManage}
+        >
+          {["Admin", "Operator", "Viewer"].map((item) => (
+            <option key={item}>{item}</option>
+          ))}
         </select>
       </Field>
-      <p className="small muted">
-        Admin quản trị ứng dụng nhưng không tự động được chạy PROD.
-      </p>
-      <ScopeEditor key={role} viewer={role === "Viewer"} />
-      <div className="actions">
-        <Button variant="danger" onClick={() => setDisable(true)}>
-          {user.active ? "Vô hiệu hóa người dùng" : "Kích hoạt người dùng"}
+      <div className="spread wrap inset">
+        <span>Account status</span>
+        <Badge tone={active ? "success" : "error"}>
+          {active ? "Active" : "Disabled"}
+        </Badge>
+        <Button
+          variant={active ? "danger" : "secondary"}
+          disabled={!canManage}
+          onClick={() => setConfirm(true)}
+        >
+          {active ? "Disable user" : "Activate user"}
         </Button>
-        <Button onClick={() => setRole(user.role)}>Hủy bản nháp vai trò</Button>
       </div>
-      <Unavailable label="Lưu quyền truy cập" />
+      <ScopeEditor
+        value={grants.data ?? []}
+        disabled={!canManage || grants.isPending || saveGrants.isPending}
+        onChange={(items) => saveGrants.mutate(items)}
+      />
+      {grants.isError && (
+        <Notice tone="error">
+          {grants.error instanceof ApiError && grants.error.status === 403
+            ? "Access denied to these grants."
+            : grants.error.message}
+        </Notice>
+      )}
+      {saveGrants.isError && (
+        <Notice tone="error">
+          Could not save grants: {saveGrants.error.message}
+        </Notice>
+      )}
+      {saveUser.isError && (
+        <Notice tone="error">
+          Could not save user: {saveUser.error.message}
+        </Notice>
+      )}
+      <Button
+        variant="primary"
+        disabled={!canManage || saveUser.isPending || !displayName.trim()}
+        onClick={() => saveUser.mutate()}
+      >
+        {saveUser.isPending ? "Saving…" : "Save user"}
+      </Button>
       <Modal
-        open={disable}
-        onOpenChange={setDisable}
-        title={`${user.active ? "Vô hiệu hóa" : "Kích hoạt"} ${user.name}?`}
-        description="Thay đổi sẽ ảnh hưởng quyền đăng nhập và truy cập console của người dùng này."
+        open={confirm}
+        onOpenChange={setConfirm}
+        title={`${active ? "Disable" : "Activate"} ${user.display_name}?`}
+        description="Changing account status may revoke active sessions and affect access."
       >
         <Notice tone="warning">
-          Chưa có API quản lý người dùng trong Phase 1. Không thể áp dụng thay
-          đổi này.
+          {active
+            ? "This user will no longer be able to log in."
+            : "The user will be able to log in with the existing provider binding."}
         </Notice>
+        {saveUser.isError && (
+          <Notice tone="error">{saveUser.error.message}</Notice>
+        )}
         <div className="dialog-actions">
-          <Button onClick={() => setDisable(false)}>Hủy</Button>
-          <Button variant="danger" disabled>
-            Xác nhận thay đổi
+          <Button onClick={() => setConfirm(false)}>Cancel</Button>
+          <Button
+            variant="danger"
+            disabled={saveUser.isPending}
+            onClick={() => saveUser.mutate(!active)}
+          >
+            {saveUser.isPending
+              ? "Saving…"
+              : active
+                ? "Disable user"
+                : "Activate user"}
           </Button>
         </div>
       </Modal>
+    </Panel>
+  );
+}
+function CreateUser({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (user: User) => void;
+}) {
+  const [provider, setProvider] = useState<Provider>("local");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
+  const [issuer, setIssuer] = useState("");
+  const [subject, setSubject] = useState("");
+  const [role, setRole] = useState<Role>("Viewer");
+  const create = useMutation({
+    mutationFn: () =>
+      api<User>("/access/users", {
+        method: "POST",
+        body: JSON.stringify(
+          provider === "local"
+            ? { provider, username, display_name: displayName, password, role }
+            : {
+                provider,
+                username,
+                display_name: displayName,
+                issuer,
+                subject,
+                role,
+              },
+        ),
+      }),
+    onSuccess: (user) => {
+      setPassword("");
+      onCreated(user);
+    },
+  });
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add user"
+      description="Local accounts have an application password. External identities must be explicitly bound by issuer and subject."
+    >
+      <form
+        onSubmit={(event: FormEvent) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <Field label="Provider">
+          <select
+            value={provider}
+            onChange={(event) => setProvider(event.target.value as Provider)}
+          >
+            <option value="local">Local</option>
+            <option value="ldap">LDAP</option>
+            <option value="oidc">OIDC</option>
+          </select>
+        </Field>
+        <Field label="Username" required>
+          <input
+            required
+            minLength={3}
+            maxLength={128}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </Field>
+        <Field label="Display name" required>
+          <input
+            required
+            maxLength={120}
+            value={displayName}
+            onChange={(event) => setDisplayName(event.target.value)}
+          />
+        </Field>
+        {provider === "local" ? (
+          <Field label="Initial password" required>
+            <input
+              required
+              minLength={12}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+        ) : (
+          <>
+            <Field label="Issuer / provider identifier" required>
+              <input
+                required
+                value={issuer}
+                onChange={(event) => setIssuer(event.target.value)}
+              />
+            </Field>
+            <Field label="Immutable subject" required>
+              <input
+                required
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+              />
+            </Field>
+          </>
+        )}
+        <Field label="Base role">
+          <select
+            value={role}
+            onChange={(event) => setRole(event.target.value as Role)}
+          >
+            <option>Viewer</option>
+            <option>Operator</option>
+            <option>Admin</option>
+          </select>
+        </Field>
+        {create.isError && <Notice tone="error">{create.error.message}</Notice>}
+        <div className="dialog-actions">
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" disabled={create.isPending}>
+            {create.isPending ? "Creating…" : "Create user"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function AuditHistory() {
+  const [offset, setOffset] = useState(0);
+  const [action, setAction] = useState("");
+  const pageSize = 20;
+  const events = useQuery({
+    queryKey: ["audit", offset, action],
+    queryFn: () =>
+      api<AuditEvent[]>(
+        `/access/audit?limit=${pageSize}&offset=${offset}&action=${encodeURIComponent(action)}`,
+      ),
+  });
+  return (
+    <Panel
+      title="Security & administration audit"
+      aside={
+        <Button onClick={() => void events.refetch()}>Refresh audit</Button>
+      }
+    >
+      <div className="filter-bar">
+        <SearchBox
+          label="Audit action filter"
+          placeholder="Exact action, e.g. permissions.update"
+          value={action}
+          onChange={(value) => {
+            setAction(value);
+            setOffset(0);
+          }}
+        />
+      </div>
+      {events.isPending ? (
+        <div
+          className="skeleton"
+          role="status"
+          aria-label="Loading audit history"
+        />
+      ) : events.isError ? (
+        <Notice tone="error">
+          {events.error.message}
+          <Button onClick={() => void events.refetch()}>Retry</Button>
+        </Notice>
+      ) : events.data.length === 0 ? (
+        <p className="empty">No audit events match this filter.</p>
+      ) : (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Actor</th>
+                <th>Action / target</th>
+                <th>Outcome</th>
+                <th>Request ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.data.map((event) => (
+                <tr key={event.id}>
+                  <td className="small">
+                    {new Date(event.timestamp).toLocaleString()}
+                  </td>
+                  <td>
+                    {event.actor_name || "Anonymous"}
+                    <small className="muted block">{event.actor_type}</small>
+                  </td>
+                  <td>
+                    <code>{event.action}</code>
+                    <small className="muted block break-word">
+                      {event.target}
+                    </small>
+                  </td>
+                  <td>
+                    <Badge
+                      tone={event.outcome === "success" ? "success" : "error"}
+                    >
+                      {event.outcome}
+                    </Badge>
+                  </td>
+                  <td className="small mono">{event.request_id}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="spread">
+        <Button
+          disabled={offset === 0 || events.isPending}
+          onClick={() => setOffset(Math.max(0, offset - pageSize))}
+        >
+          Previous audit page
+        </Button>
+        <span className="small muted">
+          Page {Math.floor(offset / pageSize) + 1}
+        </span>
+        <Button
+          disabled={
+            !events.data || events.data.length < pageSize || events.isPending
+          }
+          onClick={() => setOffset(offset + pageSize)}
+        >
+          Next audit page
+        </Button>
+      </div>
     </Panel>
   );
 }

@@ -22,7 +22,8 @@ describe("Go health API client", () => {
     expect(await getHealth(controller.signal)).toEqual(data);
     expect(fetch).toHaveBeenCalledWith("/api/v1/health", {
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: new Headers({ Accept: "application/json" }),
+      credentials: "same-origin",
     });
   });
   it("preserves typed server errors", async () => {
@@ -62,7 +63,7 @@ describe("Go health API client", () => {
           new Response(JSON.stringify({ data: { status: "ok" } })),
         ),
     );
-    await expect(getHealth()).rejects.toThrow("không đúng hợp đồng");
+    await expect(getHealth()).rejects.toThrow("expected contract");
   });
   it("does not replace network failures with fixture health", async () => {
     vi.stubGlobal(
@@ -74,16 +75,14 @@ describe("Go health API client", () => {
   it("handles a degraded health data envelope without assuming an error property", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              data: { status: "degraded", database: "unavailable" },
-            }),
-            { status: 503 },
-          ),
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: { status: "degraded", database: "unavailable" },
+          }),
+          { status: 503 },
         ),
+      ),
     );
     await expect(getHealth()).rejects.toMatchObject({
       status: 503,
@@ -92,6 +91,6 @@ describe("Go health API client", () => {
   });
   it("rejects a null successful response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("null")));
-    await expect(getHealth()).rejects.toThrow("không đúng hợp đồng");
+    await expect(getHealth()).rejects.toThrow("expected contract");
   });
 });

@@ -1,424 +1,300 @@
 import { test, expect, type Page } from "@playwright/test";
-const routes = [
+import { readFile } from "node:fs/promises";
+
+let initialized = false;
+const admin = { username: "e2e-admin", password: "E2E-admin-password-2026" };
+const targets = [
   "/runs",
   "/runs/new",
-  "/runs/RUN-1048",
-  "/runs/RUN-1047",
+  "/runs/e2e-run",
   "/databases",
-  "/databases/db-uat-finance",
+  "/databases/e2e-db",
   "/execution-accounts",
   "/access/users",
   "/access/service-accounts",
   "/settings/authentication",
 ];
-async function preview(page: Page) {
+
+test.describe.configure({ mode: "serial" });
+async function login(page: Page) {
   await page.goto("/login");
-  await page.getByRole("button", { name: "Mở console minh họa" }).click();
-  await expect(page).toHaveURL("/runs");
-}
-async function controlSlowFileReads(page: Page) {
-  await page.addInitScript(() => {
-    const original = File.prototype.arrayBuffer;
-    const browserWindow = window as Window & { __slowFilePending?: boolean };
-    browserWindow.__slowFilePending = false;
-    File.prototype.arrayBuffer = function () {
-      if (this.name !== "slow.sql") return original.call(this);
-      browserWindow.__slowFilePending = true;
-      return new Promise<ArrayBuffer>((resolve) => {
-        window.addEventListener(
-          "release-slow-file-read",
-          () => {
-            browserWindow.__slowFilePending = false;
-            original.call(this).then(resolve);
-          },
-          { once: true },
-        );
-      });
-    };
-  });
-}
-async function waitForSlowFileRead(page: Page) {
-  await page.waitForFunction(
-    () => (window as Window & { __slowFilePending?: boolean }).__slowFilePending,
-  );
-}
-async function releaseSlowFileRead(page: Page) {
-  await page.evaluate(() =>
-    window.dispatchEvent(new Event("release-slow-file-read")),
-  );
-}
-test("login separates providers and preview from unavailable authentication", async ({
-  page,
-}) => {
-  await page.goto("/login");
+  await page.getByLabel("Tên đăng nhập").fill(admin.username);
+  await page.getByRole("textbox", { name: "Mật khẩu" }).fill(admin.password);
+  await page.getByRole("button", { name: "Đăng nhập vào console" }).click();
   await expect(
-    page.getByRole("button", { name: "Đăng nhập vào console" }),
-  ).toBeDisabled();
-  await page.getByRole("tab", { name: "LDAP / Active Directory" }).click();
-  await expect(page.getByText("Đăng nhập bằng tài khoản LDAP")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Đăng nhập bằng SSO (OIDC)" }),
-  ).toBeDisabled();
-  await page.getByRole("button", { name: "Mở console minh họa" }).click();
-  await expect(
-    page.getByText("Dữ liệu minh họa · Development fixtures"),
+    page.getByText(`${admin.username}`, { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Trạng thái hệ thống" }).click();
-  await expect(page.getByRole("dialog")).toContainText("SQLite");
-  await expect(page.getByRole("dialog")).toContainText("ok");
-});
-test("history search, source, sorting, columns, URL pagination and empty state", async ({
+}
+
+test("first-run setup is one-time; sessions are server-authoritative", async ({
   page,
 }) => {
-  await preview(page);
-  await page.getByRole("button", { name: "Trang sau", exact: true }).click();
-  await expect(page).toHaveURL(/page=1/);
+  await page.goto("/login");
+  const statusResponse = await page.request.get("/api/v1/auth/status");
+  expect(statusResponse.ok()).toBeTruthy();
+  const status = (await statusResponse.json()).data as {
+    bootstrap_required: boolean;
+    bootstrap_token_file: string;
+  };
+  expect(status.bootstrap_required).toBe(true);
+  const setupToken = (
+    await readFile(status.bootstrap_token_file, "utf8")
+  ).trim();
+  await page.getByLabel("Setup token").fill(setupToken);
+  await page.getByLabel("Tên hiển thị").fill("E2E Administrator");
+  await page.getByLabel("Tên đăng nhập").fill(admin.username);
+  await page.getByLabel("Mật khẩu mới").fill(admin.password);
+  await page.getByRole("button", { name: "Tạo quản trị viên" }).click();
+  await expect(page).toHaveURL(/\/runs$/);
+  await expect(
+    page.getByRole("heading", { name: "Run History" }),
+  ).toBeVisible();
+  await expect(page.getByText("Unavailable until Phase 3")).toBeVisible();
   await page.reload();
-  await expect(page.getByText("12 kết quả · Trang 2 / 2")).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Nguồn", exact: true })
-    .selectOption("API");
-  await expect(page).not.toHaveURL(/page=1/);
-  await expect(page.locator("tbody tr")).toHaveCount(5);
-  await page.getByRole("button", { name: "Sắp xếp Run ID & Nguồn" }).click();
-  await page.getByRole("button", { name: "Tùy chọn cột" }).click();
-  await page.getByRole("checkbox", { name: "Artifact filename" }).uncheck();
-  await page.getByRole("button", { name: "Áp dụng", exact: true }).click();
-  await expect(
-    page.getByRole("columnheader", { name: "Artifact filename" }),
-  ).toHaveCount(0);
-  await page
-    .getByRole("textbox", { name: "Tìm kiếm", exact: true })
-    .fill("does-not-exist");
-  await expect(page.getByText("Không tìm thấy dữ liệu")).toBeVisible();
-  await page.getByRole("button", { name: "Đặt lại", exact: true }).click();
-  await expect(page.locator("tbody tr")).toHaveCount(6);
-});
-test("local upload metadata, draft review, no execution requests", async ({
-  page,
-}) => {
-  const mutations: string[] = [];
-  page.on("request", (r) => {
-    if (r.url().includes("/api/") && r.method() !== "GET")
-      mutations.push(r.url());
-  });
-  await preview(page);
-  await page.goto("/runs/new");
-  await page
-    .getByRole("button", { name: "Tiếp tục: Kiểm tra & xác nhận" })
-    .click();
-  await expect(page.getByRole("alert")).toContainText("Vui lòng chọn tệp");
-  await page.getByRole("button", { name: "Tải tệp SQL", exact: true }).click();
-  await page.locator("input[type=file]").setInputFiles({
-    name: "V1__create_table.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("CREATE TABLE example (id NUMBER);"),
-  });
-  await expect(page.getByText(/SHA-256 cục bộ:/)).toBeVisible();
-  await expect(page.getByText("CHƯA XÁC MINH BỞI MÁY CHỦ")).toBeVisible();
-  await page
-    .getByRole("button", { name: "Tiếp tục: Kiểm tra & xác nhận" })
-    .click();
-  await expect(page).toHaveURL("/runs/new/review");
-  await expect(
-    page.getByRole("button", { name: "Gửi migration" }),
-  ).toBeDisabled();
-  await page.getByRole("link", { name: "Quay lại chọn bundle" }).click();
-  await expect(page.getByText("V1__create_table.sql")).toBeVisible();
-  expect(mutations).toEqual([]);
-});
-test("latest local bundle selection wins over an older pending checksum read", async ({
-  page,
-}) => {
-  await controlSlowFileReads(page);
-  await preview(page);
-  await page.goto("/runs/new");
-  const input = page.locator("input[type=file]");
-  await input.setInputFiles({
-    name: "slow.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 1;"),
-  });
-  await waitForSlowFileRead(page);
-  await input.setInputFiles({
-    name: "latest.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 2;"),
-  });
-  await expect(page.getByText("latest.sql")).toBeVisible();
-  await expect(page.getByText("slow.sql")).toHaveCount(0);
-  await releaseSlowFileRead(page);
-  await expect(page.getByText("latest.sql")).toBeVisible();
-  await expect(page.getByText("slow.sql")).toHaveCount(0);
-
-  await input.setInputFiles({
-    name: "slow.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 3;"),
-  });
-  await waitForSlowFileRead(page);
-  await page.getByLabel("Target Schema", { exact: false }).selectOption("PAYMENT");
-  await releaseSlowFileRead(page);
-  await expect(page.getByText("slow.sql")).toBeVisible();
-  await expect(page.getByLabel("Target Schema", { exact: false })).toHaveValue(
-    "PAYMENT",
+  await expect(page.getByText("E2E Administrator · Admin")).toBeVisible();
+  const identity = (await (await page.request.get("/api/v1/auth/me")).json())
+    .data as { csrf_token: string };
+  const sessions = (
+    await (await page.request.get("/api/v1/auth/sessions")).json()
+  ).data as { id: string; current: boolean }[];
+  const current = sessions.find((session) => session.current)!;
+  const revoked = await page.request.delete(
+    `/api/v1/auth/sessions/${current.id}`,
+    {
+      headers: {
+        Origin: new URL(page.url()).origin,
+        "X-CSRF-Token": identity.csrf_token,
+      },
+    },
   );
+  expect(revoked.ok()).toBe(true);
+  await page.reload();
+  await expect(page).toHaveURL(/\/login\?next=/);
+  await login(page);
+  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.goto("/access/users?view=private");
+  await expect(page).toHaveURL(/\/login\?next=/);
+  initialized = true;
+});
 
-  await input.setInputFiles({
-    name: "slow.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 4;"),
-  });
-  await waitForSlowFileRead(page);
-  await page.getByRole("button", { name: "Dùng bundle minh họa" }).click();
-  await releaseSlowFileRead(page);
-  await expect(page.getByText("FIXTURE · Minh họa")).toBeVisible();
-  await expect(page.getByText("slow.sql")).toHaveCount(0);
+test.beforeEach(async ({ page }) => {
+  if (initialized) await login(page);
 });
-test("clearing bundle invalidates pending checksum work", async ({ page }) => {
-  await controlSlowFileReads(page);
-  await preview(page);
-  await page.goto("/runs/new");
-  const input = page.locator("input[type=file]");
-  await input.setInputFiles({
-    name: "baseline.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 0;"),
-  });
-  await expect(page.getByText("baseline.sql")).toBeVisible();
-  await input.setInputFiles({
-    name: "slow.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 1;"),
-  });
-  await waitForSlowFileRead(page);
-  await page.getByRole("button", { name: "Xóa" }).click();
-  await releaseSlowFileRead(page);
-  await expect(page.getByText("baseline.sql")).toHaveCount(0);
-  await expect(page.getByText("slow.sql")).toHaveCount(0);
-  await expect(page.getByText("1 tệp cục bộ")).toHaveCount(0);
-});
-test("unmounting migration invalidates pending read before a newer draft", async ({
+
+test("register database and schema, then create and scope a user", async ({
   page,
 }) => {
-  await controlSlowFileReads(page);
-  await preview(page);
-  await page.goto("/runs/new");
-  const input = page.locator("input[type=file]");
-  await input.setInputFiles({
-    name: "slow.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 1;"),
-  });
-  await waitForSlowFileRead(page);
-  await page.getByRole("link", { name: "Lịch sử chạy" }).click();
-  await page.getByRole("link", { name: "Chạy migration" }).click();
-  await page.locator("input[type=file]").setInputFiles({
-    name: "newer.sql",
-    mimeType: "text/plain",
-    buffer: Buffer.from("SELECT 2;"),
-  });
-  await expect(page.getByText("newer.sql")).toBeVisible();
-  await releaseSlowFileRead(page);
-  await expect(page.getByText("newer.sql")).toBeVisible();
-  await expect(page.getByText("slow.sql")).toHaveCount(0);
-});
-test("fixture bundle review and schema selection preserve distinct history", async ({
-  page,
-}) => {
-  await preview(page);
-  await page.goto("/runs/new");
-  await page
-    .getByLabel("Target Schema", { exact: false })
-    .selectOption("PAYMENT");
-  await page.getByRole("button", { name: "Dùng bundle minh họa" }).click();
-  await page
-    .getByRole("button", { name: "Tiếp tục: Kiểm tra & xác nhận" })
-    .click();
-  await expect(page.getByText("PAYMENT.flyway_schema_history")).toBeVisible();
-  await expect(page.getByText("Chưa sẵn sàng để thực thi.")).toBeVisible();
-});
-test("failure remains failed after successful repair; searchable source-labelled logs and downloads", async ({
-  page,
-}) => {
-  await preview(page);
-  await page.goto("/runs/RUN-1047");
-  await expect(page.getByText("FAILED", { exact: true }).first()).toBeVisible();
-  await expect(
-    page.getByText("SUCCEEDED", { exact: true }).first(),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Schema: NEEDS_REVIEW · Exit code: 1"),
-  ).toBeVisible();
-  await page.getByRole("textbox", { name: "Tìm trong log" }).fill("ORA-00955");
-  await expect(page.locator(".log-row")).toHaveCount(1);
-  await page
-    .getByRole("combobox", { name: "Nguồn log" })
-    .selectOption("stdout");
-  await expect(page.getByText("Không có dòng log khớp bộ lọc.")).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Nguồn log" })
-    .selectOption("stderr");
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Tải log minh họa (.txt)" }).click();
-  expect((await download).suggestedFilename()).toBe(
-    "RUN-1047-fixture-logs.txt",
-  );
-  await page.getByRole("tab", { name: "Schema History / Audit" }).click();
-  await expect(
-    page.getByText("CORE_BANKING.flyway_schema_history"),
-  ).toBeVisible();
-});
-test("registry filtering, draft form, database stream configuration", async ({
-  page,
-}) => {
-  await preview(page);
   await page.goto("/databases");
-  await page.getByRole("button", { name: "PROD", exact: true }).click();
-  await expect(page.locator(".registry-row")).toHaveCount(1);
+  await page.getByRole("button", { name: "Add database" }).click();
+  await page.getByLabel("Display name").fill("E2E Oracle UAT");
+  await page.getByLabel("Stable ID").fill("e2e-db");
+  await page.getByLabel("Hostname").fill("oracle.invalid");
+  await page.getByRole("spinbutton", { name: "Port" }).fill("1521");
+  await page.getByLabel("Oracle service / PDB").fill("E2EUAT");
+  await page.getByRole("button", { name: "Register target" }).click();
+  await expect(page.getByText("E2E Oracle UAT", { exact: true })).toBeVisible();
   await page
-    .getByRole("button", { name: "Thêm Database", exact: true })
+    .getByRole("button", { name: "Toggle schemas E2E Oracle UAT" })
     .click();
-  await page.getByLabel("Tên hiển thị").fill("ORA_DEV_TEST");
-  await page.getByLabel("Stable ID").fill("db-dev-test");
-  await page.getByLabel("Hostname").fill("oracle.local");
-  await page.getByLabel("Oracle Service / PDB").fill("TEST");
-  await page.getByRole("button", { name: "Kiểm tra bản nháp" }).click();
-  await expect(page.getByRole("status")).toContainText("Chưa lưu");
-  await page.keyboard.press("Escape");
-  await page.goto("/databases/db-uat-finance");
-  await page.getByRole("tab", { name: "PAYMENT V1" }).click();
-  await expect(page.getByLabel("Target schema (đích migration)")).toHaveValue(
-    "PAYMENT",
-  );
-  await page.getByRole("radio", { name: "Dedicated History Schema" }).check();
+  await page.getByRole("button", { name: "Register schema" }).click();
+  await page.getByLabel("Target schema name").fill("E2E_SCHEMA");
   await page
-    .getByLabel("History schema", { exact: true })
-    .fill("FLYWAY_HISTORY");
-  await expect(
-    page.getByText("FLYWAY_HISTORY.flyway_schema_history"),
-  ).toBeVisible();
-});
-test("credential draft masking and accessible discard confirmation", async ({
-  page,
-}) => {
-  await preview(page);
-  await page.goto("/execution-accounts");
-  const password = page.getByLabel("Mật khẩu mới Oracle", { exact: true });
-  await expect(password).toHaveValue("");
-  await password.fill("fixture-secret");
-  await expect(password).toHaveAttribute("type", "password");
-  await page.getByRole("button", { name: "Hiện mật khẩu mới" }).click();
-  await expect(password).toHaveAttribute("type", "text");
-  await page.getByRole("button", { name: "Hủy thay đổi", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("button", { name: "Hủy bản nháp", exact: true }).click();
-  await expect(password).toHaveValue("");
-  await expect(
-    page.getByRole("button", { name: "Lưu & Cập nhật ánh xạ" }),
-  ).toBeDisabled();
-});
-test("scoped RBAC keeps PROD explicit and modal focus returns", async ({
-  page,
-}) => {
-  await preview(page);
+    .getByRole("button", { name: "Register schema", exact: true })
+    .last()
+    .click();
+  await expect(page.getByText("E2E_SCHEMA", { exact: true })).toBeVisible();
+
   await page.goto("/access/users");
-  const prod = page
-    .getByRole("checkbox", {
-      name: "Cho phép chạy PROD (explicit grant, không kế thừa)",
-    })
-    .first();
-  await expect(prod).not.toBeChecked();
-  await expect(prod).toBeEnabled();
-  await prod.check();
-  await expect(prod).toBeChecked();
-  await expect(
-    page.getByRole("button", { name: "Lưu quyền truy cập" }),
-  ).toBeDisabled();
-  const disable = page.getByRole("button", {
-    name: "Vô hiệu hóa người dùng",
-    exact: true,
-  });
-  await disable.click();
-  await expect(page.getByRole("dialog")).toContainText("Lê Thu Hà");
-  await page.keyboard.press("Escape");
-  await expect(disable).toBeFocused();
-});
-test("service tokens and auth providers expose honest unavailable actions", async ({
-  page,
-}) => {
-  await preview(page);
-  await page.goto("/access/service-accounts");
-  await expect(
-    page.getByRole("button", { name: "Tạo mã Token Scoped mới" }),
-  ).toBeDisabled();
+  await page.getByRole("button", { name: "Thêm người dùng" }).click();
+  await page.getByLabel("Provider").selectOption("local");
+  await page.getByLabel("Username").fill("e2e-operator");
+  await page.getByLabel("Display name").last().fill("E2E Operator");
+  await page.getByLabel("Initial password").fill("E2E-operator-password-2026");
+  await page.getByLabel("Base role").last().selectOption("Operator");
+  await page.getByRole("button", { name: "Create user" }).click();
+  await expect(page.getByText("E2E Operator", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Manage" }).last().click();
   await page
-    .getByRole("button", { name: "Thu hồi token", exact: true })
+    .getByRole("checkbox", { name: "Read authorized data" })
     .first()
     .click();
-  await expect(page.getByRole("dialog")).toContainText("CI/CD");
   await expect(
-    page.getByRole("button", { name: "Xác nhận thu hồi" }),
-  ).toBeDisabled();
-  await page.keyboard.press("Escape");
-  await page.goto("/settings/authentication");
+    page.getByRole("checkbox", { name: "Read authorized data" }).first(),
+  ).toBeChecked();
+  await expect(page.getByText("Could not save grants")).toHaveCount(0);
+  await expect(page.getByText("E2E Operator", { exact: true })).toBeVisible();
+
+  await page.goto("/login?next=%2Faccess%2Fusers");
+  await page.getByLabel("Tên đăng nhập").fill("e2e-operator");
   await page
-    .getByRole("checkbox", { name: "Kích hoạt đăng nhập cục bộ" })
+    .getByRole("textbox", { name: "Mật khẩu" })
+    .fill("E2E-operator-password-2026");
+  await page.getByRole("button", { name: "Đăng nhập vào console" }).click();
+  await expect(page).toHaveURL(/\/access\/users$/);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Điều hướng chính" })
+      .getByRole("link", { name: "Người dùng & Quyền" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(
+      "Your role can view identity details only. User administration requires Admin.",
+    ),
+  ).toBeVisible();
+});
+
+test("service account grants, one-time token display, rotation and revocation", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/access/service-accounts");
+  await page.getByRole("button", { name: "Create service account" }).click();
+  await page.getByLabel("Identifier").fill("e2e-ci");
+  await page.getByLabel("Purpose").fill("E2E test client");
+  await page
+    .getByLabel("Owner")
+    .selectOption({ label: "E2E Administrator (e2e-admin)" });
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page.getByText("e2e-ci", { exact: true }).first()).toBeVisible();
+  await page
+    .getByRole("checkbox", { name: "Read authorized data" })
+    .first()
     .click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("button", { name: "Giữ cấu hình cục bộ" }).click();
-  await page.getByRole("tab", { name: "LDAP / Active Directory" }).click();
-  await expect(
-    page.getByText("Direct LDAP bind · Không lưu mật khẩu LDAP"),
-  ).toBeVisible();
-  await page.getByRole("tab", { name: "OIDC / SSO" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Authorization Code + PKCE" }),
-  ).toBeVisible();
-});
-test("API connection error is visible and retryable", async ({ page }) => {
-  await page.route("**/api/v1/health", (route) =>
-    route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: { code: "DATABASE_UNAVAILABLE", message: "SQLite unavailable" },
-      }),
-    }),
+  await page.getByLabel("Token name").fill("e2e-token");
+  await page
+    .getByLabel("Expiration")
+    .fill(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16));
+  await page.getByRole("button", { name: "Create token" }).click();
+  const once = page.getByRole("dialog");
+  await expect(once).toContainText("Copy your API token now");
+  await expect(once.locator("code.token-example")).not.toBeEmpty();
+  const originalToken = (
+    await once.locator("code.token-example").innerText()
+  ).trim();
+  expect(
+    (
+      await request.get("/api/v1/database-targets", {
+        headers: { Authorization: `Bearer ${originalToken}` },
+      })
+    ).status(),
+  ).toBe(200);
+  await once.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByText("e2e-token", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Rotate", exact: true })
+    .first()
+    .click();
+  await page
+    .getByLabel("Replacement expiration")
+    .fill(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16));
+  await page.getByRole("button", { name: "Rotate token", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Copy your API token now",
   );
-  await preview(page);
-  await page.getByRole("button", { name: "Trạng thái hệ thống" }).click();
+  const replacementToken = (
+    await page.getByRole("dialog").locator("code.token-example").innerText()
+  ).trim();
+  expect(
+    (
+      await request.get("/api/v1/database-targets", {
+        headers: { Authorization: `Bearer ${originalToken}` },
+      })
+    ).status(),
+  ).toBe(401);
+  expect(
+    (
+      await request.get("/api/v1/database-targets", {
+        headers: { Authorization: `Bearer ${replacementToken}` },
+      })
+    ).status(),
+  ).toBe(200);
+  await page.getByRole("dialog").getByRole("button", { name: "Done" }).click();
   await expect(
-    page.getByRole("dialog").getByText("SQLite unavailable"),
+    page.getByRole("button", { name: "Revoke", exact: true }),
+  ).toHaveCount(2);
+  await page
+    .getByRole("row")
+    .filter({ hasText: "Active" })
+    .last()
+    .getByRole("button", { name: "Revoke", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Revoke token", exact: true })
+    .last()
+    .click();
+  await expect(page.getByText("Revoked", { exact: true })).toBeVisible();
+  expect(
+    (
+      await request.get("/api/v1/database-targets", {
+        headers: { Authorization: `Bearer ${replacementToken}` },
+      })
+    ).status(),
+  ).toBe(401);
+});
+
+test("execution account credentials are write-only and encrypted metadata is live", async ({
+  page,
+}) => {
+  await page.goto("/execution-accounts");
+  await page.getByLabel("Database target").selectOption("e2e-db");
+  await page.getByRole("button", { name: "Register Oracle account" }).click();
+  await page.getByLabel("Account label").fill("E2E_DEPLOY");
+  await page.getByLabel("Oracle username").fill("E2E_DEPLOY");
+  await page.getByLabel("Oracle password").fill("temporary-fixture-password");
+  await page.getByLabel("Confirm password").fill("temporary-fixture-password");
+  await page.getByRole("checkbox", { name: /E2E_SCHEMA/ }).check();
+  await page.getByRole("button", { name: "Register account" }).click();
+  await expect(
+    page.getByText("E2E_DEPLOY", { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Thử lại", exact: true }),
+    page.getByText("Encrypted credential", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("New Oracle password")).toHaveValue("");
+});
+
+test("authentication settings show server configuration and run routes stay unavailable", async ({
+  page,
+}) => {
+  await page.goto("/settings/authentication");
+  await expect(
+    page.getByRole("heading", { name: "Authentication providers" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save configuration" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByText(
+      "Configure local login, verified LDAP/Active Directory and OIDC sign-in.",
+    ),
+  ).toBeVisible();
+  await page.goto("/runs/new");
+  await expect(
+    page.getByText("No bundle upload or Flyway command is available."),
+  ).toBeVisible();
+  await page.goto("/runs/e2e-run");
+  await expect(
+    page.getByText(
+      "This application has not executed this migration and has no run details to display.",
+    ),
   ).toBeVisible();
 });
-for (const width of [1440, 390])
-  test(`all routes render with no page overflow at ${width}px`, async ({
+
+for (const width of [1440, 390]) {
+  test(`authenticated routes render without overflow at ${width}px`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.setViewportSize({ width, height: 1000 });
     const errors: string[] = [];
-    page.on("pageerror", (e) => errors.push(e.message));
-    await preview(page);
-    for (const route of routes) {
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("/runs");
+    for (const route of targets) {
       await page.goto(route);
       await expect(page.locator("h1")).toBeVisible();
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
-      await expect(
-        page.getByText("Dữ liệu minh họa · Development fixtures"),
-      ).toBeVisible();
-      if (["/runs", "/runs/new", "/access/users"].includes(route))
-        await page.screenshot({
-          path: testInfo.outputPath(
-            `${route.replaceAll("/", "-")}-${width}.png`,
-          ),
-          fullPage: true,
-        });
     }
     if (width === 390) {
       await page.getByRole("button", { name: "Mở điều hướng" }).click();
@@ -430,3 +306,4 @@ for (const width of [1440, 390])
     }
     expect(errors).toEqual([]);
   });
+}

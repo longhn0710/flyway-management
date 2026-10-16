@@ -1,0 +1,2666 @@
+openapi: 3.1.0
+info:
+  title: Flyway Manager Phase 2 API
+  version: 0.2.0
+  description: Standalone identity and Oracle registry. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
+    JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
+    plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
+    web sessions and cannot access administration. Lists with limit/offset are filtered by authorization before
+    pagination; ordering is stable. Clock values are UTC RFC3339. Sessions expire after 12 hours or 30 minutes idle;
+    account/role changes and password changes revoke sessions. Unknown routes return JSON 404; unsupported methods
+    405.
+servers:
+- url: /api/v1
+security:
+- Session: []
+- Bearer: []
+paths:
+  /health:
+    get:
+      summary: Public SQLite health and explicit capability flags
+      operationId: get_health
+      security: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Health'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+  /system:
+    get:
+      summary: Authenticated system capability flags
+      operationId: get_system
+      security:
+      - Session: []
+      - Bearer: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      capabilities:
+                        type: object
+                        properties: {}
+                      installation_id:
+                        type: string
+                      schema_version:
+                        type: integer
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /auth/status:
+    get:
+      summary: Enabled providers and one-time setup status
+      operationId: get_auth_status
+      security: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthStatus'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+  /auth/bootstrap:
+    post:
+      summary: Create initial local Admin and session atomically
+      operationId: post_auth_bootstrap
+      description: Requires the private bootstrap.token file contents. Concurrent/repeated successful setup is prevented
+        transactionally.
+      security: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                display_name:
+                  type: string
+                password:
+                  type: string
+                  minLength: 12
+                  maxLength: 1024
+                  writeOnly: true
+                setup_token:
+                  type: string
+                  writeOnly: true
+              required:
+              - username
+              - password
+              - setup_token
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/login:
+    post:
+      summary: Authenticate explicitly with Local or LDAP
+      operationId: post_auth_login
+      description: Generic invalid-credential errors. No provider fallback. Sets HttpOnly SameSite=Lax fm_session
+        cookie, Secure on HTTPS/configured HTTPS public URL. Rate limited by address and username.
+      security: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                  - local
+                  - ldap
+                username:
+                  type: string
+                password:
+                  type: string
+                  writeOnly: true
+              required:
+              - provider
+              - username
+              - password
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/oidc/start:
+    get:
+      summary: Begin browser-bound OIDC code flow with PKCE
+      operationId: get_auth_oidc_start
+      security: []
+      responses:
+        '302':
+          description: Success.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Provider authorization URL or same-site /runs after success.
+        default:
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/oidc/callback:
+    get:
+      summary: Consume single-use state and verify OIDC callback
+      operationId: get_auth_oidc_callback
+      security: []
+      responses:
+        '302':
+          description: Success.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Provider authorization URL or same-site /runs after success.
+        default:
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+      - name: code
+        in: query
+        schema:
+          type: string
+      - name: error
+        in: query
+        schema:
+          type: string
+  /auth/me:
+    get:
+      summary: Restore current server-side identity and CSRF token
+      operationId: get_auth_me
+      security:
+      - Session: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Session'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/logout:
+    post:
+      summary: Revoke current session and expire cookie
+      operationId: post_auth_logout
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: &id001
+                    type: boolean
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/password:
+    post:
+      summary: Change local password and revoke every session
+      operationId: post_auth_password
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                  writeOnly: true
+                  maxLength: 1024
+                new_password:
+                  type: string
+                  writeOnly: true
+                  minLength: 12
+                  maxLength: 1024
+              required:
+              - current_password
+              - new_password
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: *id001
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/sessions:
+    get:
+      summary: List current user active sessions
+      operationId: get_auth_sessions
+      security:
+      - Session: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessionInfo'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /auth/sessions/{id}:
+    delete:
+      summary: Revoke own session; cross-user IDs fail
+      operationId: delete_auth_sessions_id
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: &id005
+                    type: object
+                    properties:
+                      ok: *id001
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+  /database-targets:
+    get:
+      summary: List Oracle targets
+      operationId: get_database_targets
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - &id002
+        name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - &id003
+        name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - &id004
+        name: q
+        in: query
+        schema:
+          type: string
+      - name: environment
+        in: query
+        schema:
+          type: string
+          enum:
+          - DEV
+          - UAT
+          - PROD
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Target'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Register Oracle target
+      operationId: post_database_targets
+      description: Stable identities/natural keys reject duplicate submission with 409. New records are active.
+        No destructive deletion route exists.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Target'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /database-targets/{id}:
+    get:
+      summary: Read Oracle target
+      operationId: get_database_targets_id
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Target'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Update or deactivate Oracle target
+      operationId: put_database_targets_id
+      description: Supply the complete editable representation including active. Stable IDs cannot move. Successful
+        changes and audit commit together.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TargetInput'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Target'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /execution-accounts:
+    get:
+      summary: List Oracle execution accounts
+      operationId: get_execution_accounts
+      security:
+      - Session: []
+      parameters:
+      - *id002
+      - *id003
+      - *id004
+      - name: target_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExecutionAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Register Oracle execution account
+      operationId: post_execution_accounts
+      description: Stable identities/natural keys reject duplicate submission with 409. New records are active.
+        No destructive deletion route exists.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExecutionAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /execution-accounts/{id}:
+    get:
+      summary: Read Oracle execution account
+      operationId: get_execution_accounts_id
+      security:
+      - Session: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExecutionAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Update or deactivate Oracle execution account
+      operationId: put_execution_accounts_id
+      description: Supply the complete editable representation including active. Stable IDs cannot move. Successful
+        changes and audit commit together.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExecutionAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/users:
+    get:
+      summary: List application users
+      operationId: get_access_users
+      security:
+      - Session: []
+      parameters:
+      - *id002
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Register application user
+      operationId: post_access_users
+      description: Stable identities/natural keys reject duplicate submission with 409. New records are active.
+        No destructive deletion route exists.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/users/{id}:
+    put:
+      summary: Update or deactivate application user
+      operationId: put_access_users_id
+      description: Supply the complete editable representation including active. Stable IDs cannot move. Successful
+        changes and audit commit together.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts:
+    get:
+      summary: List service accounts
+      operationId: get_access_service_accounts
+      security:
+      - Session: []
+      parameters:
+      - *id002
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Register service account
+      operationId: post_access_service_accounts
+      description: Stable identities/natural keys reject duplicate submission with 409. New records are active.
+        No destructive deletion route exists.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ServiceAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts/{id}:
+    put:
+      summary: Update or deactivate service account
+      operationId: put_access_service_accounts_id
+      description: Supply the complete editable representation including active. Stable IDs cannot move. Successful
+        changes and audit commit together.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceInput'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ServiceAccount'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /database-targets/{id}/schemas:
+    get:
+      summary: List authorized independent schema streams
+      operationId: get_database_targets_id_schemas
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - *id002
+      - *id003
+      - *id004
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Schema'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Register a target schema; never create an Oracle schema
+      operationId: post_database_targets_id_schemas
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Schema'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /database-targets/{id}/schemas/{schemaID}:
+    get:
+      summary: Read an authorized schema stream
+      operationId: get_database_targets_id_schemas_schemaID
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schemaID
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Schema'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Update history location, default account or activation
+      operationId: put_database_targets_id_schemas_schemaID
+      description: History locations must be unique per target. Default account must be active, same target and
+        explicitly mapped. Oracle privileges remain the security boundary.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: schemaID
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaInput'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Schema'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/users/{id}/grants:
+    get:
+      summary: Read explicit target/schema grants
+      operationId: get_access_users_id_grants
+      security:
+      - Session: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grant'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Atomically replace explicit grants
+      operationId: put_access_users_id_grants
+      description: Empty set denies all. Operate requires read. PROD requires explicit operate+prod. No implicit
+        PROD operations, including Admin.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                grants:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Grant'
+                  maxItems: 1000
+              required:
+              - grants
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grant'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts/{id}/grants:
+    get:
+      summary: Read explicit target/schema grants
+      operationId: get_access_service_accounts_id_grants
+      security:
+      - Session: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grant'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Atomically replace explicit grants
+      operationId: put_access_service_accounts_id_grants
+      description: Empty set denies all. Operate requires read. PROD requires explicit operate+prod. No implicit
+        PROD operations, including Admin.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                grants:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Grant'
+                  maxItems: 1000
+              required:
+              - grants
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Grant'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts/{id}/tokens:
+    get:
+      summary: List token metadata; never plaintext
+      operationId: get_access_service_accounts_id_tokens
+      security:
+      - Session: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Token'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Issue a random hashed token with one-time plaintext display
+      operationId: post_access_service_accounts_id_tokens
+      description: Requires explicit account grants, active account and owner, unique active token name, expiry
+        within 366 days. Same active name returns 409; lost plaintext must be revoked and reissued.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/IssuedToken'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts/{id}/tokens/{tokenID}/rotate:
+    post:
+      summary: Atomically revoke old token and issue replacement
+      operationId: post_access_service_accounts_id_tokens_tokenID_rotate
+      description: Repeating rotation against the old revoked token returns 409; no second token is minted.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tokenID
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenInput'
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/IssuedToken'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/service-accounts/{id}/tokens/{tokenID}:
+    delete:
+      summary: Revoke bearer token immediately
+      operationId: delete_access_service_accounts_id_tokens_tokenID
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tokenID
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: *id005
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /execution-accounts/{id}/credential:
+    put:
+      summary: Create or replace encrypted write-only credential
+      operationId: put_execution_accounts_id_credential
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 4096
+                  writeOnly: true
+              required:
+              - password
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CredentialMetadata'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+    delete:
+      summary: Revoke credential while preserving metadata
+      operationId: delete_execution_accounts_id_credential
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CredentialMetadata'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /settings/authentication:
+    get:
+      summary: Read provider settings without client secret
+      operationId: get_settings_authentication
+      security:
+      - Session: []
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthSettings'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    put:
+      summary: Configure independent providers and invalidate outstanding challenges
+      operationId: put_settings_authentication
+      description: Local disable requires an explicit active external Admin binding with an enabled matching issuer.
+        Provider connectivity is verified at login, not claimed by saving settings. No automatic provisioning.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSettingsInput'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthSettings'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /access/audit:
+    get:
+      summary: Read security and administration audit history
+      operationId: get_access_audit
+      security:
+      - Session: []
+      parameters:
+      - *id002
+      - *id003
+      - name: action
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+  /migration-runs:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_migration_runs
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_migration_runs
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /migration-runs/{id}:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_migration_runs_id
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_migration_runs_id
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /migration-runs/{id}/logs:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_migration_runs_id_logs
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_migration_runs_id_logs
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /migration-runs/{id}/events:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_migration_runs_id_events
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_migration_runs_id_events
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /migration-runs/{id}/artifacts:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_migration_runs_id_artifacts
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_migration_runs_id_artifacts
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /artifacts:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_artifacts
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_artifacts
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+  /artifacts/{id}:
+    get:
+      summary: Unavailable until Phase 3
+      operationId: get_artifacts_id
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+    post:
+      summary: Unavailable until Phase 3
+      operationId: post_artifacts_id
+      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
+        are produced.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Origin
+        in: header
+        required: false
+        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
+          requests are exempt.
+        schema:
+          type: string
+      responses:
+        '501':
+          description: Capability unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+        '409':
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    Session:
+      type: apiKey
+      in: cookie
+      name: fm_session
+    CSRF:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque fm_ token
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            field:
+              type: string
+          required:
+          - code
+          - message
+      required:
+      - error
+    Grant:
+      type: object
+      properties:
+        target_id:
+          type: string
+        schema_id:
+          type: string
+          description: Empty string grants all schemas in this target.
+        read: *id001
+        operate: *id001
+        prod: *id001
+      required:
+      - target_id
+      - schema_id
+      - read
+      - operate
+      - prod
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        display_name:
+          type: string
+        provider:
+          type: string
+          enum:
+          - local
+          - ldap
+          - oidc
+        issuer:
+          type: string
+        subject:
+          type: string
+        role:
+          type: string
+          enum:
+          - Admin
+          - Operator
+          - Viewer
+        active: *id001
+        created_at: &id006
+          type: string
+          format: date-time
+    UserInput:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 128
+        display_name:
+          type: string
+          maxLength: 200
+        provider:
+          type: string
+          enum:
+          - local
+          - ldap
+          - oidc
+          default: local
+        issuer:
+          type: string
+          maxLength: 512
+        subject:
+          type: string
+          maxLength: 512
+        role:
+          type: string
+          enum:
+          - Admin
+          - Operator
+          - Viewer
+          default: Viewer
+        password:
+          type: string
+          minLength: 12
+          maxLength: 1024
+          writeOnly: true
+      required:
+      - username
+    UserUpdate:
+      type: object
+      properties:
+        display_name:
+          type: string
+        role:
+          type: string
+          enum:
+          - Admin
+          - Operator
+          - Viewer
+        active: *id001
+      required:
+      - display_name
+      - role
+      - active
+    Session:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        grants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Grant'
+        csrf_token:
+          type: string
+          description: Send as X-CSRF-Token on cookie-authenticated mutations.
+        expires_at: *id006
+    SessionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        created_at: *id006
+        expires_at: *id006
+        current: *id001
+    AuthStatus:
+      type: object
+      properties:
+        bootstrap_required: *id001
+        providers:
+          type: array
+          items:
+            type: string
+            enum:
+            - local
+            - ldap
+            - oidc
+        bootstrap_token_file:
+          type: string
+          description: Private server-side file path, present only before bootstrap; never its contents.
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+        schema_version: &id014
+          type: integer
+        installation_id:
+          type: string
+        capabilities:
+          type: object
+          properties:
+            authentication: *id001
+            registry: *id001
+            migration_execution:
+              const: false
+    Target:
+      type: object
+      properties:
+        id: &id007
+          type: string
+        name: &id008
+          type: string
+        environment: &id009
+          type: string
+          enum:
+          - DEV
+          - UAT
+          - PROD
+        host: &id010
+          type: string
+        port: &id011
+          type: integer
+          minimum: 1
+          maximum: 65535
+        service: &id012
+          type: string
+        transport: &id013
+          type: string
+          enum:
+          - TCP
+          - TCPS
+        active: *id001
+        created_at: *id006
+    TargetInput:
+      type: object
+      properties:
+        id: *id007
+        name: *id008
+        environment: *id009
+        host: *id010
+        port: *id011
+        service: *id012
+        transport: *id013
+        active: *id001
+      required:
+      - name
+      - environment
+      - host
+      - port
+      - service
+      - transport
+    Schema:
+      type: object
+      properties:
+        id:
+          type: string
+        target_id:
+          type: string
+        name:
+          type: string
+        history_schema:
+          type: string
+        history_table:
+          type: string
+        default_account_id:
+          type: string
+        active: *id001
+        created_at: *id006
+    SchemaInput:
+      type: object
+      properties:
+        name:
+          type: string
+        history_schema:
+          type: string
+          description: Defaults to target schema name.
+        history_table:
+          type: string
+          default: flyway_schema_history
+        default_account_id:
+          type: string
+          description: Empty clears the default; nonempty must be explicitly mapped and active.
+        active: *id001
+      required:
+      - name
+    CredentialMetadata:
+      type: object
+      properties:
+        configured: *id001
+        version: *id014
+        updated_at: &id015
+          anyOf:
+          - *id006
+          - const: ''
+        revoked: *id001
+    ExecutionAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        target_id:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        active: *id001
+        schema_ids:
+          type: array
+          items:
+            type: string
+        credential:
+          $ref: '#/components/schemas/CredentialMetadata'
+        created_at: *id006
+    AccountInput:
+      type: object
+      properties:
+        target_id:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        active: *id001
+        schema_ids:
+          type: array
+          items:
+            type: string
+        password:
+          type: string
+          maxLength: 4096
+          writeOnly: true
+          description: Optional on creation; use credential endpoint for replacement.
+      required:
+      - name
+      - username
+      - schema_ids
+    ServiceAccount:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        owner_id:
+          type: string
+        purpose:
+          type: string
+        active: *id001
+        created_at: *id006
+    ServiceInput:
+      type: object
+      properties:
+        name:
+          type: string
+        owner_id:
+          type: string
+        purpose:
+          type: string
+        active: *id001
+      required:
+      - name
+      - owner_id
+      - purpose
+    Token:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        created_at: *id006
+        expires_at: *id006
+        last_used_at: *id015
+        revoked: *id001
+    TokenInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        expires_at: *id006
+      required:
+      - expires_at
+    IssuedToken:
+      type: object
+      properties:
+        token:
+          type: string
+          description: One-time plaintext; cannot be retrieved again.
+        metadata:
+          $ref: '#/components/schemas/Token'
+    LDAPSettings:
+      type: object
+      properties:
+        enabled: *id001
+        url:
+          type: string
+        start_tls: *id001
+        base_dn:
+          type: string
+        bind_dn_template:
+          type: string
+          description: Contains {username}; escaped before direct user bind.
+        subject_attribute:
+          type: string
+        username_attribute:
+          type: string
+          default: uid
+        display_name_attribute:
+          type: string
+          default: displayName
+        ca_file:
+          type: string
+    OIDCSettings:
+      type: object
+      properties:
+        enabled: *id001
+        issuer: &id016
+          type: string
+        client_id: &id017
+          type: string
+        redirect_url: &id018
+          type: string
+        ca_file: &id019
+          type: string
+        client_secret_configured: *id001
+    OIDCInput:
+      type: object
+      properties:
+        enabled: *id001
+        issuer: *id016
+        client_id: *id017
+        redirect_url: *id018
+        ca_file: *id019
+        client_secret_configured: *id001
+        client_secret:
+          type: string
+          writeOnly: true
+          description: Empty/omitted preserves the existing encrypted secret.
+    AuthSettings:
+      type: object
+      properties:
+        local_enabled: *id001
+        ldap:
+          $ref: '#/components/schemas/LDAPSettings'
+        oidc:
+          $ref: '#/components/schemas/OIDCSettings'
+    AuthSettingsInput:
+      type: object
+      properties:
+        local_enabled: *id001
+        ldap:
+          $ref: '#/components/schemas/LDAPSettings'
+        oidc:
+          $ref: '#/components/schemas/OIDCInput'
+      required:
+      - local_enabled
+      - ldap
+      - oidc
+    AuditEvent:
+      type: object
+      properties:
+        id: *id014
+        actor_id:
+          type: string
+        actor_type:
+          type: string
+        actor_name:
+          type: string
+        action:
+          type: string
+        target:
+          type: string
+        timestamp: *id006
+        outcome:
+          type: string
+        request_id:
+          type: string
+  responses:
+    Error:
+      description: Typed API error with safe message and optional field.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

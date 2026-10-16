@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LockKeyhole, Building2, ShieldCheck } from "lucide-react";
+import { api, ApiError, type AuthConfiguration } from "../lib/contracts";
+import { useIdentity } from "../lib/identity-context";
 import {
   Panel,
   PageHeading,
@@ -9,120 +12,146 @@ import {
   Notice,
   Field,
   Check,
-  Unavailable,
   Modal,
 } from "../components/ui";
+
+type Tab = "local" | "ldap" | "oidc";
 export default function Authentication() {
-  const [tab, setTab] = useState("local"),
-    [local, setLocal] = useState(true),
-    [ldap, setLdap] = useState(false),
-    [oidc, setOidc] = useState(false),
-    [warning, setWarning] = useState(false),
-    [transport, setTransport] = useState("ldaps"),
-    [endpoint, setEndpoint] = useState("ldaps://ad.bank.internal:636");
-  function toggleLocal(value: boolean) {
-    if (!value && !ldap && !oidc) {
-      setWarning(true);
-      return;
-    }
-    setLocal(value);
-  }
+  const identity = useIdentity();
+  const admin = identity.user.role === "Admin";
+  const [tab, setTab] = useState<Tab>("local");
+  const queryClient = useQueryClient();
+  const settings = useQuery({
+    queryKey: ["authentication-settings"],
+    queryFn: () => api<AuthConfiguration>("/settings/authentication"),
+  });
+  const [draft, setDraft] = useState<AuthConfiguration | null>(null);
+  const [clientSecret, setClientSecret] = useState("");
+  const [confirmSave, setConfirmSave] = useState(false);
+  const config = draft ?? settings.data;
+  const save = useMutation({
+    mutationFn: () =>
+      api<AuthConfiguration>("/settings/authentication", {
+        method: "PUT",
+        body: JSON.stringify({
+          ...config,
+          oidc: { ...config!.oidc, client_secret: clientSecret || undefined },
+        }),
+      }),
+    onSuccess: (value) => {
+      setDraft(null);
+      setClientSecret("");
+      queryClient.setQueryData(["authentication-settings"], value);
+    },
+  });
+  const update = <K extends keyof AuthConfiguration>(
+    key: K,
+    values: AuthConfiguration[K],
+  ) =>
+    setDraft((current) => ({ ...(current ?? settings.data!), [key]: values }));
+  if (settings.isPending)
+    return (
+      <>
+        <PageHeading title="Authentication settings" />
+        <div
+          className="skeleton"
+          role="status"
+          aria-label="Loading authentication settings"
+        />
+      </>
+    );
+  if (settings.isError)
+    return (
+      <>
+        <PageHeading title="Authentication settings" />
+        <Notice tone="error">
+          {settings.error instanceof ApiError && settings.error.status === 403
+            ? "Access denied. Authentication configuration requires Admin."
+            : settings.error.message}
+          <Button onClick={() => void settings.refetch()}>Retry</Button>
+        </Notice>
+      </>
+    );
   return (
     <>
       <PageHeading
-        title="Nhà cung cấp xác thực (Identity Providers)"
-        description="Cấu hình phương thức đăng nhập console: cục bộ, LDAP / Active Directory và OpenID Connect."
-        breadcrumb="Cài đặt hệ thống / Nhà cung cấp xác thực"
+        title="Authentication providers"
+        description="Configure local login, verified LDAP/Active Directory and OIDC sign-in."
+        breadcrumb="System settings / Authentication"
         actions={
-          <>
-            <Button disabled>Kiểm tra toàn bộ kết nối</Button>
-            <Button variant="primary" disabled>
-              Lưu thay đổi cấu hình
-            </Button>
-          </>
+          <Button
+            variant="primary"
+            disabled={!admin || save.isPending || !draft}
+            onClick={() => setConfirmSave(true)}
+          >
+            {save.isPending ? "Saving…" : "Save configuration"}
+          </Button>
         }
       />
+      {!admin && (
+        <Notice tone="warning">
+          Read-only view. Authentication configuration requires Admin.
+        </Notice>
+      )}
       <p className="small muted">
-        Cần cấu hình API token cho CI/CD?{" "}
-        <Link to="/access/service-accounts">Quản lý Service Accounts →</Link>
+        Need API tokens for automation?{" "}
+        <Link to="/access/service-accounts">Manage Service Accounts →</Link>
       </p>
-      <Notice tone="warning" title="Emergency Admin Guardrail:">
-        Giữ ít nhất một phương thức đăng nhập Admin khả dụng. Không tự động
-        fallback giữa LDAP và tài khoản cục bộ trùng tên.
+      <Notice tone="warning" title="Provider safety">
+        Keep at least one working Admin sign-in method. External providers do
+        not silently fall back to local login.
       </Notice>
       <div
         className="tabs auth-tabs"
         role="tablist"
-        aria-label="Nhà cung cấp xác thực"
+        aria-label="Authentication providers"
       >
-        {[
-          ["local", "Cục bộ", LockKeyhole],
-          ["ldap", "LDAP / Active Directory", Building2],
-          ["oidc", "OIDC / SSO", ShieldCheck],
-        ].map(([key, label, Icon]) => {
-          const I = Icon as typeof LockKeyhole;
-          return (
-            <button
-              role="tab"
-              aria-selected={tab === key}
-              key={String(key)}
-              onClick={() => setTab(String(key))}
-            >
-              <I size={16} />
-              {String(label)}
-            </button>
-          );
-        })}
+        {(
+          [
+            ["local", "Local", LockKeyhole],
+            ["ldap", "LDAP / Active Directory", Building2],
+            ["oidc", "OIDC / SSO", ShieldCheck],
+          ] as const
+        ).map(([key, label, Icon]) => (
+          <button
+            role="tab"
+            aria-selected={tab === key}
+            key={key}
+            onClick={() => setTab(key)}
+          >
+            <Icon size={16} />
+            {label}
+          </button>
+        ))}
       </div>
       {tab === "local" && (
         <Panel
           title={
             <>
               <LockKeyhole size={17} />
-              1. Xác thực Cục bộ (Local Authentication)
+              Local authentication
             </>
           }
-          aside={<Badge>BẢN NHÁP</Badge>}
+          aside={
+            <Badge tone={config!.local_enabled ? "success" : "neutral"}>
+              {config!.local_enabled ? "Enabled" : "Disabled"}
+            </Badge>
+          }
         >
           <Check
-            label="Kích hoạt đăng nhập cục bộ"
-            checked={local}
-            onChange={toggleLocal}
+            label="Enable local authentication"
+            checked={config!.local_enabled}
+            disabled={!admin}
+            onChange={(local_enabled) => update("local_enabled", local_enabled)}
           />
-          <div className="grid-two">
-            <div className="inset">
-              <h3>Chính sách mật khẩu</h3>
-              <Field label="Độ dài tối thiểu">
-                <input type="number" min="8" max="128" defaultValue="12" />
-              </Field>
-              <p className="small">
-                Thiết kế: Argon2id. Tham số sẽ được xác minh ở giai đoạn
-                Identity.
-              </p>
-              <p className="small muted">
-                Không có chính sách bắt buộc đổi mật khẩu định kỳ trong Phase 1.
-              </p>
-            </div>
-            <div className="inset">
-              <h3>Tài khoản cứu hộ khẩn cấp</h3>
-              <Field label="Tên đăng nhập Admin">
-                <input placeholder="recovery_admin" autoComplete="off" />
-              </Field>
-              <Field label="Mật khẩu mới (Write-only replace)">
-                <input
-                  type="password"
-                  placeholder="Không nhập mật khẩu thật trong bản xem trước"
-                  autoComplete="new-password"
-                />
-              </Field>
-            </div>
-          </div>
           <Notice>
-            Danh tính cục bộ thuộc SQLite của Flyway Manager, tách biệt với
-            Oracle schema. Chưa có bootstrap hoặc password hashing thực trong
-            Phase 1.
+            Passwords are stored as Argon2id hashes. Bootstrap and password
+            changes are handled through identity management.
           </Notice>
-          <Unavailable label="Lưu chính sách Local" />
+          <p className="small muted">
+            The backend rejects configurations that would remove the last usable
+            Admin sign-in method.
+          </p>
         </Panel>
       )}
       {tab === "ldap" && (
@@ -130,96 +159,136 @@ export default function Authentication() {
           title={
             <>
               <Building2 size={17} />
-              2. LDAP / Active Directory
+              LDAP / Active Directory
             </>
           }
-          aside={<Badge>CHƯA KẾT NỐI</Badge>}
+          aside={
+            <Badge tone={config!.ldap.enabled ? "success" : "neutral"}>
+              {config!.ldap.enabled ? "Enabled" : "Disabled"}
+            </Badge>
+          }
         >
           <Check
-            label="Kích hoạt LDAP / AD"
-            checked={ldap}
-            onChange={setLdap}
+            label="Enable LDAP sign-in"
+            checked={config!.ldap.enabled}
+            disabled={!admin}
+            onChange={(enabled) => update("ldap", { ...config!.ldap, enabled })}
           />
-          <div className="grid-two">
-            <Field label="Kênh truyền bắt buộc">
-              <select
-                value={transport}
-                onChange={(e) => {
-                  setTransport(e.target.value);
-                  setEndpoint(
-                    e.target.value === "ldaps"
-                      ? "ldaps://ad.bank.internal:636"
-                      : "ldap://ad.bank.internal:389",
-                  );
-                }}
-              >
-                <option value="ldaps">LDAPS</option>
-                <option value="starttls">LDAP + StartTLS bắt buộc</option>
-              </select>
-            </Field>
-            <Field label="Thời gian chờ kết nối (ms)">
-              <input type="number" min="1000" max="60000" defaultValue="5000" />
-            </Field>
-          </div>
           <Field
-            label="LDAP Endpoint"
+            label="Secure LDAP URL"
             required
-            hint={
-              transport === "ldaps"
-                ? "Yêu cầu ldaps:// và xác minh chứng chỉ TLS."
-                : "Yêu cầu nâng cấp StartTLS thành công trước user bind."
-            }
+            hint="Use LDAPS, or LDAP with StartTLS enabled. Certificate validation stays on."
           >
             <input
+              required
               type="url"
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              aria-invalid={
-                transport === "ldaps" && !endpoint.startsWith("ldaps://")
+              placeholder="ldaps://directory.example:636"
+              value={config!.ldap.url}
+              disabled={!admin}
+              onChange={(event) =>
+                update("ldap", { ...config!.ldap, url: event.target.value })
               }
             />
           </Field>
-          {transport === "ldaps" && !endpoint.startsWith("ldaps://") && (
-            <p className="form-error" role="alert">
-              LDAPS endpoint phải bắt đầu bằng ldaps://.
-            </p>
-          )}
+          <Check
+            label="Require StartTLS"
+            checked={config!.ldap.start_tls}
+            disabled={!admin}
+            onChange={(start_tls) =>
+              update("ldap", { ...config!.ldap, start_tls })
+            }
+          />
           <div className="grid-two">
             <Field label="Base DN">
-              <input defaultValue="ou=Users,dc=bank,dc=vn" />
+              <input
+                value={config!.ldap.base_dn}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    base_dn: event.target.value,
+                  })
+                }
+              />
             </Field>
-            <Field label="User DN template (Direct bind)">
-              <input defaultValue="uid={username},ou=Users,dc=bank,dc=vn" />
+            <Field label="User DN template" required>
+              <input
+                required
+                value={config!.ldap.bind_dn_template}
+                disabled={!admin}
+                placeholder="uid={username},ou=Users,dc=example,dc=com"
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    bind_dn_template: event.target.value,
+                  })
+                }
+              />
             </Field>
           </div>
-          <Field label="Immutable identity attribute">
-            <select>
-              <option>objectGUID (Active Directory)</option>
-              <option>entryUUID (LDAP)</option>
-            </select>
-          </Field>
-          <Notice title="Direct LDAP bind · Không lưu mật khẩu LDAP">
-            Không có service-bind password lưu trong provider settings. Test
-            credentials chỉ dùng tạm trong phiên kiểm tra; không lưu vào SQLite.
+          <div className="grid-two">
+            <Field
+              label="Login username attribute"
+              required
+              hint="For AD, this may be sAMAccountName."
+            >
+              <input
+                required
+                value={config!.ldap.username_attribute}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    username_attribute: event.target.value,
+                  })
+                }
+              />
+            </Field>
+            <Field label="Display name attribute">
+              <input
+                value={config!.ldap.display_name_attribute}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    display_name_attribute: event.target.value,
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <div className="grid-two">
+            <Field label="Immutable subject attribute" required>
+              <input
+                required
+                value={config!.ldap.subject_attribute}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    subject_attribute: event.target.value,
+                  })
+                }
+              />
+            </Field>
+            <Field label="Custom CA file (optional)">
+              <input
+                value={config!.ldap.ca_file}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("ldap", {
+                    ...config!.ldap,
+                    ca_file: event.target.value,
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <Notice title="Direct user bind">
+            User passwords are sent only during sign-in and are never saved in
+            provider settings. External user binding requires a stable provider
+            and subject.
           </Notice>
-          <div className="inset">
-            <h3>Thử nghiệm xác thực tạm thời</h3>
-            <div className="grid-two">
-              <Field label="Username kiểm tra">
-                <input placeholder="test_user" autoComplete="off" />
-              </Field>
-              <Field label="Mật khẩu kiểm tra (không lưu)">
-                <input
-                  type="password"
-                  autoComplete="off"
-                  placeholder="Chỉ dùng giá trị minh họa"
-                />
-              </Field>
-            </div>
-            <Button disabled>Thử nghiệm LDAP</Button>
-            <p className="small muted">Kết quả: Chưa kiểm tra.</p>
-          </div>
-          <Unavailable label="Lưu cấu hình LDAP" />
         </Panel>
       )}
       {tab === "oidc" && (
@@ -227,68 +296,136 @@ export default function Authentication() {
           title={
             <>
               <ShieldCheck size={17} />
-              3. OpenID Connect (Enterprise OIDC / SSO)
+              OpenID Connect
             </>
           }
-          aside={<Badge>CHƯA KẾT NỐI</Badge>}
+          aside={
+            <Badge tone={config!.oidc.enabled ? "success" : "neutral"}>
+              {config!.oidc.enabled ? "Enabled" : "Disabled"}
+            </Badge>
+          }
         >
           <Check
-            label="Kích hoạt OIDC / SSO"
-            checked={oidc}
-            onChange={setOidc}
+            label="Enable OIDC sign-in"
+            checked={config!.oidc.enabled}
+            disabled={!admin}
+            onChange={(enabled) => update("oidc", { ...config!.oidc, enabled })}
           />
-          <Field label="OpenID Provider Issuer URL" required>
-            <input type="url" placeholder="https://iam.bank.internal" />
-          </Field>
-          <div className="grid-two">
-            <Field label="Client ID" required>
-              <input placeholder="flyway-manager" />
-            </Field>
-            <Field label="Client Secret (Write-only replace)">
-              <input
-                type="password"
-                placeholder="Chỉ nhập để thay thế"
-                autoComplete="new-password"
-              />
-            </Field>
-          </div>
-          <Field label="Redirect URI">
+          <Field label="Issuer URL" required>
             <input
+              required
               type="url"
-              placeholder="https://manager.example/auth/callback/oidc"
+              value={config!.oidc.issuer}
+              disabled={!admin}
+              placeholder="https://identity.example"
+              onChange={(event) =>
+                update("oidc", { ...config!.oidc, issuer: event.target.value })
+              }
             />
           </Field>
           <div className="grid-two">
-            <div className="inset">
-              <h3>Authorization Code + PKCE</h3>
-              <p className="small muted">
-                Thiết kế bắt buộc PKCE (S256). Chưa triển khai OIDC discovery
-                hoặc callback.
-              </p>
-            </div>
-            <div className="inset">
-              <h3>Immutable Identity: issuer + sub</h3>
-              <p className="small muted">
-                Không ánh xạ tài khoản chỉ bằng email; danh tính được gắn với
-                provider và subject bất biến.
-              </p>
-            </div>
+            <Field label="Client ID" required>
+              <input
+                required
+                value={config!.oidc.client_id}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("oidc", {
+                    ...config!.oidc,
+                    client_id: event.target.value,
+                  })
+                }
+              />
+            </Field>
+            <Field
+              label="Client secret (write only)"
+              hint={
+                config!.oidc.client_secret_configured
+                  ? "A secret is configured. Leave empty to keep it."
+                  : "Enter a secret to configure OIDC."
+              }
+            >
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={clientSecret}
+                disabled={!admin}
+                onChange={(event) => {
+                  setClientSecret(event.target.value);
+                  setDraft((current) => current ?? settings.data!);
+                }}
+              />
+            </Field>
           </div>
-          <Button disabled>Kiểm tra OIDC Discovery</Button>
-          <Unavailable label="Lưu cấu hình OIDC" />
+          <div className="grid-two">
+            <Field label="Redirect URL" required>
+              <input
+                required
+                type="url"
+                value={config!.oidc.redirect_url}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("oidc", {
+                    ...config!.oidc,
+                    redirect_url: event.target.value,
+                  })
+                }
+              />
+            </Field>
+            <Field label="Custom CA file (optional)">
+              <input
+                value={config!.oidc.ca_file}
+                disabled={!admin}
+                onChange={(event) =>
+                  update("oidc", {
+                    ...config!.oidc,
+                    ca_file: event.target.value,
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <Notice title="Authorization Code + PKCE">
+            OIDC uses state, nonce, issuer, audience and token validation.
+            External identities must be bound explicitly by issuer and subject;
+            no automatic Admin grant.
+          </Notice>
+          <Badge>
+            {config!.oidc.client_secret_configured
+              ? "Client secret configured"
+              : "Client secret not configured"}
+          </Badge>
         </Panel>
       )}
+      {save.isError && (
+        <Notice tone="error">
+          Could not save configuration: {save.error.message}
+        </Notice>
+      )}
       <Modal
-        open={warning}
-        onOpenChange={setWarning}
-        title="Giữ đường đăng nhập Admin khả dụng"
-        description="Bản nháp không thể tắt phương thức đăng nhập cuối cùng."
+        open={confirmSave}
+        onOpenChange={setConfirmSave}
+        title="Apply authentication changes?"
+        description="Provider changes affect who can sign in to this installation."
       >
         <Notice tone="warning">
-          Xác minh một đường đăng nhập Admin thay thế trước khi tắt Local. Tất
-          cả provider hiện đều chưa được triển khai.
+          Verify that an Admin can still sign in. Local authentication is being
+          disabled only if another configured provider remains available.
         </Notice>
-        <Button onClick={() => setWarning(false)}>Giữ cấu hình cục bộ</Button>
+        {save.isError && <Notice tone="error">{save.error.message}</Notice>}
+        <div className="dialog-actions">
+          <Button onClick={() => setConfirmSave(false)}>Review settings</Button>
+          <Button
+            variant="danger"
+            disabled={save.isPending}
+            onClick={() => {
+              setConfirmSave(false);
+              save.mutate();
+            }}
+          >
+            {save.isPending ? "Saving…" : "Apply changes"}
+          </Button>
+        </div>
       </Modal>
     </>
   );

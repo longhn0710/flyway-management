@@ -276,22 +276,6 @@ export function Modal({
     </Dialog.Root>
   );
 }
-export function Unavailable({ label = "Lưu thay đổi" }: { label?: string }) {
-  return (
-    <div className="unavailable">
-      <small>
-        Chưa có API trong Phase 1. Bản nháp chỉ tồn tại trên trang này.
-      </small>
-      <Button
-        variant="primary"
-        disabled
-        title="Chưa được triển khai trong Phase 1"
-      >
-        {label}
-      </Button>
-    </div>
-  );
-}
 export function KeyValues({ rows }: { rows: [string, ReactNode][] }) {
   return (
     <dl className="key-values">

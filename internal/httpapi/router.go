@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"flyway-manager/internal/core"
 	"flyway-manager/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,6 +22,7 @@ import (
 
 type RouterOptions struct {
 	Database *database.DB
+	Service  *core.Service
 	Assets   fs.FS
 	Logger   *slog.Logger
 }
@@ -31,6 +33,7 @@ type envelope[T any] struct {
 type apiError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+	Field   string `json:"field,omitempty"`
 }
 type errorEnvelope struct {
 	Error apiError `json:"error"`
@@ -42,11 +45,7 @@ func NewRouter(options RouterOptions) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	// Preview is a client-side demo choice only. The Phase 1 business routes are
-	// deliberately unavailable; when implemented they must be registered behind
-	// server-side authentication and RBAC. Never accept caller-supplied identity
-	// or bearer credentials without server-side verification.
-	r.Use(middleware.RequestID, securityHeaders, recoverer(logger))
+	r.Use(serverRequestIDs, securityHeaders, recoverer(logger))
 	r.Use(requestLogger(logger))
 	r.Get("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -61,30 +60,11 @@ func NewRouter(options RouterOptions) http.Handler {
 			"status": map[bool]string{true: "ok", false: "degraded"}[databaseStatus == "ok"], "database": databaseStatus,
 			"schema_version":  schemaVersion(options.Database),
 			"installation_id": installationID(options.Database),
-			"capabilities":    map[string]bool{"authentication": false, "migration_execution": false, "registry": false},
+			"capabilities":    map[string]bool{"authentication": options.Service != nil, "migration_execution": false, "registry": options.Service != nil},
 		}
 		writeJSON(w, status, envelope[map[string]any]{Data: data})
 	})
-	r.Get("/api/v1/system", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, envelope[map[string]any]{Data: map[string]any{
-			"installation_id": installationID(options.Database),
-			"schema_version":  schemaVersion(options.Database),
-			"capabilities":    map[string]bool{"authentication": false, "migration_execution": false, "registry": false},
-		}})
-	})
-	unimplemented := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeError(w, http.StatusNotImplemented, "NOT_IMPLEMENTED", "This API capability is not implemented.")
-	})
-	for _, route := range []string{
-		"/api/v1/database-targets", "/api/v1/database-targets/{id}/schemas",
-		"/api/v1/artifacts", "/api/v1/artifacts/{id}",
-		"/api/v1/migration-runs", "/api/v1/migration-runs/{id}",
-		"/api/v1/migration-runs/{id}/logs", "/api/v1/migration-runs/{id}/events",
-		"/api/v1/migration-runs/{id}/artifacts", "/api/v1/execution-accounts",
-		"/api/v1/access/*", "/api/v1/settings/*",
-	} {
-		r.Handle(route, unimplemented)
-	}
+	phase2{s: options.Service, logger: logger, database: options.Database}.register(r)
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		if isAPIPath(r.URL.Path) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "API route not found.")
@@ -123,7 +103,7 @@ func recoverer(logger *slog.Logger) func(http.Handler) http.Handler {
 			wrapped := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 			defer func() {
 				if value := recover(); value != nil {
-					logger.Error("http handler panic", "panic", value, "path", r.URL.Path)
+					logger.Error("http handler panic", "request_id", middleware.GetReqID(r.Context()))
 					if wrapped.Status() == 0 {
 						writeError(wrapped, http.StatusInternalServerError, "INTERNAL_ERROR", "An unexpected error occurred.")
 					}
@@ -158,7 +138,7 @@ func serveFrontend(w http.ResponseWriter, r *http.Request, assets fs.FS) {
 		return
 	}
 	f, err := assets.Open(name)
-	if err != nil && errors.Is(err, fs.ErrNotExist) && acceptsHTML(r.Header.Get("Accept")) && !strings.Contains(path.Base(name), ".") && name != "assets" && !strings.HasPrefix(name, "assets/") {
+	if err != nil && errors.Is(err, fs.ErrNotExist) && acceptsHTML(r.Header.Get("Accept")) && (!strings.Contains(path.Base(name), ".") || isDatabaseDetailRoute(name)) && name != "assets" && !strings.HasPrefix(name, "assets/") {
 		name = "index.html"
 		f, err = assets.Open(name)
 	}
@@ -193,6 +173,11 @@ func serveFrontend(w http.ResponseWriter, r *http.Request, assets fs.FS) {
 		return
 	}
 	http.ServeContent(w, r, info.Name(), info.ModTime(), reader)
+}
+
+// Registry stable IDs can contain dots; deep links still need the SPA shell.
+func isDatabaseDetailRoute(name string) bool {
+	return strings.HasPrefix(name, "databases/") && strings.Count(name, "/") == 1
 }
 
 func acceptsHTML(header string) bool {
@@ -243,7 +228,26 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			started := time.Now()
 			next.ServeHTTP(w, r)
-			logger.Info("http request", "method", r.Method, "path", r.URL.Path, "duration", time.Since(started))
+			logger.Info("http request", "method", r.Method, "path", requestPath(r), "duration", time.Since(started))
 		})
 	}
+}
+
+// Generate correlation IDs here, rather than persisting attacker-controlled header values.
+func serverRequestIDs(next http.Handler) http.Handler {
+	handler := middleware.RequestID(next)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { r.Header.Del("X-Request-ID"); handler.ServeHTTP(w, r) })
+}
+
+// API route templates exclude caller-supplied path values from diagnostic/security logs.
+func requestPath(r *http.Request) string {
+	if isAPIPath(r.URL.Path) {
+		if route := chi.RouteContext(r.Context()); route != nil {
+			if pattern := route.RoutePattern(); pattern != "" {
+				return pattern
+			}
+		}
+		return "/api/*"
+	}
+	return "frontend"
 }

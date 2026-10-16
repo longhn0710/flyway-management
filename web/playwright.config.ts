@@ -23,6 +23,8 @@ export default defineConfig({
     url: "http://127.0.0.1:18081/api/v1/health",
     reuseExistingServer: false,
     env: {
+      FLYWAY_MANAGER_CONFIG: "",
+      FLYWAY_MANAGER_PUBLIC_URL: "",
       FLYWAY_MANAGER_LISTEN_ADDRESS: "127.0.0.1:18081",
       FLYWAY_MANAGER_DATA_DIR: mkdtempSync(
         join(tmpdir(), "flyway-manager-e2e-"),

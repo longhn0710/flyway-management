@@ -5,16 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// Config contains the small set of settings needed by the Phase 1 server.
+// Config contains native server settings; authentication providers are managed in SQLite.
 type Config struct {
 	ListenAddress string `json:"listen_address"`
 	DataDir       string `json:"data_dir"`
 	LogLevel      string `json:"log_level"`
+	PublicURL     string `json:"public_url"`
 }
 
 func Load() (Config, error) {
@@ -51,6 +54,9 @@ func Load() (Config, error) {
 	if value, ok := os.LookupEnv("FLYWAY_MANAGER_LOG_LEVEL"); ok {
 		cfg.LogLevel = value
 	}
+	if value, ok := os.LookupEnv("FLYWAY_MANAGER_PUBLIC_URL"); ok {
+		cfg.PublicURL = value
+	}
 	var err error
 	cfg.DataDir, err = expandHome(cfg.DataDir)
 	if err != nil {
@@ -58,6 +64,17 @@ func Load() (Config, error) {
 	}
 	if cfg.ListenAddress == "" || cfg.DataDir == "" {
 		return Config{}, errors.New("listen_address and data_dir must not be empty")
+	}
+	if cfg.PublicURL != "" {
+		u, e := url.Parse(cfg.PublicURL)
+		if e != nil || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") || (u.Scheme != "https" && u.Scheme != "http") {
+			return Config{}, errors.New("public_url must be an HTTP(S) origin")
+		}
+		ip := net.ParseIP(u.Hostname())
+		if u.Scheme == "http" && u.Hostname() != "localhost" && (ip == nil || !ip.IsLoopback()) {
+			return Config{}, errors.New("remote public_url requires HTTPS")
+		}
+		cfg.PublicURL = strings.TrimRight(cfg.PublicURL, "/")
 	}
 	switch strings.ToLower(cfg.LogLevel) {
 	case "debug", "info", "warn", "error":

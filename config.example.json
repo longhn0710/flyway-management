@@ -1,5 +1,6 @@
 {
   "listen_address": "127.0.0.1:8080",
   "data_dir": "~/.flyway-manager",
-  "log_level": "info"
+  "log_level": "info",
+  "public_url": ""
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"flyway-manager/internal/config"
+	"flyway-manager/internal/core"
 	"flyway-manager/internal/database"
 	"flyway-manager/internal/httpapi"
 	"flyway-manager/web"
@@ -51,11 +52,18 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	service, err := core.New(ctx, db, cfg.DataDir, cfg.PublicURL)
+	if err != nil {
+		return err
+	}
+	if required, _ := service.BootstrapRequired(ctx); required {
+		logger.Info("first-run setup required; read the private setup token file", "bootstrap_token_file", service.SetupTokenFile)
+	}
 	assets, err := web.Dist()
 	if err != nil {
 		return err
 	}
-	handler := httpapi.NewRouter(httpapi.RouterOptions{Database: db, Assets: assets, Logger: logger})
+	handler := httpapi.NewRouter(httpapi.RouterOptions{Database: db, Service: service, Assets: assets, Logger: logger})
 	server := &http.Server{
 		Addr: cfg.ListenAddress, Handler: handler,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -69,7 +77,7 @@ func run() error {
 		return err
 	}
 	if addr, ok := listener.Addr().(*net.TCPAddr); ok && !addr.IP.IsLoopback() {
-		logger.Warn("server is listening on a non-loopback interface; Phase 1 preview and API are unauthenticated, so expose only on a trusted LAN with network controls; do not expose to the internet", "address", listener.Addr().String())
+		logger.Warn("server is listening on a non-loopback interface; configure public_url and a trusted HTTPS reverse proxy, and deny direct backend access", "address", listener.Addr().String())
 	}
 	serveErr := make(chan error, 1)
 	go func() {

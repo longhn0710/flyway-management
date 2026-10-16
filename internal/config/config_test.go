@@ -90,7 +90,7 @@ func TestLoadRejectsUnknownTrailingAndBlankEnvironmentConfig(t *testing.T) {
 
 func clearConfigEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"FLYWAY_MANAGER_CONFIG", "FLYWAY_MANAGER_LISTEN_ADDRESS", "FLYWAY_MANAGER_DATA_DIR", "FLYWAY_MANAGER_LOG_LEVEL"} {
+	for _, key := range []string{"FLYWAY_MANAGER_CONFIG", "FLYWAY_MANAGER_LISTEN_ADDRESS", "FLYWAY_MANAGER_DATA_DIR", "FLYWAY_MANAGER_LOG_LEVEL", "FLYWAY_MANAGER_PUBLIC_URL"} {
 		value, existed := os.LookupEnv(key)
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatal(err)
@@ -100,6 +100,28 @@ func clearConfigEnv(t *testing.T) {
 				_ = os.Setenv(key, value)
 			} else {
 				_ = os.Unsetenv(key)
+			}
+		})
+	}
+}
+
+func TestPublicURLValidation(t *testing.T) {
+	for _, value := range []string{"http://remote.example", "https://user:password@console.example", "https://console.example/app", "https://console.example?query=1", "ftp://console.example"} {
+		t.Run(value, func(t *testing.T) {
+			clearConfigEnv(t)
+			t.Setenv("FLYWAY_MANAGER_PUBLIC_URL", value)
+			if _, err := Load(); err == nil {
+				t.Fatal("invalid public origin accepted")
+			}
+		})
+	}
+	for _, value := range []string{"https://console.example", "http://127.0.0.1:5173", "http://[::1]:8080"} {
+		t.Run(value, func(t *testing.T) {
+			clearConfigEnv(t)
+			t.Setenv("FLYWAY_MANAGER_PUBLIC_URL", value)
+			cfg, err := Load()
+			if err != nil || cfg.PublicURL != value {
+				t.Fatalf("valid origin rejected: %v", err)
 			}
 		})
 	}

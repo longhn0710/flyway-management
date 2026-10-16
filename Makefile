@@ -1,4 +1,4 @@
-.PHONY: install dev-web dev-api build run check test-e2e
+.PHONY: install dev-web dev-api build run check test-e2e test-race security
 
 # Pin the patched toolchain even when the caller sets GOTOOLCHAIN=local.
 export GOTOOLCHAIN := go1.26.9
@@ -30,3 +30,10 @@ check: build
 
 test-e2e: build
 	npm --prefix web run test:e2e
+
+test-race: build
+	go test -race ./cmd/... ./internal/... ./web
+
+security:
+	npm --prefix web audit --audit-level=moderate
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./cmd/... ./internal/... ./web

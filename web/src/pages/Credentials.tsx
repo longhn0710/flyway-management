@@ -1,7 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, Plus, Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { previewFixtures as fixtures } from "../lib/fixtures";
-const { accounts } = fixtures;
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { KeyRound, Plus, ShieldCheck } from "lucide-react";
+import {
+  api,
+  apiList,
+  ApiError,
+  type DatabaseTarget,
+  type ExecutionAccount,
+  type TargetSchema,
+} from "../lib/contracts";
+import { useIdentity } from "../lib/identity-context";
 import {
   Panel,
   PageHeading,
@@ -12,325 +20,566 @@ import {
   Modal,
   Field,
   Check,
-  Unavailable,
 } from "../components/ui";
+
 export default function Credentials() {
-  const [q, setQ] = useState(""),
-    [provider, setProvider] = useState(""),
-    [schema, setSchema] = useState(""),
-    [selected, setSelected] = useState("DEPLOY_ADMIN"),
-    [create, setCreate] = useState(false);
-  const data = accounts.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q.toLowerCase()) &&
-        (!provider || a.provider === provider) &&
-        (!schema || a.schemas.includes(schema)),
-    ),
-    account = accounts.find((a) => a.name === selected)!;
+  const identity = useIdentity();
+  const admin = identity.user.role === "Admin";
+  const queryClient = useQueryClient();
+  const [targetID, setTargetID] = useState("");
+  const [q, setQ] = useState("");
+  const [selectedID, setSelectedID] = useState("");
+  const [create, setCreate] = useState(false);
+  const targets = useQuery({
+    queryKey: ["database-targets"],
+    queryFn: () => apiList<DatabaseTarget>("/database-targets"),
+  });
+  const activeTargets = (targets.data ?? []).filter((target) => target.active);
+  const selectedTargetID = targetID || activeTargets[0]?.id || "";
+  const accounts = useQuery({
+    queryKey: ["execution-accounts", selectedTargetID],
+    queryFn: () =>
+      apiList<ExecutionAccount>(
+        `/execution-accounts?target_id=${encodeURIComponent(selectedTargetID)}`,
+      ),
+    enabled: !!selectedTargetID,
+  });
+  const data = (accounts.data ?? []).filter((account) =>
+    [account.name, account.username, account.id]
+      .join(" ")
+      .toLowerCase()
+      .includes(q.toLowerCase()),
+  );
+  const selected = data.find((account) => account.id === selectedID) ?? data[0];
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["execution-accounts"] });
+    void queryClient.invalidateQueries({ queryKey: ["schemas"] });
+  };
   return (
     <>
       <PageHeading
-        title="Tài khoản thực thi Oracle"
-        description="Quản lý thông tin xác thực Oracle và ánh xạ schema. Tách biệt hoàn toàn với người dùng ứng dụng."
-        breadcrumb="Quản trị thực thi / Tài khoản thực thi Oracle"
+        title="Oracle execution accounts"
+        description="Register Oracle identities, map them to target schemas, and replace or revoke encrypted credentials."
+        breadcrumb="Execution administration / Oracle accounts"
         actions={
           <>
-            <Button disabled>Kiểm tra kết nối tất cả</Button>
-            <Button variant="primary" onClick={() => setCreate(true)}>
+            <Button disabled>Test connections · Unavailable</Button>
+            <Button
+              variant="primary"
+              disabled={!admin || !selectedTargetID}
+              onClick={() => setCreate(true)}
+            >
               <Plus size={16} />
-              Đăng ký tài khoản Oracle mới
+              Register Oracle account
             </Button>
           </>
         }
       />
+      {!admin && (
+        <Notice tone="warning">
+          Execution account metadata and credentials are visible to Admin only.
+        </Notice>
+      )}
       <div className="filter-bar">
-        <Badge>Mục tiêu: ORA_UAT_FINANCE · FINUAT / UAT</Badge>
         <select
-          aria-label="Nhà cung cấp khóa"
-          value={provider}
-          onChange={(e) => setProvider(e.target.value)}
+          aria-label="Database target"
+          value={selectedTargetID}
+          onChange={(event) => {
+            setTargetID(event.target.value);
+            setSelectedID("");
+          }}
         >
-          <option value="">Tất cả nhà cung cấp khóa</option>
-          <option>Local</option>
-          <option>Vault</option>
-        </select>
-        <select
-          aria-label="Schema ánh xạ"
-          value={schema}
-          onChange={(e) => setSchema(e.target.value)}
-        >
-          <option value="">Tất cả schema</option>
-          <option>CORE_BANKING</option>
-          <option>PAYMENT</option>
+          <option value="">Choose target</option>
+          {activeTargets.map((target) => (
+            <option value={target.id} key={target.id}>
+              {target.name} · {target.environment}
+            </option>
+          ))}
         </select>
         <SearchBox
           value={q}
           onChange={setQ}
-          placeholder="Tìm kiếm tài khoản Oracle…"
+          placeholder="Search execution account…"
         />
       </div>
-      <div className="layout-editor">
-        <Panel
-          title="Danh sách tài khoản kết nối Oracle"
-          aside={<Badge>{data.length} mục</Badge>}
-        >
-          <div className="credential-list">
-            {data.map((a) => (
-              <button
-                key={a.name}
-                className={`credential-row ${selected === a.name ? "selected" : ""}`}
-                onClick={() => setSelected(a.name)}
-              >
-                <div>
-                  <strong className="mono">
-                    <KeyRound size={14} />
-                    {a.name}
-                  </strong>
-                  <small className="mono muted block">
-                    Mật khẩu: ••••••••••••
-                  </small>
-                </div>
-                <div>
-                  <Badge>
-                    {a.provider === "Local"
-                      ? "Mã hóa cục bộ"
-                      : "HashiCorp Vault"}
-                  </Badge>
-                  <small className="block muted">
-                    {a.provider === "Local"
-                      ? "Thiết kế: AES-256-GCM"
-                      : "secret/…/payment"}
-                  </small>
-                </div>
-                <div className="stack tight">
-                  {a.schemas.map((s) => (
-                    <Badge key={s}>{s}</Badge>
-                  ))}
-                </div>
-                <small className="mono muted">{a.rotated}</small>
-              </button>
-            ))}
-          </div>
-          {!data.length && <p className="empty">Không có tài khoản phù hợp.</p>}
-          <Notice>
-            Mật khẩu đã lưu chỉ hiển thị metadata / placeholder. Không có thao
-            tác xem lại hoặc sao chép secret.
-          </Notice>
-        </Panel>
-        <CredentialForm key={account.id} account={account} />
-      </div>
-      <Notice title="Nguyên tắc kiến trúc phân quyền">
+      {!selectedTargetID ? (
+        targets.isPending ? (
+          <div className="skeleton" role="status" />
+        ) : targets.isError ? (
+          <Notice tone="error">{targets.error.message}</Notice>
+        ) : (
+          <p className="empty">Register an active database target first.</p>
+        )
+      ) : (
+        <div className="layout-editor">
+          <Panel
+            title="Execution accounts"
+            aside={
+              <Badge>
+                {accounts.isSuccess ? `${accounts.data.length} accounts` : ""}
+              </Badge>
+            }
+          >
+            {accounts.isPending ? (
+              <div
+                className="skeleton"
+                role="status"
+                aria-label="Loading execution accounts"
+              />
+            ) : accounts.isError ? (
+              <Notice tone="error">
+                {accounts.error instanceof ApiError &&
+                accounts.error.status === 403
+                  ? "Execution account management requires Admin."
+                  : accounts.error.message}
+                <Button onClick={() => void accounts.refetch()}>Retry</Button>
+              </Notice>
+            ) : data.length === 0 ? (
+              <p className="empty">
+                {accounts.data.length
+                  ? "No accounts match."
+                  : "No execution accounts registered for this target."}
+              </p>
+            ) : (
+              <div className="credential-list">
+                {data.map((account) => (
+                  <button
+                    key={account.id}
+                    className={`credential-row ${selected?.id === account.id ? "selected" : ""}`}
+                    onClick={() => setSelectedID(account.id)}
+                  >
+                    <div>
+                      <strong className="mono">
+                        <KeyRound size={14} />
+                        {account.name}
+                      </strong>
+                      <small className="mono muted block">
+                        {account.username}
+                      </small>
+                    </div>
+                    <div>
+                      <Badge
+                        tone={
+                          account.credential.configured &&
+                          !account.credential.revoked
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {account.credential.revoked
+                          ? "Revoked"
+                          : account.credential.configured
+                            ? "Encrypted credential"
+                            : "No credential"}
+                      </Badge>
+                      <small className="block muted">
+                        {account.credential.updated_at
+                          ? `Updated ${new Date(account.credential.updated_at).toLocaleString()}`
+                          : "No credential stored"}
+                      </small>
+                    </div>
+                    <div className="stack tight">
+                      {account.schema_ids.map((schemaID) => (
+                        <Badge key={schemaID}>{schemaID}</Badge>
+                      ))}
+                    </div>
+                    <Badge tone={account.active ? "success" : "error"}>
+                      {account.active ? "Active" : "Disabled"}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Panel>
+          {selected && (
+            <CredentialEditor
+              key={selected.id}
+              account={selected}
+              targetID={selectedTargetID}
+              canManage={admin}
+              onSaved={invalidate}
+            />
+          )}
+        </div>
+      )}
+      <Notice title="Credential boundary">
         <ShieldCheck size={16} />
-        Mỗi Target Database + Schema là một stream độc lập. Quyền Oracle quyết
-        định quyền DDL; ánh xạ ứng dụng không thay thế GRANT.
+        Credential values are write-only, encrypted at rest, and never returned
+        by the API. The application does not provision Oracle users.
       </Notice>
-      <Modal
+      <CreateExecutionAccount
         open={create}
         onOpenChange={setCreate}
-        title="Đăng ký tài khoản Oracle mới"
-        description="Bản nháp giao diện · Không lưu hoặc kiểm tra thông tin xác thực."
-      >
-        <CredentialForm fresh />
-      </Modal>
+        targetID={selectedTargetID}
+        onCreated={(account) => {
+          setCreate(false);
+          setSelectedID(account.id);
+          invalidate();
+        }}
+      />
     </>
   );
 }
-function CredentialForm({
+function CredentialEditor({
   account,
-  fresh = false,
+  targetID,
+  canManage,
+  onSaved,
 }: {
-  account?: (typeof accounts)[number];
-  fresh?: boolean;
+  account: ExecutionAccount;
+  targetID: string;
+  canManage: boolean;
+  onSaved: () => void;
 }) {
-  const [provider, setProvider] = useState(account?.provider ?? "Local"),
-    [show, setShow] = useState(false),
-    [password, setPassword] = useState(""),
-    [confirm, setConfirm] = useState(""),
-    [mapped, setMapped] = useState<string[]>(account?.schemas ?? []),
-    [defaults, setDefaults] = useState<string[]>(
-      account?.name === "DEPLOY_ADMIN" ? account.schemas : [],
-    ),
-    [error, setError] = useState(""),
-    [reset, setReset] = useState(false);
-  function validate(e: FormEvent) {
-    e.preventDefault();
-    setError(
-      password !== confirm
-        ? "Mật khẩu xác nhận chưa khớp."
-        : !mapped.length
-          ? "Chọn ít nhất một schema."
-          : "Bản nháp chỉ được kiểm tra trên trình duyệt; không có thông tin nào được lưu.",
+  const [name, setName] = useState(account.name);
+  const [username, setUsername] = useState(account.username);
+  const [active, setActive] = useState(account.active);
+  const [schemaIDs, setSchemaIDs] = useState(account.schema_ids);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
+  const schemas = useQuery({
+    queryKey: ["schemas", targetID],
+    queryFn: () =>
+      apiList<TargetSchema>(
+        `/database-targets/${encodeURIComponent(targetID)}/schemas`,
+      ),
+  });
+  const update = useMutation({
+    mutationFn: () =>
+      api<ExecutionAccount>(
+        `/execution-accounts/${encodeURIComponent(account.id)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            name,
+            username,
+            active,
+            schema_ids: schemaIDs,
+          }),
+        },
+      ),
+    onSuccess: onSaved,
+  });
+  const replaceCredential = useMutation({
+    mutationFn: () =>
+      api<ExecutionAccount>(
+        `/execution-accounts/${encodeURIComponent(account.id)}/credential`,
+        { method: "PUT", body: JSON.stringify({ password }) },
+      ),
+    onSuccess: () => {
+      setPassword("");
+      setConfirmPassword("");
+      onSaved();
+    },
+  });
+  const revokeCredential = useMutation({
+    mutationFn: () =>
+      api<void>(
+        `/execution-accounts/${encodeURIComponent(account.id)}/credential`,
+        { method: "DELETE" },
+      ),
+    onSuccess: () => {
+      setConfirmRevoke(false);
+      onSaved();
+    },
+  });
+  const toggleSchema = (id: string, checked: boolean) =>
+    setSchemaIDs(
+      checked ? [...schemaIDs, id] : schemaIDs.filter((item) => item !== id),
     );
-    setPassword("");
-    setConfirm("");
-  }
-  function changeMapping(schema: string, checked: boolean) {
-    setMapped(
-      checked ? [...mapped, schema] : mapped.filter((s) => s !== schema),
-    );
-    if (!checked) setDefaults(defaults.filter((s) => s !== schema));
-  }
   return (
     <Panel
       title={
-        fresh ? (
-          "Tài khoản mới"
-        ) : (
-          <>
-            Cập nhật / Luân chuyển: <code>{account?.name}</code>
-          </>
-        )
+        <>
+          Update account: <code>{account.name}</code>
+        </>
       }
     >
-      <form onSubmit={validate} autoComplete="off">
-        <Field
-          label="Tên tài khoản Oracle (Username)"
+      <Field label="Oracle account name" required>
+        <input
           required
-          hint="Đổi username bằng cách đăng ký tài khoản mới."
-        >
+          maxLength={120}
+          value={name}
+          disabled={!canManage}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </Field>
+      <Field label="Oracle username" required>
+        <input
+          required
+          maxLength={120}
+          value={username}
+          disabled={!canManage}
+          onChange={(event) => setUsername(event.target.value)}
+        />
+      </Field>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={active}
+          disabled={!canManage}
+          onChange={(event) => setActive(event.target.checked)}
+        />
+        Account active
+      </label>
+      <h3>Target schema mappings</h3>
+      {schemas.isPending ? (
+        <div className="skeleton" role="status" />
+      ) : schemas.isError ? (
+        <Notice tone="error">{schemas.error.message}</Notice>
+      ) : schemas.data.filter((schema) => schema.active).length ? (
+        schemas.data
+          .filter((schema) => schema.active)
+          .map((schema) => (
+            <Check
+              key={schema.id}
+              label={
+                <>
+                  <code>{schema.name}</code>{" "}
+                  <small className="muted">({schema.id})</small>
+                </>
+              }
+              checked={schemaIDs.includes(schema.id)}
+              disabled={!canManage}
+              onChange={(checked) => toggleSchema(schema.id, checked)}
+            />
+          ))
+      ) : (
+        <p className="empty">No active schemas for this target.</p>
+      )}
+      {update.isError && <Notice tone="error">{update.error.message}</Notice>}
+      <Button
+        variant="primary"
+        disabled={
+          !canManage ||
+          update.isPending ||
+          !name.trim() ||
+          !username.trim() ||
+          schemaIDs.length === 0
+        }
+        onClick={() => update.mutate()}
+      >
+        Save mappings
+      </Button>
+      <div className="inset">
+        <h3>
+          {account.credential.configured
+            ? "Replace credential"
+            : "Set credential"}{" "}
+          <Badge>Write only</Badge>
+        </h3>
+        <Notice>
+          No saved password can be retrieved. Enter a new Oracle credential to
+          encrypt and replace it.
+        </Notice>
+        <Field label="New Oracle password" required>
           <input
-            required
-            defaultValue={account?.name ?? ""}
-            readOnly={!fresh}
-            placeholder="DEPLOY_ADMIN"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            disabled={!canManage}
+            onChange={(event) => setPassword(event.target.value)}
           />
         </Field>
-        <Field label="Nguồn lưu trữ bí mật (Secret Provider)">
-          <select
-            value={provider}
-            onChange={(e) => {
-              setProvider(e.target.value);
-              setPassword("");
-              setConfirm("");
-            }}
-          >
-            <option value="Local">Mã hóa cục bộ (mặc định)</option>
-            <option value="Vault">HashiCorp Vault (tùy chọn)</option>
-          </select>
+        <Field label="Confirm new password" required>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            disabled={!canManage}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
         </Field>
-        {provider === "Local" ? (
-          <div className="inset">
-            <h3>
-              {fresh ? "Mật khẩu Oracle mới" : "Luân chuyển mật khẩu Oracle"}{" "}
-              <Badge>Write-only</Badge>
-            </h3>
-            <Notice>
-              Không hỗ trợ xem lại mật khẩu đã lưu. Chỉ nhập giá trị mới để thay
-              thế. Không dùng mật khẩu thật trong bản xem trước.
-            </Notice>
-            <Field label="Mật khẩu mới Oracle">
-              <div className="password-field">
-                <input
-                  autoComplete="new-password"
-                  type={show ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Nhập giá trị minh họa"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setShow(!show)}
-                  aria-label={show ? "Ẩn mật khẩu mới" : "Hiện mật khẩu mới"}
-                >
-                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
-                </Button>
-              </div>
-            </Field>
-            <Field label="Xác nhận mật khẩu mới">
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Nhập lại giá trị minh họa"
-              />
-            </Field>
-          </div>
-        ) : (
-          <Field
-            label="Vault secret reference"
-            hint="Chỉ tham chiếu secret; chưa có Vault adapter."
+        {replaceCredential.isError && (
+          <Notice tone="error">{replaceCredential.error.message}</Notice>
+        )}
+        <div className="actions">
+          <Button
+            variant="primary"
+            disabled={
+              !canManage ||
+              !password ||
+              password !== confirmPassword ||
+              replaceCredential.isPending
+            }
+            onClick={() => replaceCredential.mutate()}
           >
-            <input placeholder="secret/data/oracle/payment" />
-          </Field>
-        )}
-        <h3>Ánh xạ Target Schema & Quyền mặc định</h3>
-        {["CORE_BANKING", "PAYMENT"].map((schema) => (
-          <div className="inset" key={schema}>
-            <Check
-              label={<code>{schema}</code>}
-              checked={mapped.includes(schema)}
-              onChange={(checked) => changeMapping(schema, checked)}
-            />
-            <Check
-              label={`Đặt làm tài khoản mặc định cho ${schema}`}
-              checked={defaults.includes(schema)}
-              disabled={!mapped.includes(schema)}
-              onChange={(checked) =>
-                setDefaults(
-                  checked
-                    ? [...defaults, schema]
-                    : defaults.filter((s) => s !== schema),
-                )
-              }
-            />
-          </div>
-        ))}
-        <Notice tone="warning">
-          Tài khoản có quyền DBA hoặc cross-schema grants vẫn có quyền rộng. Cấu
-          hình Flyway không phải cơ chế cách ly quyền Oracle.
-        </Notice>
-        <div className="inset">
-          <h3>Probed Diagnostics</h3>
-          <p className="small muted">
-            Reachability · Authentication · Privileges: Chưa kiểm tra.
-          </p>
-          <Button type="button" disabled>
-            Kiểm tra kết nối
+            {replaceCredential.isPending ? "Encrypting…" : "Save credential"}
           </Button>
+          {account.credential.configured && !account.credential.revoked && (
+            <Button
+              variant="danger"
+              disabled={!canManage}
+              onClick={() => setConfirmRevoke(true)}
+            >
+              Revoke credential
+            </Button>
+          )}
         </div>
-        {error && (
-          <p className="form-message" role="status">
-            {error}
-          </p>
-        )}
-        <div className="actions wrap">
-          <Button type="button" onClick={() => setReset(true)}>
-            Hủy thay đổi
-          </Button>
-          <Button type="submit">Kiểm tra bản nháp</Button>
-        </div>
-        <Unavailable
-          label={fresh ? "Đăng ký tài khoản" : "Lưu & Cập nhật ánh xạ"}
-        />
-      </form>
+      </div>
       <Modal
-        open={reset}
-        onOpenChange={setReset}
-        title="Hủy bản nháp thông tin xác thực?"
-        description={`Xóa mật khẩu mới và các thay đổi chưa lưu của ${account?.name ?? "tài khoản mới"}.`}
+        open={confirmRevoke}
+        onOpenChange={setConfirmRevoke}
+        title="Revoke this Oracle credential?"
+        description="The application will stop using this credential. Change the Oracle password separately if needed."
       >
+        {revokeCredential.isError && (
+          <Notice tone="error">{revokeCredential.error.message}</Notice>
+        )}
         <div className="dialog-actions">
-          <Button onClick={() => setReset(false)}>Tiếp tục chỉnh sửa</Button>
+          <Button onClick={() => setConfirmRevoke(false)}>Cancel</Button>
           <Button
             variant="danger"
-            onClick={() => {
-              setPassword("");
-              setConfirm("");
-              setMapped(account?.schemas ?? []);
-              setDefaults(
-                account?.name === "DEPLOY_ADMIN" ? account.schemas : [],
-              );
-              setProvider(account?.provider ?? "Local");
-              setError("");
-              setReset(false);
-            }}
+            disabled={revokeCredential.isPending}
+            onClick={() => revokeCredential.mutate()}
           >
-            Hủy bản nháp
+            Revoke credential
           </Button>
         </div>
       </Modal>
     </Panel>
+  );
+}
+function CreateExecutionAccount({
+  open,
+  onOpenChange,
+  targetID,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  targetID: string;
+  onCreated: (account: ExecutionAccount) => void;
+}) {
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [schemaIDs, setSchemaIDs] = useState<string[]>([]);
+  const schemas = useQuery({
+    queryKey: ["schemas", targetID],
+    queryFn: () =>
+      apiList<TargetSchema>(
+        `/database-targets/${encodeURIComponent(targetID)}/schemas`,
+      ),
+    enabled: open && !!targetID,
+  });
+  const create = useMutation({
+    mutationFn: () =>
+      api<ExecutionAccount>("/execution-accounts", {
+        method: "POST",
+        body: JSON.stringify({
+          target_id: targetID,
+          name,
+          username,
+          schema_ids: schemaIDs,
+          password,
+        }),
+      }),
+    onSuccess: (account) => {
+      setPassword("");
+      setConfirmPassword("");
+      onCreated(account);
+    },
+  });
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Register Oracle execution account"
+      description="Creates application metadata and an encrypted credential. This does not create an Oracle account."
+    >
+      <form
+        onSubmit={(event: FormEvent) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <Field label="Account label" required>
+          <input
+            required
+            maxLength={120}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </Field>
+        <Field label="Oracle username" required>
+          <input
+            required
+            maxLength={120}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </Field>
+        <Field label="Oracle password" required>
+          <input
+            required
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </Field>
+        <Field label="Confirm password" required>
+          <input
+            required
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
+        </Field>
+        <h3>Map to schemas</h3>
+        {schemas.isPending ? (
+          <div className="skeleton" role="status" />
+        ) : schemas.isError ? (
+          <Notice tone="error">{schemas.error.message}</Notice>
+        ) : schemas.data.filter((schema) => schema.active).length ? (
+          schemas.data
+            .filter((schema) => schema.active)
+            .map((schema) => (
+              <Check
+                key={schema.id}
+                label={<code>{schema.name}</code>}
+                checked={schemaIDs.includes(schema.id)}
+                onChange={(checked) =>
+                  setSchemaIDs(
+                    checked
+                      ? [...schemaIDs, schema.id]
+                      : schemaIDs.filter((id) => id !== schema.id),
+                  )
+                }
+              />
+            ))
+        ) : (
+          <p className="empty">Register a schema first.</p>
+        )}
+        <Notice>
+          Secrets are encrypted locally and never returned again. Confirm
+          default account mappings on the database detail page.
+        </Notice>
+        {create.isError && <Notice tone="error">{create.error.message}</Notice>}
+        <div className="dialog-actions">
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={
+              create.isPending ||
+              !name.trim() ||
+              !username.trim() ||
+              !password ||
+              password !== confirmPassword ||
+              schemaIDs.length === 0
+            }
+          >
+            {create.isPending ? "Encrypting…" : "Register account"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

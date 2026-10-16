@@ -14,12 +14,14 @@ import (
 	"strings"
 	"testing"
 
+	"flyway-manager/internal/core"
 	"flyway-manager/internal/database"
 )
 
 func testRouter(t *testing.T) http.Handler {
 	t.Helper()
-	db, err := database.Open(context.Background(), t.TempDir())
+	dataDir := t.TempDir()
+	db, err := database.Open(context.Background(), dataDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,11 @@ func testRouter(t *testing.T) http.Handler {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return NewRouter(RouterOptions{Database: db, Assets: assets})
+	service, err := core.New(context.Background(), db, dataDir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return NewRouter(RouterOptions{Database: db, Service: service, Assets: assets, Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
 }
 
 func request(handler http.Handler, method, target string) *httptest.ResponseRecorder {
@@ -51,7 +57,7 @@ func request(handler http.Handler, method, target string) *httptest.ResponseReco
 
 func TestHealthAndSystemMetadata(t *testing.T) {
 	handler := testRouter(t)
-	for _, target := range []string{"/api/v1/health", "/api/v1/system"} {
+	for _, target := range []string{"/api/v1/health"} {
 		rec := request(handler, http.MethodGet, target)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET %s status = %d, body: %s", target, rec.Code, rec.Body.String())
@@ -68,7 +74,7 @@ func TestHealthAndSystemMetadata(t *testing.T) {
 		if result.Data["installation_id"] == "" {
 			t.Fatalf("GET %s has no installation ID", target)
 		}
-		if result.Data["schema_version"] != float64(1) {
+		if result.Data["schema_version"] != float64(2) {
 			t.Fatalf("GET %s schema version = %v", target, result.Data["schema_version"])
 		}
 	}
@@ -85,19 +91,19 @@ func TestHealthAndSystemMetadata(t *testing.T) {
 	if result.Data.Status != "ok" || result.Data.Database != "ok" {
 		t.Fatalf("health = %+v", result.Data)
 	}
-	if result.Data.Capabilities["authentication"] || result.Data.Capabilities["migration_execution"] || result.Data.Capabilities["registry"] {
+	if !result.Data.Capabilities["authentication"] || result.Data.Capabilities["migration_execution"] || !result.Data.Capabilities["registry"] {
 		t.Fatalf("unexpected enabled capabilities: %+v", result.Data.Capabilities)
 	}
 }
 
-func TestUnsupportedAPIRoutesReturnTyped501AndUnknownAPIReturnsJSON404(t *testing.T) {
+func TestPrivateAPIRoutesRequireAuthenticationAndUnknownAPIReturnsJSON404(t *testing.T) {
 	handler := testRouter(t)
-	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodDelete} {
+	for _, method := range []string{http.MethodGet, http.MethodPost} {
 		rec := request(handler, method, "/api/v1/database-targets")
-		if rec.Code != http.StatusNotImplemented {
+		if rec.Code != http.StatusUnauthorized {
 			t.Fatalf("%s unsupported route status = %d; body %s", method, rec.Code, rec.Body.String())
 		}
-		if !strings.Contains(rec.Body.String(), `"code":"NOT_IMPLEMENTED"`) {
+		if !strings.Contains(rec.Body.String(), `"code":"UNAUTHENTICATED"`) {
 			t.Fatalf("missing typed error: %s", rec.Body.String())
 		}
 	}
@@ -114,7 +120,7 @@ func TestUnsupportedAPIRoutesReturnTyped501AndUnknownAPIReturnsJSON404(t *testin
 
 func TestStaticAssetsSPAAndMissingAssets(t *testing.T) {
 	handler := testRouter(t)
-	for target, want := range map[string]string{"/": "app shell", "/assets/app.js": "bundle", "/runs/123": "app shell"} {
+	for target, want := range map[string]string{"/": "app shell", "/assets/app.js": "bundle", "/runs/123": "app shell", "/databases/oracle.prod": "app shell"} {
 		rec := request(handler, http.MethodGet, target)
 		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), want) {
 			t.Fatalf("GET %s = %d %q", target, rec.Code, rec.Body.String())
@@ -190,7 +196,7 @@ func TestPreviewOrAuthorizationHeadersDoNotEnableBusinessRoutes(t *testing.T) {
 		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
-		if rec.Code != http.StatusNotImplemented || !strings.Contains(rec.Body.String(), `"code":"NOT_IMPLEMENTED"`) {
+		if rec.Code != http.StatusUnauthorized || !strings.Contains(rec.Body.String(), `"code":"UNAUTHENTICATED"`) {
 			t.Fatalf("untrusted headers enabled business API: %d %s", rec.Code, rec.Body.String())
 		}
 	}

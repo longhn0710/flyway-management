@@ -1,7 +1,18 @@
-import { useState } from "react";
-import { Bot, KeyRound, Plus, Copy, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bot, Plus, Copy, ShieldCheck } from "lucide-react";
 import ScopeEditor from "../components/ScopeEditor";
+import {
+  api,
+  apiList,
+  ApiError,
+  type ApiToken,
+  type Grant,
+  type ServiceAccount,
+  type TokenCreated,
+  type User,
+} from "../lib/contracts";
+import { useIdentity } from "../lib/identity-context";
 import {
   Panel,
   PageHeading,
@@ -11,288 +22,713 @@ import {
   SearchBox,
   Modal,
   Field,
-  Check,
-  Unavailable,
 } from "../components/ui";
-const services = [
-  {
-    id: "svc-ci-finance-uat",
-    name: "ci-finance-uat",
-    purpose: "CI/CD pipeline triển khai môi trường UAT",
-    owner: "devops-fin@bank.internal",
-    prefix: "fm_uat_89a2…",
-    last: "RUN-1047",
-    expiry: "2025-12-31",
-  },
-  {
-    id: "svc-release-payment",
-    name: "release-payment",
-    purpose: "Batch script thanh toán định kỳ",
-    owner: "payment-team@bank.internal",
-    prefix: "fm_rel_c41e…",
-    last: "RUN-1045",
-    expiry: "2025-09-15",
-  },
-];
+
 export default function ServiceAccounts() {
-  const [selected, setSelected] = useState(services[0].id),
-    [q, setQ] = useState(""),
-    [create, setCreate] = useState(false),
-    [action, setAction] = useState(""),
-    [example, setExample] = useState(false),
-    [copied, setCopied] = useState(false);
-  const service = services.find((s) => s.id === selected)!;
+  const identity = useIdentity();
+  const admin = identity.user.role === "Admin";
+  const queryClient = useQueryClient();
+  const [q, setQ] = useState("");
+  const [selectedID, setSelectedID] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [action, setAction] = useState<{
+    kind: "rotate" | "revoke";
+    token: ApiToken;
+  } | null>(null);
+  const [oneTime, setOneTime] = useState<TokenCreated | null>(null);
+  const [rotationExpiry, setRotationExpiry] = useState(() =>
+    new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
+  );
+  const accounts = useQuery({
+    queryKey: ["service-accounts"],
+    queryFn: () => apiList<ServiceAccount>("/access/service-accounts"),
+  });
+  const filtered = (accounts.data ?? []).filter((item) =>
+    [item.name, item.purpose, item.id]
+      .join(" ")
+      .toLowerCase()
+      .includes(q.toLowerCase()),
+  );
+  const selected =
+    filtered.find((item) => item.id === selectedID) ?? filtered[0];
+  const accountTokens = useQuery({
+    queryKey: ["service-tokens", selected?.id],
+    queryFn: () =>
+      api<ApiToken[]>(
+        `/access/service-accounts/${encodeURIComponent(selected!.id)}/tokens`,
+      ),
+    enabled: !!selected,
+  });
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["service-accounts"] });
+    if (selected)
+      void queryClient.invalidateQueries({
+        queryKey: ["service-tokens", selected.id],
+      });
+  };
+  const revoke = useMutation({
+    mutationFn: (token: ApiToken) =>
+      api<void>(
+        `/access/service-accounts/${encodeURIComponent(selected!.id)}/tokens/${encodeURIComponent(token.id)}`,
+        { method: "DELETE" },
+      ),
+    onSuccess: () => {
+      setAction(null);
+      invalidate();
+    },
+  });
+  const rotate = useMutation({
+    gcTime: 0,
+    mutationFn: (token: ApiToken) =>
+      api<TokenCreated>(
+        `/access/service-accounts/${encodeURIComponent(selected!.id)}/tokens/${encodeURIComponent(token.id)}/rotate`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            expires_at: new Date(rotationExpiry).toISOString(),
+          }),
+        },
+      ),
+    onSuccess: (value) => {
+      setAction(null);
+      setOneTime(value);
+      rotate.reset();
+      invalidate();
+    },
+  });
   return (
     <>
       <PageHeading
         title="Service Accounts & API Tokens"
-        description="Định danh tự động hóa cho CI/CD và API scripts. Tách biệt với người dùng ứng dụng và tài khoản thực thi Oracle."
-        breadcrumb="Quản trị hệ thống / Service Accounts"
+        description="Manage automation identities, explicit scopes, and revocable API tokens."
+        breadcrumb="System administration / Service Accounts"
         actions={
-          <Button variant="primary" onClick={() => setCreate(true)}>
+          <Button
+            variant="primary"
+            disabled={!admin}
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus size={16} />
-            Tạo Service Account mới
+            Create service account
           </Button>
         }
       />
+      {!admin && (
+        <Notice tone="warning">
+          Read-only view. Service account and token administration requires
+          Admin.
+        </Notice>
+      )}
       <div className="layout-editor">
         <Panel
-          title="Danh bạ Service Accounts"
-          aside={<Badge>2 tài khoản mẫu</Badge>}
+          title="Service account directory"
+          aside={
+            <Badge>
+              {accounts.isSuccess ? `${accounts.data.length} accounts` : ""}
+            </Badge>
+          }
         >
           <SearchBox
             value={q}
             onChange={setQ}
-            placeholder="Tìm kiếm định danh…"
+            placeholder="Search name, purpose or ID…"
           />
-          <p className="small muted">
-            Token prefix ONLY — Không thể đọc lại toàn bộ token sau khi cấp.
-          </p>
-          <div className="service-list">
-            {services
-              .filter((s) => [s.name, s.purpose].join(" ").includes(q))
-              .map((s) => (
-                <div
-                  className={`service-row ${selected === s.id ? "selected" : ""}`}
-                  key={s.id}
+          {accounts.isPending ? (
+            <div
+              className="skeleton"
+              role="status"
+              aria-label="Loading service accounts"
+            />
+          ) : accounts.isError ? (
+            <Notice tone="error">
+              {accounts.error instanceof ApiError &&
+              accounts.error.status === 403
+                ? "Access denied to service accounts."
+                : accounts.error.message}
+              <Button onClick={() => void accounts.refetch()}>Retry</Button>
+            </Notice>
+          ) : filtered.length === 0 ? (
+            <p className="empty">
+              {accounts.data.length
+                ? "No service accounts match."
+                : "No service accounts have been registered."}
+            </p>
+          ) : (
+            <div className="service-list">
+              {filtered.map((account) => (
+                <button
+                  className={`service-row ${selected?.id === account.id ? "selected" : ""}`}
+                  key={account.id}
+                  onClick={() => setSelectedID(account.id)}
                 >
-                  <Button variant="ghost" onClick={() => setSelected(s.id)}>
-                    <Bot size={18} />
-                    <strong className="mono">{s.name}</strong>
-                  </Button>
-                  <p>{s.purpose}</p>
-                  <small className="muted block">{s.owner}</small>
-                  <div className="spread wrap">
-                    <code>{s.prefix}</code>
-                    <Badge>Fixture · snapshot 2025</Badge>
+                  <div className="spread">
+                    <strong className="mono">
+                      <Bot size={17} />
+                      {account.name}
+                    </strong>
+                    <Badge tone={account.active ? "success" : "error"}>
+                      {account.active ? "Active" : "Disabled"}
+                    </Badge>
                   </div>
-                  <p className="small">
-                    Lần dùng cuối: <Link to={`/runs/${s.last}`}>{s.last}</Link>{" "}
-                    · Hết hạn: <code>{s.expiry}</code>
-                  </p>
-                  <div className="actions">
-                    <Button
-                      onClick={() => {
-                        setSelected(s.id);
-                        setAction("Luân chuyển");
-                      }}
-                    >
-                      Luân chuyển token
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => {
-                        setSelected(s.id);
-                        setAction("Thu hồi");
-                      }}
-                    >
-                      Thu hồi token
-                    </Button>
-                  </div>
-                </div>
+                  <p>{account.purpose}</p>
+                  <small className="muted block">
+                    Owner ID: {account.owner_id}
+                  </small>
+                  <small className="mono muted block">{account.id}</small>
+                </button>
               ))}
-          </div>
-          <Notice title="Thiết kế bảo mật">
-            Token được hash khi lưu trữ, chỉ hiện đầy đủ một lần khi cấp. Chưa
-            triển khai token API trong Phase 1.
-          </Notice>
+            </div>
+          )}
         </Panel>
-        <Panel
-          title={
-            <>
-              Cấp phát Token cho <code>{service.name}</code>
-            </>
+        {selected && (
+          <ServiceDetail
+            key={selected.id}
+            account={selected}
+            canManage={admin}
+            tokens={accountTokens.data ?? []}
+            tokensLoading={accountTokens.isPending}
+            tokensError={accountTokens.error}
+            onToken={setOneTime}
+            onAction={(kind, token) => setAction({ kind, token })}
+          />
+        )}
+      </div>
+      <CreateAccount
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(account) => {
+          setCreateOpen(false);
+          setSelectedID(account.id);
+          invalidate();
+        }}
+      />
+      {selected && (
+        <Modal
+          open={!!action}
+          onOpenChange={(open) => {
+            if (!open) setAction(null);
+          }}
+          title={`${action?.kind === "rotate" ? "Rotate" : "Revoke"} ${action?.token.name}?`}
+          description={
+            action?.kind === "rotate"
+              ? "The old token will be revoked when its replacement is created."
+              : "Clients using this token will lose API access immediately."
           }
         >
-          <ServiceForm
-            key={service.id}
-            name={service.name}
-            purpose={service.purpose}
-          />
-          <Button
-            className="full"
-            onClick={() => {
-              setCopied(false);
-              setExample(true);
-            }}
-          >
-            Xem trạng thái một lần (fixture)
-          </Button>
-        </Panel>
-      </div>
-      <Panel
-        title="Hướng dẫn tích hợp REST API cho CI/CD"
-        aside={<Badge>HỢP ĐỒNG DỰ KIẾN</Badge>}
-      >
-        <p className="muted">
-          Ví dụ hợp đồng cho giai đoạn thực thi. Các endpoint nghiệp vụ hiện trả
-          HTTP 501; không gửi token hoặc bundle thật.
-        </p>
-        <div className="grid-two">
-          <div className="code-card">
-            <h3>1. Upload Migration Bundle</h3>
-            <pre>{`POST /api/v1/artifacts\nAuthorization: Bearer <TOKEN>\nContent-Type: multipart/form-data\n\nbundle=@migrations.zip\n\nDự kiến: 201 Created\n{ "artifact_id": "art_82fd21" }`}</pre>
+          <Notice tone="warning">
+            {action?.kind === "rotate"
+              ? "Copy the replacement token now. The plaintext is shown once."
+              : "This action cannot be undone."}
+          </Notice>
+          {action?.kind === "rotate" && (
+            <Field label="Replacement expiration" required>
+              <input
+                type="datetime-local"
+                min={new Date().toISOString().slice(0, 16)}
+                value={rotationExpiry}
+                onChange={(event) => setRotationExpiry(event.target.value)}
+              />
+            </Field>
+          )}
+          {(revoke.isError || rotate.isError) && (
+            <Notice tone="error">
+              {(revoke.error ?? rotate.error)?.message}
+            </Notice>
+          )}
+          <div className="dialog-actions">
+            <Button onClick={() => setAction(null)}>Cancel</Button>
+            <Button
+              variant="danger"
+              disabled={
+                revoke.isPending ||
+                rotate.isPending ||
+                (action?.kind === "rotate" && !rotationExpiry)
+              }
+              onClick={() =>
+                action?.kind === "rotate"
+                  ? rotate.mutate(action.token)
+                  : action && revoke.mutate(action.token)
+              }
+            >
+              {action?.kind === "rotate" ? "Rotate token" : "Revoke token"}
+            </Button>
           </div>
-          <div className="code-card">
-            <h3>2. Khởi tạo Migration Run</h3>
-            <pre>{`POST /api/v1/migration-runs\nAuthorization: Bearer <TOKEN>\nIdempotency-Key: deploy-core-uat-1042\n\n{\n  "target_id": "db-uat-finance",\n  "schema_id": "schema-core-banking",\n  "execution_account_id": "acc-deploy-admin",\n  "artifact_id": "art_82fd21"\n}\n\nDự kiến: 202 Accepted\n{ "run_id": "run_1049",\n  "status_url": "/api/v1/migration-runs/run_1049",\n  "logs_url": "/api/v1/migration-runs/run_1049/logs" }`}</pre>
-          </div>
-        </div>
-        <div className="inset mono small break-word">
-          GET /api/v1/migration-runs/&#123;run_id&#125;
-          <br />
-          SSE dự kiến: GET /api/v1/migration-runs/&#123;run_id&#125;/events
-        </div>
-        <Notice tone="warning" title="Quy tắc Pipeline:">
-          HTTP 200 khi đọc trạng thái không có nghĩa migration thành công.
-          Client chỉ pass khi SUCCEEDED; FAILED vẫn fail dù repair SUCCEEDED.
-          Repair không rollback DDL.
-        </Notice>
-      </Panel>
-      <Modal
-        open={create}
-        onOpenChange={setCreate}
-        title="Tạo Service Account mới"
-        description="Bản nháp định danh và quyền cho API client. Chưa có token thật."
-      >
-        <ServiceForm />
-      </Modal>
-      <Modal
-        open={!!action}
-        onOpenChange={(open) => {
-          if (!open) setAction("");
-        }}
-        title={`${action} token · ${service.name}?`}
-        description={
-          action === "Thu hồi"
-            ? "CI/CD đang dùng token này sẽ không thể truy cập API sau khi thu hồi."
-            : "Luân chuyển tạo token mới; cần quy định thời hạn hoặc thu hồi token cũ."
-        }
-      >
-        <Notice tone="warning">
-          Chưa triển khai phát hành, luân chuyển hoặc thu hồi token. Không có
-          thay đổi nào được thực hiện.
-        </Notice>
-        <div className="dialog-actions">
-          <Button onClick={() => setAction("")}>Hủy</Button>
-          <Button variant="danger" disabled>
-            Xác nhận {action.toLowerCase()}
-          </Button>
-        </div>
-      </Modal>
-      <Modal
-        open={example}
-        onOpenChange={setExample}
-        title="Token minh họa — chỉ hiển thị tại đây"
-        description="Fixture cho trạng thái cấp một lần. Giá trị này không thể xác thực API."
-      >
-        <Notice title="DỮ LIỆU MINH HỌA">
-          Đây là placeholder, không phải token đã được cấp.
-        </Notice>
-        <code className="token-example">EXAMPLE_ONLY_NOT_A_VALID_TOKEN</code>
-        <div className="dialog-actions">
-          <Button
-            onClick={() =>
-              void navigator.clipboard
-                .writeText("EXAMPLE_ONLY_NOT_A_VALID_TOKEN")
-                .then(() => setCopied(true))
-                .catch(() => setCopied(false))
-            }
-          >
-            <Copy size={15} />
-            {copied ? "Đã sao chép placeholder" : "Sao chép placeholder"}
-          </Button>
-          <Button variant="primary" onClick={() => setExample(false)}>
-            Đã xem ví dụ
-          </Button>
-        </div>
-      </Modal>
+        </Modal>
+      )}
+      <TokenOnce value={oneTime} onClose={() => setOneTime(null)} />
     </>
   );
 }
-function ServiceForm({
-  name = "",
-  purpose = "",
+function ServiceDetail({
+  account,
+  canManage,
+  tokens,
+  tokensLoading,
+  tokensError,
+  onToken,
+  onAction,
 }: {
-  name?: string;
-  purpose?: string;
+  account: ServiceAccount;
+  canManage: boolean;
+  tokens: ApiToken[];
+  tokensLoading: boolean;
+  tokensError: Error | null;
+  onToken: (token: TokenCreated) => void;
+  onAction: (kind: "rotate" | "revoke", token: ApiToken) => void;
 }) {
-  const [actions, setActions] = useState(["read-runs", "read-logs"]),
-    [expiry, setExpiry] = useState("");
+  const queryClient = useQueryClient();
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const [name, setName] = useState(account.name);
+  const [purpose, setPurpose] = useState(account.purpose);
+  const [ownerID, setOwnerID] = useState(account.owner_id);
+  const [active, setActive] = useState(account.active);
+  const [confirmDisable, setConfirmDisable] = useState(false);
+  const [tokenName, setTokenName] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [minExpiry] = useState(() =>
+    new Date(Date.now() + 60000).toISOString().slice(0, 16),
+  );
+  const users = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiList<User>("/access/users"),
+  });
+  const grants = useQuery({
+    queryKey: ["service-grants", account.id],
+    queryFn: () =>
+      api<Grant[]>(
+        `/access/service-accounts/${encodeURIComponent(account.id)}/grants`,
+      ),
+  });
+  const update = useMutation({
+    mutationFn: () =>
+      api<ServiceAccount>(
+        `/access/service-accounts/${encodeURIComponent(account.id)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ name, purpose, owner_id: ownerID, active }),
+        },
+      ),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ["service-accounts"] }),
+  });
+  const saveGrants = useMutation({
+    mutationFn: (items: Grant[]) =>
+      api<Grant[]>(
+        `/access/service-accounts/${encodeURIComponent(account.id)}/grants`,
+        { method: "PUT", body: JSON.stringify({ grants: items }) },
+      ),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({
+        queryKey: ["service-grants", account.id],
+      }),
+  });
+  const createToken = useMutation({
+    gcTime: 0,
+    mutationFn: () =>
+      api<TokenCreated>(
+        `/access/service-accounts/${encodeURIComponent(account.id)}/tokens`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: tokenName,
+            expires_at: new Date(expiry).toISOString(),
+          }),
+        },
+      ),
+    onSuccess: (value) => {
+      setTokenName("");
+      setExpiry("");
+      onToken(value);
+      createToken.reset();
+      void queryClient.invalidateQueries({
+        queryKey: ["service-tokens", account.id],
+      });
+    },
+  });
   return (
-    <form onSubmit={(e) => e.preventDefault()}>
-      <Field label="Tên định danh (Identifier)" required>
+    <Panel
+      title={
+        <>
+          <Bot size={17} />
+          <code>{account.name}</code>
+        </>
+      }
+    >
+      <Field label="Service account name" required>
         <input
-          defaultValue={name}
-          readOnly={!!name}
-          placeholder="ci-finance-uat"
+          required
+          maxLength={120}
+          value={name}
+          disabled={!canManage}
+          onChange={(event) => setName(event.target.value)}
         />
       </Field>
-      <Field label="Mục đích / Ghi chú cấp phát" required>
-        <input defaultValue={purpose} placeholder="Mục đích của API client" />
-      </Field>
-      <Field label="Ngày hết hạn token" required>
+      <Field label="Purpose" required>
         <input
-          type="date"
-          value={expiry}
-          onChange={(e) => setExpiry(e.target.value)}
-          min={new Date().toISOString().slice(0, 10)}
+          required
+          maxLength={500}
+          value={purpose}
+          disabled={!canManage}
+          onChange={(event) => setPurpose(event.target.value)}
         />
       </Field>
-      <h3>Quyền thao tác được phép</h3>
-      <div className="grid-two inset">
-        {[
-          ["read-runs", "Xem lịch sử chạy"],
-          ["read-logs", "Xem nhật ký"],
-          ["upload", "Tải bundle"],
-          ["submit", "Khởi tạo migration"],
-        ].map(([key, label]) => (
-          <Check
-            key={key}
-            label={
-              <>
-                {label} <code>({key})</code>
-              </>
-            }
-            checked={actions.includes(key)}
-            onChange={(v) =>
-              setActions(
-                v ? [...actions, key] : actions.filter((a) => a !== key),
-              )
-            }
-          />
-        ))}
-      </div>
-      <ScopeEditor />
+      <Field label="Owner" required>
+        <select
+          required
+          value={ownerID}
+          disabled={!canManage || users.isPending}
+          onChange={(event) => setOwnerID(event.target.value)}
+        >
+          <option value="">Choose owner</option>
+          {(users.data ?? []).map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.display_name} ({user.username})
+            </option>
+          ))}
+        </select>
+      </Field>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={active}
+          disabled={!canManage}
+          onChange={(event) => setActive(event.target.checked)}
+        />
+        Account enabled
+      </label>
+      <Button
+        variant="primary"
+        disabled={
+          !canManage ||
+          update.isPending ||
+          !name.trim() ||
+          !purpose.trim() ||
+          !ownerID
+        }
+        onClick={() =>
+          account.active && !active ? setConfirmDisable(true) : update.mutate()
+        }
+      >
+        Save account
+      </Button>
+      {update.isError && <Notice tone="error">{update.error.message}</Notice>}
+      <ScopeEditor
+        value={grants.data ?? []}
+        disabled={!canManage || grants.isPending || saveGrants.isPending}
+        onChange={(items) => saveGrants.mutate(items)}
+      />
+      {grants.isError && <Notice tone="error">{grants.error.message}</Notice>}
+      {saveGrants.isError && (
+        <Notice tone="error">{saveGrants.error.message}</Notice>
+      )}
       <Notice>
         <ShieldCheck size={15} />
-        Quyền PROD phải được cấp riêng. Không dùng mật khẩu Oracle làm service
-        token.
+        Service-account grants support read and operate. PROD access requires an
+        explicit grant.
       </Notice>
-      <Unavailable label="Tạo mã Token Scoped mới" />
-      <span className="sr-only">
-        <KeyRound size={1} />
-      </span>
-    </form>
+      <h3>API tokens</h3>
+      <p className="small muted">
+        Only token prefixes are visible after creation. Full token values are
+        shown once.
+      </p>
+      {tokensLoading ? (
+        <div className="skeleton" role="status" />
+      ) : tokensError ? (
+        <Notice tone="error">{tokensError.message}</Notice>
+      ) : tokens.length === 0 ? (
+        <p className="empty">No tokens registered.</p>
+      ) : (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Prefix</th>
+                <th>Expires</th>
+                <th>Last used</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tokens.map((token) => (
+                <tr key={token.id}>
+                  <td>{token.name}</td>
+                  <td>
+                    <code>{token.prefix}</code>
+                  </td>
+                  <td>{new Date(token.expires_at).toLocaleString()}</td>
+                  <td>
+                    {token.last_used_at
+                      ? new Date(token.last_used_at).toLocaleString()
+                      : "Never"}
+                  </td>
+                  <td>
+                    <Badge
+                      tone={
+                        token.revoked
+                          ? "error"
+                          : new Date(token.expires_at).getTime() <= clock
+                            ? "warning"
+                            : "success"
+                      }
+                    >
+                      {token.revoked
+                        ? "Revoked"
+                        : new Date(token.expires_at).getTime() <= clock
+                          ? "Expired"
+                          : "Active"}
+                    </Badge>
+                  </td>
+                  <td>
+                    <div className="inline">
+                      <Button
+                        variant="secondary"
+                        disabled={!canManage || token.revoked}
+                        onClick={() => onAction("rotate", token)}
+                      >
+                        Rotate
+                      </Button>
+                      <Button
+                        variant="danger"
+                        disabled={!canManage || token.revoked}
+                        onClick={() => onAction("revoke", token)}
+                      >
+                        Revoke
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <form
+        onSubmit={(event: FormEvent) => {
+          event.preventDefault();
+          createToken.mutate();
+        }}
+      >
+        <div className="grid-two">
+          <Field label="Token name" required>
+            <input
+              required
+              maxLength={120}
+              value={tokenName}
+              onChange={(event) => setTokenName(event.target.value)}
+              disabled={!canManage}
+            />
+          </Field>
+          <Field label="Expiration" required>
+            <input
+              type="datetime-local"
+              required
+              min={minExpiry}
+              value={expiry}
+              onChange={(event) => setExpiry(event.target.value)}
+              disabled={!canManage}
+            />
+          </Field>
+        </div>
+        {createToken.isError && (
+          <Notice tone="error">{createToken.error.message}</Notice>
+        )}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={
+            !canManage || createToken.isPending || !tokenName.trim() || !expiry
+          }
+        >
+          {createToken.isPending ? "Creating…" : "Create token"}
+        </Button>
+      </form>
+      <Modal
+        open={confirmDisable}
+        onOpenChange={setConfirmDisable}
+        title={`Disable ${account.name}?`}
+        description="Disabling this service account prevents its tokens from being used."
+      >
+        <Notice tone="warning">
+          Existing tokens are permanently revoked. Reactivating this account
+          requires issuing new tokens.
+        </Notice>
+        {update.isError && <Notice tone="error">{update.error.message}</Notice>}
+        <div className="dialog-actions">
+          <Button onClick={() => setConfirmDisable(false)}>Keep enabled</Button>
+          <Button
+            variant="danger"
+            disabled={update.isPending}
+            onClick={() => {
+              setConfirmDisable(false);
+              update.mutate();
+            }}
+          >
+            {update.isPending ? "Saving…" : "Disable service account"}
+          </Button>
+        </div>
+      </Modal>
+    </Panel>
+  );
+}
+function CreateAccount({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: (account: ServiceAccount) => void;
+}) {
+  const [name, setName] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [ownerID, setOwnerID] = useState("");
+  const users = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiList<User>("/access/users"),
+    enabled: open,
+  });
+  const create = useMutation({
+    mutationFn: () =>
+      api<ServiceAccount>("/access/service-accounts", {
+        method: "POST",
+        body: JSON.stringify({ name, purpose, owner_id: ownerID }),
+      }),
+    onSuccess: onCreated,
+  });
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Create service account"
+      description="A service account has scoped API permissions and does not create a web session."
+    >
+      <form
+        onSubmit={(event: FormEvent) => {
+          event.preventDefault();
+          create.mutate();
+        }}
+      >
+        <Field label="Identifier" required>
+          <input
+            required
+            maxLength={120}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </Field>
+        <Field label="Purpose" required>
+          <input
+            required
+            maxLength={500}
+            value={purpose}
+            onChange={(event) => setPurpose(event.target.value)}
+          />
+        </Field>
+        <Field label="Owner" required>
+          <select
+            required
+            value={ownerID}
+            onChange={(event) => setOwnerID(event.target.value)}
+          >
+            <option value="">Choose owner</option>
+            {(users.data ?? []).map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.display_name} ({user.username})
+              </option>
+            ))}
+          </select>
+        </Field>
+        {users.isError && (
+          <Notice tone="error">
+            Could not load users: {users.error.message}
+          </Notice>
+        )}
+        {create.isError && <Notice tone="error">{create.error.message}</Notice>}
+        <div className="dialog-actions">
+          <Button type="button" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={
+              create.isPending || !name.trim() || !purpose.trim() || !ownerID
+            }
+          >
+            {create.isPending ? "Creating…" : "Create"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+function TokenOnce({
+  value,
+  onClose,
+}: {
+  value: TokenCreated | null;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Modal
+      open={!!value}
+      onOpenChange={(open) => {
+        if (!open) {
+          setCopied(false);
+          onClose();
+        }
+      }}
+      title="Copy your API token now"
+      description="This plaintext token is shown only once. Closing this dialog discards it."
+    >
+      {value && (
+        <>
+          <Notice tone="warning">
+            Store this token in your secret manager. It will not be available
+            again.
+          </Notice>
+          <code className="token-example">{value.token}</code>
+          <p className="small">
+            Prefix: <code>{value.metadata.prefix}</code> · Expires{" "}
+            {new Date(value.metadata.expires_at).toLocaleString()}
+          </p>
+          <div className="dialog-actions">
+            <Button
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(value.token)
+                  .then(() => setCopied(true))
+                  .catch(() => setCopied(false));
+              }}
+            >
+              {copied ? (
+                "Copied"
+              ) : (
+                <>
+                  <Copy size={15} />
+                  Copy token
+                </>
+              )}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setCopied(false);
+                onClose();
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }
