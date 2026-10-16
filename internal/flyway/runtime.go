@@ -386,7 +386,10 @@ func restrictedEnv(work, distributionRoot string) []string {
 	if runtime.GOOS == "windows" {
 		path = os.Getenv("SystemRoot") + `\System32`
 	}
-	env := []string{"PATH=" + path, "HOME=" + work, "USERPROFILE=" + work, "TMPDIR=" + work, "TEMP=" + work, "TMP=" + work, "LC_ALL=C", "LANG=C", "JAVA_TOOL_OPTIONS=-Xmx512m"}
+	// Offline deployments must not wait for blocked vendor usage telemetry on
+	// every version/info/validate invocation. This fixed vendor-supported opt-out
+	// is not inherited configuration and does not alter migration semantics.
+	env := []string{"PATH=" + path, "HOME=" + work, "USERPROFILE=" + work, "TMPDIR=" + work, "TEMP=" + work, "TMP=" + work, "LC_ALL=C", "LANG=C", "JAVA_TOOL_OPTIONS=-Xmx512m", "REDGATE_DISABLE_TELEMETRY=true"}
 	if javaHome, ok := runtimeJavaHome(distributionRoot); ok && javaHome != "" {
 		javaBin := filepath.Join(javaHome, "bin")
 		for i, value := range env {

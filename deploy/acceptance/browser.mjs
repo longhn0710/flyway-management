@@ -252,6 +252,10 @@ async function uploadAndPreflight(page, config, sqlFiles) {
   await page.getByRole("button", { name: "Review and submit migration" }).waitFor({ state: "visible", timeout: 15000 });
   record("migration-preflight", {
     verified: true,
+    artifactId: response.request().postDataJSON().artifact_id,
+    targetId: response.request().postDataJSON().target_id,
+    schemaId: response.request().postDataJSON().schema_id,
+    accountId: response.request().postDataJSON().execution_account_id,
     runtimeVersion: result.runtime_version,
     migrationCount: migrations.length,
     expectedHistoryChecks: (config.expectedMigrations ?? []).length,
@@ -354,4 +358,3 @@ try {
   if (context) await context.close().catch(() => {});
   if (browser) await browser.close().catch(() => {});
 }
-

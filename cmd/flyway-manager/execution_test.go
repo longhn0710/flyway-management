@@ -470,7 +470,9 @@ func TestNativeCrashRecoveryDoesNotReplayBlockedMigration(t *testing.T) {
 	for _, execution := range executions {
 		commands = append(commands, fmt.Sprint(execution["command"]))
 	}
-	if strings.Contains(strings.Join(commands, ","), "migrate") || len(commands) != 2 {
+	// NEEDS_REVIEW is durable before asynchronous read-only reconciliation starts;
+	// inspection evidence may already be arriving when this request completes.
+	if strings.Contains(strings.Join(commands, ","), "migrate") || len(commands) < 2 || len(commands) > 4 || commands[0] != "info" || commands[1] != "validate" {
 		t.Fatalf("interrupted mutate was recorded as completed or inspection evidence missing: %v", commands)
 	}
 	// Startup reconciliation is deliberately read-only and records its own
@@ -488,7 +490,7 @@ func TestNativeCrashRecoveryDoesNotReplayBlockedMigration(t *testing.T) {
 		}
 		time.Sleep(30 * time.Millisecond)
 	}
-	if len(reconciled) < 4 || reconciled[len(reconciled)-2]["command"] != "info" || reconciled[len(reconciled)-1]["command"] != "validate" {
+	if len(reconciled) != 4 || reconciled[0]["command"] != "info" || reconciled[1]["command"] != "validate" || reconciled[2]["command"] != "info" || reconciled[3]["command"] != "validate" {
 		t.Fatalf("startup read-only reconciliation did not persist completed info/validate evidence: %+v", reconciled)
 	}
 	before, err := os.ReadFile(filepath.Join(fake.stateDir, "commands"))

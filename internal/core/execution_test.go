@@ -141,6 +141,24 @@ func (f *fakeEngine) migrateCount(schema string) int {
 	defer f.mu.Unlock()
 	return f.migrations[schema]
 }
+
+type cancelOnInfoRunner struct {
+	cancel context.CancelFunc
+	calls  []string
+}
+
+func (*cancelOnInfoRunner) Check(context.Context) flyway.Readiness {
+	return flyway.Readiness{Ready: true, Version: "11.20.0", Integrity: "verified", Dependency: "fixture"}
+}
+func (r *cancelOnInfoRunner) Execute(_ context.Context, req flyway.Request) flyway.Result {
+	r.calls = append(r.calls, req.Command)
+	if req.Command == "info" {
+		r.cancel()
+		return flyway.Result{ExitCode: -1, TimedOut: true, Stderr: "execution deadline exceeded"}
+	}
+	return flyway.Result{Success: true, Version: "11.20.0"}
+}
+
 func executionFixture(t *testing.T) (*fixture, *fakeEngine, Target, Schema, ExecutionAccount) {
 	t.Helper()
 	f := newFixture(t)
@@ -175,6 +193,48 @@ func waitRun(t *testing.T, f *fixture, rid string) Run {
 	t.Fatalf("run did not settle: %+v %v", r, e)
 	return r
 }
+
+func TestPreflightTimeoutReturnsDiagnosticsAndPersistsAudit(t *testing.T) {
+	f, _, target, schema, account := executionFixture(t)
+	in := uploadRun(t, f, target, schema, account, "V1__timeout.sql", "CREATE TABLE timeout_probe(id NUMBER);")
+	ctx, cancel := context.WithCancel(context.Background())
+	runner := &cancelOnInfoRunner{cancel: cancel}
+	f.s.execution.runner = runner
+
+	pre, err := f.s.Preflight(ctx, f.trace(), in)
+	must(t, err)
+	if pre.Ready || pre.LocalReady == false || pre.LiveStatus != "NOT_VERIFIED" {
+		t.Fatalf("timeout preflight should preserve local readiness and fail closed: %+v", pre)
+	}
+	foundTimeout := false
+	for _, blocker := range pre.Blockers {
+		if blocker.Code == "REQUEST_TIMEOUT" && strings.Contains(blocker.Message, "No migration was started") {
+			foundTimeout = true
+		}
+	}
+	if !foundTimeout {
+		t.Fatalf("missing actionable timeout blocker: %+v", pre.Blockers)
+	}
+	if len(runner.calls) != 1 || runner.calls[0] != "info" {
+		t.Fatalf("timeout must stop read-only preflight without validate or migrate: %v", runner.calls)
+	}
+	events, err := f.s.Audit(testCtx, f.admin, Page{Action: "migration.preflight", Limit: 20})
+	must(t, err)
+	foundAudit := false
+	for _, event := range events {
+		if event.RequestID == f.trace().RequestID && event.Target == schema.ID {
+			if event.Outcome != "NOT_VERIFIED" {
+				t.Fatalf("timeout audit outcome %q, want NOT_VERIFIED", event.Outcome)
+			}
+			foundAudit = true
+			break
+		}
+	}
+	if !foundAudit {
+		t.Fatal("timeout preflight audit event was not persisted")
+	}
+}
+
 func TestDurableRunContinuityIdempotencyAndImmutableEvidence(t *testing.T) {
 	f, engine, target, schema, account := executionFixture(t)
 	in := uploadRun(t, f, target, schema, account, "nested/V1__initial.sql", "CREATE TABLE fixture(id NUMBER);\r\n")

@@ -10,6 +10,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 )
 
 type storedFile struct {
@@ -247,6 +248,17 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 		if e = s.noImplicitRetry(ctx, Run{RunInput: in}, plan, info.JSON); e != nil {
 			p.block("IMPLICIT_SQL_RETRY", safeExecutionError(e))
 		}
+	}
+	if ctx.Err() != nil {
+		p.Ready = false
+		p.LiveStatus = "NOT_VERIFIED"
+		p.block("REQUEST_TIMEOUT", "Preflight timed out while inspecting Oracle. No migration was started.")
+		auditCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+		defer cancel()
+		if e = s.Event(auditCtx, t, "migration.preflight", in.SchemaID, p.LiveStatus); e != nil {
+			return p, e
+		}
+		return p, nil
 	}
 	if e = s.Event(ctx, t, "migration.preflight", in.SchemaID, p.LiveStatus); e != nil {
 		return p, e

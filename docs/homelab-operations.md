@@ -32,6 +32,11 @@ application authority: `public_url` fixes cookie security and allowed Origin;
 rate limiting uses the direct peer. Only ingress/cluster-node traffic may reach
 the backend, and only this workload may reach the specified Oracle lab on 1521.
 
+The adapter always sets `REDGATE_DISABLE_TELEMETRY=true`, the
+[vendor-supported usage telemetry opt-out](https://documentation.red-gate.com/fd/redgate-disable-telemetry-environment-variable-277579301.html).
+This avoids blocked external telemetry connections delaying each CLI startup in
+the isolated pod; full manifest/version checks and migration policy still run.
+
 ## Credentials and first use
 
 Master key source: Kubernetes Secret `flyway-manager-master-key`, independent
@@ -77,13 +82,13 @@ umask 077
 mkdir -p "$HOME/backups/flyway-manager/data" "$HOME/backups/flyway-manager/keys"
 FWM_STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 kubectl --context k8s-admin-public -n flyway-manager exec deployment/flyway-manager -c manager -- \
-  /usr/local/bin/flyway-manager backup --output "/tmp/manager-$FWM_STAMP.db"
+  /usr/local/bin/flyway-manager backup --output "/data/manager/backup-$FWM_STAMP.db"
 kubectl --context k8s-admin-public -n flyway-manager exec deployment/flyway-manager -c manager -- \
-  cat "/tmp/manager-$FWM_STAMP.db" > "$HOME/backups/flyway-manager/data/manager-$FWM_STAMP.db"
+  cat "/data/manager/backup-$FWM_STAMP.db" > "$HOME/backups/flyway-manager/data/manager-$FWM_STAMP.db"
 kubectl --context k8s-admin-public -n flyway-manager get secret flyway-manager-master-key \
   -o jsonpath='{.data.master\.key}' | base64 -d > "$HOME/backups/flyway-manager/keys/master-$FWM_STAMP.key"
 kubectl --context k8s-admin-public -n flyway-manager exec deployment/flyway-manager -c manager -- \
-  rm "/tmp/manager-$FWM_STAMP.db"
+  rm "/data/manager/backup-$FWM_STAMP.db"
 ```
 
 Record source image digest/config/backup time separately, copy both backup
