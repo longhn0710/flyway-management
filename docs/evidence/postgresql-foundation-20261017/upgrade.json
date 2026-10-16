@@ -1,0 +1,207 @@
+{
+  "checked_at": "2026-10-16T19:02:00.388227+00:00",
+  "encrypted_credentials": {
+    "count": 3,
+    "original_key_decryption": "all passed"
+  },
+  "execution_started": false,
+  "foreign_key_violations": 0,
+  "installation_identity_preserved": true,
+  "integrity_check": "ok",
+  "legacy_target_columns_preserved": true,
+  "migration_008_checksum_matches_source": true,
+  "migration_ledger_v1_v7_preserved": true,
+  "new_tables": [
+    "target_connection_profiles"
+  ],
+  "original_key_unchanged": true,
+  "original_rows": 446,
+  "original_tables": 34,
+  "preserved_rows": 446,
+  "preserved_tables": 34,
+  "private_evidence_directory": "/home/longhn0710/.local/state/flyway-v7-upgrade-z8zb2ht8",
+  "restore_method": "SQLite backup API from a private read-only staged copy",
+  "result": "PASS",
+  "row_comparison": "Per-row typed SHA-256 over every original column; BLOB values are hashed byte-for-byte.",
+  "runtime_or_oracle_accessed": false,
+  "schema_version": {
+    "after": 8,
+    "before": 7
+  },
+  "source_backup": "manager.db",
+  "source_database_unchanged": true,
+  "source_directory": "/tmp/fwm-projects-release/restore-v7",
+  "source_files_checked": 3,
+  "table_checksums": {
+    "account_schema_grants": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "6176b42d62294cb1bb53a166a0541bf35e856f4662c7fa93979f97ed198ae8d4"
+    },
+    "api_tokens": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "31147f83541d3a7c9f22119032ed02d429cf3374a3d55c6c2e1163567b9c2be0"
+    },
+    "artifact_blobs": {
+      "preserved": true,
+      "rows": 33,
+      "sha256": "397ade5d8a8b02dfc207f4dfbd28691c782202d21970983237f7cf1a1401aefc"
+    },
+    "artifacts": {
+      "preserved": true,
+      "rows": 13,
+      "sha256": "13612d9e0dee17d50d271db08d633cfba3c1428aeda8d85042bec1ba328c97a9"
+    },
+    "audit_events": {
+      "preserved": true,
+      "rows": 228,
+      "sha256": "2e4779a005734904e1ee41bb886f5a4d73cf9fae51e54b952a1e682af0c8bfc0"
+    },
+    "auth_settings": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "7a29f5dc53d59a0b59290830f685dc4267b3604491bb5e10f24d9454938c23b8"
+    },
+    "connection_allowed_schemas": {
+      "preserved": true,
+      "rows": 2,
+      "sha256": "4a79672e374c655810a11583299d70d67f449e29b0d8755c754a2ad806ca824d"
+    },
+    "connection_managed_accounts": {
+      "preserved": true,
+      "rows": 2,
+      "sha256": "a34583e6d84a38fd61a16aa1b3d23f3ac63bbd9efc960240565e7bdff82ae617"
+    },
+    "connection_settings": {
+      "preserved": true,
+      "rows": 1,
+      "sha256": "a958219970a4d52ba044afaf29355ce513b3e1bbbf33b311e2afce5ca491ae82"
+    },
+    "credential_secrets": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "4a7855432f9c384c2b3100da8f697ef51d3b6324b65370f0974df39f3ee5e54f"
+    },
+    "database_targets": {
+      "preserved": true,
+      "rows": 2,
+      "sha256": "a2cd54c415422dc7b7c49f5dd65f03ea9df8de8c476ea93d1349f9b3705da4ab"
+    },
+    "execution_accounts": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "41a26379cfe555fe235b0544dee40c10ef30437b49c822cf3f5fad3cca4aaa57"
+    },
+    "flyway_info_captures": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "ff19b02122f9a30f3e4ec512db7b38d4ddb3533191aa15ce9e2762cc239e3058"
+    },
+    "idempotency_records": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "ff06369f234514263a95d13ba833fa982fddd8ac4a00ef6e75e4c528f575c515"
+    },
+    "installation_metadata": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "27fba2ed736da79a0f05429ce6606e7be3d232b2100d7238b37d1ea7026722b1"
+    },
+    "jobs": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "0c84f4d0538b9536ef4db04c26d32bfc2cc6a210acf29e1e9baca861f439df77"
+    },
+    "migration_files": {
+      "preserved": true,
+      "rows": 36,
+      "sha256": "de66e40ae8a85ce0358e0b41939f78a91f80f5f5c9049a4568b435199b19ec0f"
+    },
+    "migration_logs": {
+      "preserved": true,
+      "rows": 33,
+      "sha256": "8801a77ab1ba2b53670578442ffb60eb63b631d1452c0439cf1243212e878e0e"
+    },
+    "migration_run_items": {
+      "preserved": true,
+      "rows": 9,
+      "sha256": "6b740763273b0c609f04faec7f96b23630bf2f1c9e6c22c9bec2c4f06e3ec84d"
+    },
+    "migration_runs": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "bc06a9b3f1e976f9ac4882b618e6f72ac20619a624731c1976aa3614e338c530"
+    },
+    "migration_streams": {
+      "preserved": true,
+      "rows": 2,
+      "sha256": "f5931fd5f632ac980f3cb75d26a3a813abe0918ebcf3f4f52ee5408b8841c2a6"
+    },
+    "oidc_flows": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "591976bb14b6b7ff1bd15b9c62c97d9d4da76c0083be3364f1316f897a4cf4c0"
+    },
+    "permission_grants": {
+      "preserved": true,
+      "rows": 4,
+      "sha256": "49839ad6794a823e53e26896c4a547c35d6e10a788090aac311239bdef752416"
+    },
+    "project_members": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "c0a3527a34c0bbce23f42d78c55a2eed8264b03b44816f048d008908b5ba2c0e"
+    },
+    "projects": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "186a32caf71b1979dedb3cd3a982120ee307018a828b2a67ebd4e7c42a561ee3"
+    },
+    "repair_operations": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "5396905b0652d14fb2203998d1995a0d397352ad93532752729e78b6faf9b0ae"
+    },
+    "run_dependencies": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "467b280a2847d5cad9dd0ce5f8bfd8e3fe74403d49c39fc35db02991b43f97e0"
+    },
+    "run_executions": {
+      "preserved": true,
+      "rows": 15,
+      "sha256": "6ace15dce796f239af002090ac20643462b63b9429444ce3016893ce62b51a49"
+    },
+    "schema_migrations": {
+      "preserved": true,
+      "rows": 7,
+      "sha256": "7546625b581f8105b9acf56fa5f9cf93137fab57ae931349a47f0b05e5e5eb2b"
+    },
+    "service_accounts": {
+      "preserved": true,
+      "rows": 0,
+      "sha256": "f49ea5a9121b46096fb56cf7f493a9b34238514fd698d5ecef577a588e2629f8"
+    },
+    "sessions": {
+      "preserved": true,
+      "rows": 25,
+      "sha256": "8025c0cc939cf43acb63e4fac8511dc7d948bccc25082d825aacdb76744a32ef"
+    },
+    "stream_files": {
+      "preserved": true,
+      "rows": 6,
+      "sha256": "691caa56cb71e3bde63c4c1f153ec3aa64d05b18be81834809d464193b818c82"
+    },
+    "target_schemas": {
+      "preserved": true,
+      "rows": 3,
+      "sha256": "653c0baafeb24bac9d4ce8967c17dca758eeededf8b3972992c7648d57b04f59"
+    },
+    "users": {
+      "preserved": true,
+      "rows": 4,
+      "sha256": "34a8656ff49722246449c367d02cc30c539becf039a0ac968345296bec24ee9e"
+    }
+  }
+}

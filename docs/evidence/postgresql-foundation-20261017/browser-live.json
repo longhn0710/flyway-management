@@ -1,0 +1,24 @@
+{
+  "backend": "real isolated Manager / disposable PostgreSQL 17 lab",
+  "tls": "verify-full; CA certificate; localhost DNS SAN",
+  "runtime": "pinned Flyway 13.10.3 manifest verified",
+  "schema_discovery": {
+    "included": "app",
+    "restricted_hidden": true
+  },
+  "native_info": {
+    "V1": "Success",
+    "V2": "Success",
+    "V3": "Pending"
+  },
+  "second_database_schema_identity_distinct": true,
+  "viewer_refresh_denied": 403,
+  "operator_instance_admin_disabled": true,
+  "widths": [
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "page_errors": []
+}

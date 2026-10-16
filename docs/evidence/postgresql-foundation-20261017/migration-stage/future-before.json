@@ -1,0 +1,31 @@
+{
+  "database" : "fwm_gate_acceptance_20261016t191333z",
+  "databaseType" : "PostgreSQL",
+  "exception" : null,
+  "flywayVersion" : "13.10.3",
+  "initialSchemaVersion" : null,
+  "licenseFailed" : false,
+  "migrations" : [ {
+    "category" : "Versioned",
+    "description" : "future",
+    "executionTime" : 12,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/future/V1__future.sql",
+    "type" : "SQL",
+    "version" : "1"
+  }, {
+    "category" : "Versioned",
+    "description" : "second",
+    "executionTime" : 9,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/future/V2__second.sql",
+    "type" : "SQL",
+    "version" : "2"
+  } ],
+  "migrationsExecuted" : 2,
+  "operation" : "migrate",
+  "schemaName" : "gate_future",
+  "success" : true,
+  "targetSchemaVersion" : "2",
+  "timestamp" : "2026-10-17T02:14:05.510924576+07:00",
+  "totalMigrationTime" : 21,
+  "warnings" : [ ]
+}

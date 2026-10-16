@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-10-17T02:13:17+07:00",
+  "result": "PASS",
+  "scope": "Direct read-only Runtime.ProbePostgreSQL checks against the isolated disposable PostgreSQL 17 TLS lab. This batch executed no Flyway command and performed no SQL mutation.",
+  "runtime": {
+    "flyway_version": "13.10.3",
+    "flyway_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c",
+    "postgresql_jdbc_driver": "42.7.14",
+    "verified_server_version_num": "170011",
+    "tls_policy": "verify-full"
+  },
+  "probe_cases": [
+    {
+      "case": "valid identity and TLS",
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "error_code": "",
+      "server_version_num": "170011",
+      "result": "PASS"
+    },
+    {
+      "case": "wrong password",
+      "network_state": "verified",
+      "authentication_state": "failed",
+      "error_code": "POSTGRESQL_28P01",
+      "result": "PASS"
+    },
+    {
+      "case": "nonexistent database",
+      "network_state": "verified",
+      "authentication_state": "unknown",
+      "error_code": "POSTGRESQL_3D000",
+      "result": "PASS"
+    },
+    {
+      "case": "unavailable listener",
+      "network_state": "failed",
+      "authentication_state": "unknown",
+      "error_code": "POSTGRESQL_08001",
+      "result": "PASS"
+    },
+    {
+      "case": "TLS hostname mismatch",
+      "network_state": "failed",
+      "authentication_state": "unknown",
+      "error_code": "POSTGRESQL_08006",
+      "result": "PASS"
+    },
+    {
+      "case": "untrusted CA",
+      "network_state": "failed",
+      "authentication_state": "unknown",
+      "error_code": "POSTGRESQL_08006",
+      "result": "PASS"
+    },
+    {
+      "case": "read-only account",
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "error_code": "",
+      "server_version_num": "170011",
+      "result": "PASS"
+    }
+  ],
+  "execution": {
+    "method": "Temporary Go test overlay calling the existing pinned runtime adapter directly; no repository source or test file was changed for result capture.",
+    "test_duration_seconds": 26.83,
+    "credentials_or_ca_material_included": false,
+    "endpoint_or_account_names_included": false
+  }
+}
