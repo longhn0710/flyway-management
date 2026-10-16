@@ -11,9 +11,17 @@ import Credentials from "./pages/Credentials";
 import Users from "./pages/Users";
 import ServiceAccounts from "./pages/ServiceAccounts";
 import Authentication from "./pages/Authentication";
+import { ApiError } from "./lib/contracts";
 import { SessionGate } from "./lib/identity";
 import { PageHeading, Button, Notice } from "./components/ui";
-const client = new QueryClient();
+const client = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (count, error) =>
+        count < 1 && (!(error instanceof ApiError) || error.status >= 500),
+    },
+  },
+});
 class ErrorBoundary extends Component<
   { children: ReactNode },
   { error: boolean }

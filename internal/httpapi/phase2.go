@@ -64,7 +64,11 @@ func (h phase2) ready(next http.Handler) http.Handler {
 		}
 		w.Header().Set("X-Request-ID", middleware.GetReqID(r.Context()))
 		w.Header().Set("Cache-Control", "no-store")
-		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		budget := 20 * time.Second
+		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" {
+			budget = 50 * time.Second
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), budget)
 		defer cancel()
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -307,7 +311,7 @@ func (h phase2) register(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(h.authenticated)
 			r.Get("/system", result(h, func(r *http.Request) (map[string]any, error) {
-				return map[string]any{"installation_id": installationID(h.database), "schema_version": schemaVersion(h.database), "capabilities": map[string]bool{"authentication": true, "registry": true, "migration_execution": false}}, nil
+				return map[string]any{"installation_id": installationID(h.database), "schema_version": schemaVersion(h.database), "capabilities": map[string]bool{"authentication": true, "registry": true, "migration_execution": h.s.ExecutionEnabled()}}, nil
 			}))
 			r.Get("/auth/me", result(h, func(r *http.Request) (core.SessionResult, error) { return h.s.Me(r.Context(), actor(r)) }))
 			r.Post("/auth/logout", func(w http.ResponseWriter, r *http.Request) {
@@ -348,13 +352,8 @@ func (h phase2) register(r chi.Router) {
 			r.Get("/database-targets/{id}/schemas/{schemaID}", result(h, func(r *http.Request) (core.Schema, error) {
 				return h.s.Schema(r.Context(), actor(r), pathID(r), chi.URLParam(r, "schemaID"))
 			}))
-			// Execution, uploads and run history remain unavailable until Phase 3.
-			unavailable := func(w http.ResponseWriter, r *http.Request) {
-				writeError(w, 501, "NOT_IMPLEMENTED", "Migration execution and artifacts are unavailable until Phase 3.")
-			}
-			for _, path := range []string{"/migration-runs", "/migration-runs/{id}", "/migration-runs/{id}/logs", "/migration-runs/{id}/events", "/migration-runs/{id}/artifacts", "/artifacts", "/artifacts/{id}"} {
-				r.HandleFunc(path, unavailable)
-			}
+			h.registerExecution(r)
+
 			r.Group(func(r chi.Router) {
 				r.Use(h.admin)
 				r.Post("/database-targets", bodyResult(h, 201, func(r *http.Request, in core.TargetInput) (core.Target, error) {

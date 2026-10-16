@@ -28,6 +28,7 @@ type Service struct {
 	limiterMu      sync.Mutex
 	limits         map[string]rateEntry
 	dummyHash      string
+	execution      *Execution
 	PublicURL      string
 }
 type rateEntry struct {

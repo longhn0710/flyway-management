@@ -1,0 +1,888 @@
+// Package flyway provides a narrowly scoped, integrity-pinned Flyway CLI adapter.
+package flyway
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"net"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
+)
+
+const maxOutput = 2 << 20
+const maxTimeoutSeconds = 3600
+
+// Config pins a Flyway distribution and bounds each process invocation.
+type Config struct {
+	Executable     string `json:"executable"`
+	Version        string `json:"version"`
+	SHA256         string `json:"sha256"` // SHA-256 of the exact bytes in flyway-manifest.sha256.
+	TimeoutSeconds int    `json:"timeout_seconds"`
+}
+
+// Runtime runs a verified Flyway CLI distribution in isolated workspaces.
+type Runtime struct {
+	config  Config
+	dataDir string
+	slots   chan struct{}
+}
+
+// Readiness reports only local runtime readiness. It never represents a DB check.
+type Readiness struct {
+	Ready      bool     `json:"ready"`
+	Version    string   `json:"version"`
+	Integrity  string   `json:"integrity"`
+	Dependency string   `json:"dependency"`
+	Blockers   []string `json:"blockers"`
+}
+
+// Request describes one supported Flyway command and an immutable SQL snapshot.
+type Request struct {
+	Command       string
+	Host          string
+	Port          int
+	Service       string
+	Transport     string
+	Schema        string
+	HistorySchema string
+	HistoryTable  string
+	Username      string
+	Password      string
+	Files         map[string][]byte
+}
+
+// Result contains bounded, redacted process output and a verified JSON result.
+type Result struct {
+	Success   bool            `json:"success"`
+	ExitCode  int             `json:"exit_code"`
+	Stdout    string          `json:"stdout"`
+	Stderr    string          `json:"stderr"`
+	JSON      json.RawMessage `json:"json,omitempty"`
+	Version   string          `json:"version"`
+	TimedOut  bool            `json:"timed_out"`
+	Ambiguous bool            `json:"ambiguous"`
+}
+
+func New(config Config, dataDir string) *Runtime {
+	if config.Executable != "" {
+		if abs, err := filepath.Abs(config.Executable); err == nil {
+			config.Executable = abs
+		}
+	}
+	if config.TimeoutSeconds <= 0 {
+		config.TimeoutSeconds = 300
+	} else if config.TimeoutSeconds > maxTimeoutSeconds {
+		config.TimeoutSeconds = maxTimeoutSeconds
+	}
+	return &Runtime{config: config, dataDir: dataDir, slots: make(chan struct{}, 4)}
+}
+
+// Check validates the pinned complete distribution and Java runtime, then checks
+// the CLI's exact version. It does not contact Oracle.
+func (r *Runtime) Check(ctx context.Context) Readiness {
+	ready := Readiness{Version: r.config.Version, Integrity: "not_verified", Dependency: "not_verified", Blockers: []string{}}
+	if !r.acquire(ctx) {
+		ready.Blockers = append(ready.Blockers, "Runtime capacity wait exceeded request budget.")
+		return ready
+	}
+	defer r.release()
+	root, err := r.distributionRoot()
+	if err != nil {
+		ready.Blockers = append(ready.Blockers, "invalid Flyway executable: "+err.Error())
+		return ready
+	}
+	if err := r.verifyManifest(root); err != nil {
+		ready.Blockers = append(ready.Blockers, "distribution integrity failed: "+err.Error())
+	} else {
+		ready.Integrity = "verified"
+		if err := verifyOracleJars(root); err != nil {
+			ready.Blockers = append(ready.Blockers, "Oracle JDBC dependency check failed: "+err.Error())
+		} else {
+			ready.Dependency = "oracle_jdbc_available"
+		}
+	}
+	javaHome, hasJava := runtimeJavaHome(root)
+	if !hasJava {
+		ready.Blockers = append(ready.Blockers, "Java runtime not found")
+	} else {
+		ready.Dependency = "java_available"
+		if javaHome != "" {
+			ready.Dependency = "bundled_java_available"
+		}
+		if len(ready.Blockers) == 0 {
+			if javaHome != "" {
+				ready.Dependency = "bundled_java_and_oracle_jdbc_available"
+			} else {
+				ready.Dependency = "java_and_oracle_jdbc_available"
+			}
+		}
+	}
+	if len(ready.Blockers) == 0 {
+		output, runErr, timedOut := r.runVersion(ctx)
+		if timedOut {
+			ready.Blockers = append(ready.Blockers, "Flyway version check timed out")
+		} else if runErr != nil {
+			ready.Blockers = append(ready.Blockers, "Flyway version check failed")
+		} else if got := parseVersion(string(output)); got != r.config.Version {
+			ready.Blockers = append(ready.Blockers, "Flyway version does not match configured pin")
+		}
+	}
+	ready.Ready = len(ready.Blockers) == 0
+	return ready
+}
+
+// Execute runs info, validate, migrate, or repair using explicit argv and a
+// private temporary config/workspace. It always performs Check first.
+func (r *Runtime) Execute(ctx context.Context, req Request) Result {
+	result := Result{ExitCode: -1, Version: r.config.Version}
+	if !validCommand(req.Command) {
+		result.Stderr = "unsupported Flyway command"
+		return result
+	}
+	if err := validateRequest(req); err != nil {
+		result.Stderr = err.Error()
+		return result
+	}
+	ready := r.Check(ctx)
+	if !ready.Ready {
+		result.Stderr = "Flyway runtime is not ready: " + strings.Join(ready.Blockers, "; ")
+		return result
+	}
+	root, rootErr := r.distributionRoot()
+	if rootErr != nil {
+		result.Stderr = "Flyway runtime is not ready: invalid distribution path"
+		return result
+	}
+	if !r.acquire(ctx) {
+		result.Stderr = "Runtime capacity wait exceeded request budget."
+		return result
+	}
+	defer r.release()
+	if err := os.MkdirAll(r.dataDir, 0700); err != nil {
+		result.Stderr = "unable to prepare private runtime directory"
+		return result
+	}
+	work, err := os.MkdirTemp(r.dataDir, "flyway-run-")
+	if err != nil {
+		result.Stderr = "unable to create private workspace"
+		return result
+	}
+	defer os.RemoveAll(work)
+	if err := os.Chmod(work, 0700); err != nil {
+		result.Stderr = "unable to secure private workspace"
+		return result
+	}
+	if err := writeSnapshot(work, req.Files); err != nil {
+		result.Stderr = err.Error()
+		return result
+	}
+	configPath := filepath.Join(work, "flyway.conf")
+	if err := os.WriteFile(configPath, []byte(makeConfig(req)), 0600); err != nil {
+		result.Stderr = "unable to write private Flyway configuration"
+		return result
+	}
+	argv := []string{req.Command, "-configFiles=" + configPath, "-workingDirectory=" + work, "-locations=filesystem:" + filepath.Join(work, "sql"), "-outputType=json"}
+	cmdCtx, cancel := context.WithTimeout(ctx, time.Duration(r.config.TimeoutSeconds)*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(cmdCtx, r.config.Executable, argv...)
+	cmd.Dir = work
+	cmd.Env = restrictedEnv(work, root)
+	configureProcessGroup(cmd)
+	if err := r.verifyManifest(root); err != nil {
+		result.Stderr = "Flyway distribution integrity changed before execution"
+		return result
+	}
+	out := &boundedBuffer{max: maxOutput}
+	errOut := &boundedBuffer{max: maxOutput}
+	cmd.Stdout, cmd.Stderr = out, errOut
+	err = cmd.Run()
+	result.Stdout = redact(out.String(), req)
+	result.Stderr = redact(errOut.String(), req)
+	result.ExitCode = 0
+	if err != nil {
+		result.ExitCode = exitCode(err)
+	}
+	if cmdCtx.Err() == context.DeadlineExceeded {
+		result.TimedOut = true
+		result.Ambiguous = req.Command == "migrate" || req.Command == "repair"
+	}
+	payload := out.Bytes()
+	parsed, parseErr := parseJSONOutput(payload)
+	if parseErr == nil {
+		result.JSON = json.RawMessage(redactJSON(parsed, req))
+		result.Version = resultVersion(parsed, r.config.Version)
+	}
+	result.Success = err == nil && !result.TimedOut && !out.truncated && !errOut.truncated && parseErr == nil && validSuccess(req.Command, parsed, r.config.Version)
+	if (req.Command == "migrate" || req.Command == "repair") && !result.Success {
+		// A process may have committed Oracle DDL before a later failure.
+		result.Ambiguous = true
+	}
+	if parseErr != nil && result.Stderr == "" {
+		result.Stderr = "Flyway did not return a valid JSON result"
+	}
+	return result
+}
+
+func validCommand(s string) bool {
+	return s == "info" || s == "validate" || s == "migrate" || s == "repair"
+}
+
+var safeIdentifier = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_$#]{0,127}$`)
+
+func validateRequest(r Request) error {
+	if r.Host == "" || strings.ContainsAny(r.Host, "\r\n\x00") || r.Port < 1 || r.Port > 65535 || r.Service == "" || strings.ContainsAny(r.Service, "\r\n\x00/@") {
+		return errors.New("invalid Oracle target configuration")
+	}
+	if r.Transport != "TCP" && r.Transport != "TCPS" {
+		return errors.New("invalid Oracle transport")
+	}
+	if ip := net.ParseIP(r.Host); ip == nil && !validHostname(r.Host) {
+		return errors.New("invalid Oracle host")
+	}
+	if !regexp.MustCompile(`^[A-Za-z0-9._$#-]+$`).MatchString(r.Service) {
+		return errors.New("invalid Oracle service")
+	}
+	if !safeIdentifier.MatchString(r.Schema) || !safeIdentifier.MatchString(r.HistorySchema) || !safeIdentifier.MatchString(r.HistoryTable) || !safeIdentifier.MatchString(r.Username) {
+		return errors.New("invalid Oracle schema, history table, or username")
+	}
+	if r.Password == "" || strings.ContainsRune(r.Password, '\x00') {
+		return errors.New("missing Oracle credential")
+	}
+	if len(r.Files) == 0 && (r.Command == "migrate" || r.Command == "validate" || r.Command == "repair") {
+		return errors.New("SQL snapshot is empty")
+	}
+	for name := range r.Files {
+		if err := validateRelativePath(name); err != nil {
+			return err
+		}
+		if !strings.HasSuffix(strings.ToLower(name), ".sql") {
+			return errors.New("snapshot contains a non-SQL file")
+		}
+	}
+	return nil
+}
+
+func validateRelativePath(name string) error {
+	if name == "" || strings.ContainsRune(name, '\\') || filepath.IsAbs(name) {
+		return errors.New("unsafe migration path")
+	}
+	clean := filepath.Clean(filepath.FromSlash(name))
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || strings.Contains(name, "\x00") {
+		return errors.New("unsafe migration path")
+	}
+	return nil
+}
+
+func writeSnapshot(work string, files map[string][]byte) error {
+	base := filepath.Join(work, "sql")
+	for name, data := range files {
+		if err := validateRelativePath(name); err != nil {
+			return err
+		}
+		path := filepath.Join(base, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			return errors.New("unable to prepare migration snapshot")
+		}
+		if err := os.WriteFile(path, data, 0600); err != nil {
+			return errors.New("unable to write migration snapshot")
+		}
+	}
+	return nil
+}
+
+func configProperties(r Request) map[string]string {
+	url := "jdbc:oracle:thin:@"
+	if r.Transport == "TCPS" {
+		url += "tcps:"
+	}
+	host := r.Host
+	if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+	url += "//" + host + ":" + strconv.Itoa(r.Port) + "/" + r.Service
+	return map[string]string{
+		"flyway.url":                     url,
+		"flyway.user":                    r.Username,
+		"flyway.password":                r.Password,
+		"flyway.schemas":                 r.Schema,
+		"flyway.defaultSchema":           r.HistorySchema,
+		"flyway.table":                   r.HistoryTable,
+		"flyway.createSchemas":           "false",
+		"flyway.cleanDisabled":           "true",
+		"flyway.validateOnMigrate":       "true",
+		"flyway.callbacks":               "",
+		"flyway.placeholderReplacement":  "false",
+		"flyway.oracle.sqlplus":          "false",
+		"flyway.ignoreMigrationPatterns": "*:pending",
+		"flyway.validateMigrationNaming": "true",
+		"flyway.baselineOnMigrate":       "false",
+		"flyway.outOfOrder":              "false",
+	}
+}
+
+func makeConfig(r Request) string {
+	props := configProperties(r)
+	var b strings.Builder
+	for _, k := range []string{"flyway.url", "flyway.user", "flyway.password", "flyway.schemas", "flyway.defaultSchema", "flyway.table", "flyway.createSchemas", "flyway.cleanDisabled", "flyway.validateOnMigrate", "flyway.callbacks", "flyway.placeholderReplacement", "flyway.oracle.sqlplus", "flyway.ignoreMigrationPatterns", "flyway.validateMigrationNaming", "flyway.baselineOnMigrate", "flyway.outOfOrder"} {
+		b.WriteString(k)
+		b.WriteByte('=')
+		b.WriteString(escapeProperty(props[k]))
+		b.WriteByte('\n')
+	}
+	return b.String()
+}
+
+func escapeProperty(s string) string {
+	var b strings.Builder
+	for i, r := range s {
+		switch r {
+		case '\\':
+			b.WriteString(`\\`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '=', ':', '#', '!':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case ' ':
+			if i == 0 {
+				b.WriteByte('\\')
+			}
+			b.WriteRune(r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+func restrictedEnv(work, distributionRoot string) []string {
+	path := "/usr/bin:/bin"
+	if runtime.GOOS == "windows" {
+		path = os.Getenv("SystemRoot") + `\System32`
+	}
+	env := []string{"PATH=" + path, "HOME=" + work, "USERPROFILE=" + work, "TMPDIR=" + work, "TEMP=" + work, "TMP=" + work, "LC_ALL=C", "LANG=C", "JAVA_TOOL_OPTIONS=-Xmx512m"}
+	if javaHome, ok := runtimeJavaHome(distributionRoot); ok && javaHome != "" {
+		javaBin := filepath.Join(javaHome, "bin")
+		for i, value := range env {
+			if strings.HasPrefix(value, "PATH=") {
+				env[i] = "PATH=" + javaBin + string(os.PathListSeparator) + strings.TrimPrefix(value, "PATH=")
+			}
+		}
+		env = append(env, "JAVA_HOME="+javaHome)
+	}
+	return env
+}
+
+type boundedBuffer struct {
+	b         bytes.Buffer
+	max       int
+	truncated bool
+}
+
+func (b *boundedBuffer) Write(p []byte) (int, error) {
+	n := len(p)
+	left := b.max - b.b.Len()
+	if left > 0 {
+		if len(p) > left {
+			p = p[:left]
+			b.truncated = true
+		}
+		_, _ = b.b.Write(p)
+	} else {
+		b.truncated = true
+	}
+	return n, nil
+}
+func (b *boundedBuffer) Bytes() []byte { return b.b.Bytes() }
+func (b *boundedBuffer) String() string {
+	s := b.b.String()
+	if b.truncated {
+		s += "\n[output truncated]"
+	}
+	return s
+}
+
+func parseJSONOutput(raw []byte) ([]byte, error) {
+	// Flyway may print a one-line product banner before JSON; decode exactly one object from its first brace.
+	start := bytes.IndexByte(raw, '{')
+	if start < 0 {
+		return nil, errors.New("no JSON object")
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw[start:]))
+	dec.UseNumber()
+	value, err := decodeStrictJSONValue(dec)
+	obj, ok := value.(map[string]any)
+	if err != nil || !ok || obj == nil {
+		return nil, errors.New("invalid JSON object")
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return nil, errors.New("trailing JSON content")
+	}
+	compact, err := json.Marshal(obj)
+	return compact, err
+}
+
+func decodeStrictJSONValue(dec *json.Decoder) (any, error) {
+	token, err := dec.Token()
+	if err != nil {
+		return nil, err
+	}
+	switch value := token.(type) {
+	case json.Delim:
+		switch value {
+		case '{':
+			object := map[string]any{}
+			for dec.More() {
+				keyToken, err := dec.Token()
+				if err != nil {
+					return nil, err
+				}
+				key, ok := keyToken.(string)
+				if !ok {
+					return nil, errors.New("invalid JSON object key")
+				}
+				if _, exists := object[key]; exists {
+					return nil, errors.New("duplicate JSON object key")
+				}
+				child, err := decodeStrictJSONValue(dec)
+				if err != nil {
+					return nil, err
+				}
+				object[key] = child
+			}
+			end, err := dec.Token()
+			if err != nil || end != json.Delim('}') {
+				return nil, errors.New("unterminated JSON object")
+			}
+			return object, nil
+		case '[':
+			array := []any{}
+			for dec.More() {
+				child, err := decodeStrictJSONValue(dec)
+				if err != nil {
+					return nil, err
+				}
+				array = append(array, child)
+			}
+			end, err := dec.Token()
+			if err != nil || end != json.Delim(']') {
+				return nil, errors.New("unterminated JSON array")
+			}
+			return array, nil
+		default:
+			return nil, errors.New("unexpected JSON delimiter")
+		}
+	default:
+		return token, nil
+	}
+}
+
+func validSuccess(command string, payload []byte, pin string) bool {
+	var obj map[string]any
+	if json.Unmarshal(payload, &obj) != nil || resultVersion(payload, "") != pin {
+		return false
+	}
+	if unsuccessfulError(obj) {
+		return false
+	}
+	if op, ok := obj["operation"].(string); !ok || op != command {
+		return false
+	}
+	switch command {
+	case "validate":
+		v, ok := obj["validationSuccessful"].(bool)
+		invalid, hasInvalid := obj["invalidMigrations"].([]any)
+		_, hasCount := numeric(obj["validateCount"])
+		return ok && v && hasInvalid && len(invalid) == 0 && hasCount
+	case "migrate":
+		n, ok := numeric(obj["migrationsExecuted"])
+		migrations, hasMigrations := obj["migrations"].([]any)
+		return ok && n >= 0 && hasMigrations && int64(len(migrations)) == n
+	case "repair":
+		_, a := obj["repairActions"].([]any)
+		_, b := obj["migrationsRemoved"].([]any)
+		_, c := obj["migrationsDeleted"].([]any)
+		_, d := obj["migrationsAligned"].([]any)
+		return a && b && c && d
+	case "info":
+		_, ok := obj["schemaVersion"]
+		_, hasMigrations := obj["migrations"].([]any)
+		return ok && hasMigrations
+	}
+	return false
+}
+
+func unsuccessfulError(obj map[string]any) bool {
+	if success, ok := obj["success"].(bool); ok && !success {
+		return true
+	}
+	for _, key := range []string{"error", "errorDetails"} {
+		if value, exists := obj[key]; exists && value != nil && value != "" && value != false {
+			return true
+		}
+	}
+	return false
+}
+
+func numeric(v any) (int64, bool) {
+	switch n := v.(type) {
+	case json.Number:
+		i, e := n.Int64()
+		return i, e == nil
+	case float64:
+		return int64(n), true
+	}
+	return 0, false
+}
+func resultVersion(payload []byte, fallback string) string {
+	var v struct {
+		FlywayVersion string `json:"flywayVersion"`
+	}
+	_ = json.Unmarshal(payload, &v)
+	if v.FlywayVersion != "" {
+		return v.FlywayVersion
+	}
+	return fallback
+}
+func parseVersion(s string) string {
+	re := regexp.MustCompile(`(?m)^Flyway (?:(?:Community|Teams|Enterprise) Edition|Command-line)?\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:[-+][A-Za-z0-9.-]+)?)`)
+	m := re.FindStringSubmatch(s)
+	if len(m) == 2 {
+		return m[1]
+	}
+	re = regexp.MustCompile(`(?m)^([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:[-+][A-Za-z0-9.-]+)?)\s*$`)
+	m = re.FindStringSubmatch(strings.TrimSpace(s))
+	if len(m) == 2 {
+		return m[1]
+	}
+	return ""
+}
+
+func redactPlain(s string, req Request) string {
+	secrets := []string{req.Password, url.QueryEscape(req.Password), url.PathEscape(req.Password), escapeProperty(req.Password)}
+	for _, html := range []bool{false, true} {
+		var buf bytes.Buffer
+		encoder := json.NewEncoder(&buf)
+		encoder.SetEscapeHTML(html)
+		if encoder.Encode(req.Password) == nil {
+			quoted := strings.TrimSuffix(buf.String(), "\n")
+			if len(quoted) >= 2 {
+				escaped := quoted[1 : len(quoted)-1]
+				secrets = append(secrets, escaped, strings.NewReplacer("'", `\u0027`, "=", `\u003d`).Replace(escaped))
+			}
+		}
+	}
+	for _, secret := range secrets {
+		if secret != "" {
+			s = strings.ReplaceAll(s, secret, "[REDACTED]")
+		}
+	}
+	return s
+}
+func validHostname(host string) bool {
+	if len(host) == 0 || len(host) > 253 || strings.HasSuffix(host, ".") {
+		return false
+	}
+	for _, label := range strings.Split(host, ".") {
+		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
+			return false
+		}
+		for _, c := range label {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-') {
+				return false
+			}
+		}
+	}
+	return true
+}
+func redactJSON(raw []byte, req Request) []byte {
+	var value any
+	if json.Unmarshal(raw, &value) != nil {
+		return []byte(`{"redacted":true}`)
+	}
+	var walk func(any) any
+	walk = func(v any) any {
+		switch x := v.(type) {
+		case map[string]any:
+			for k, child := range x {
+				lower := strings.ToLower(k)
+				if strings.Contains(lower, "password") || strings.Contains(lower, "secret") {
+					x[k] = "[REDACTED]"
+				} else {
+					x[k] = walk(child)
+				}
+			}
+			return x
+		case []any:
+			for i, child := range x {
+				x[i] = walk(child)
+			}
+			return x
+		case string:
+			return redactPlain(x, req)
+		default:
+			return v
+		}
+	}
+	result, err := json.Marshal(walk(value))
+	if err != nil {
+		return []byte(`{"redacted":true}`)
+	}
+	return result
+}
+func exitCode(err error) int {
+	var e *exec.ExitError
+	if errors.As(err, &e) {
+		return e.ExitCode()
+	}
+	return -1
+}
+
+func (r *Runtime) distributionRoot() (string, error) {
+	if r.config.Executable == "" || r.config.Version == "" || !isSHA256(r.config.SHA256) {
+		return "", errors.New("executable, version, or manifest pin is missing/invalid")
+	}
+	path, err := filepath.Abs(r.config.Executable)
+	if err != nil {
+		return "", err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if !info.Mode().IsRegular() && info.Mode()&os.ModeSymlink == 0 {
+		return "", errors.New("executable is not a regular file")
+	}
+	if info.Mode().Perm()&0111 == 0 {
+		return "", errors.New("executable is not executable")
+	}
+	return filepath.Dir(path), nil
+}
+func isSHA256(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	_, err := hex.DecodeString(s)
+	return err == nil
+}
+
+func verifyOracleJars(root string) error {
+	var driver, databaseModule bool
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		name := strings.ToLower(filepath.Base(path))
+		if strings.HasSuffix(name, ".jar") && strings.HasPrefix(name, "ojdbc") {
+			driver = true
+		}
+		if strings.HasSuffix(name, ".jar") && strings.Contains(name, "flyway-database-oracle") {
+			databaseModule = true
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.New("unable to inspect distribution")
+	}
+	if !driver || !databaseModule {
+		return errors.New("pinned distribution must include Oracle JDBC driver and Flyway Oracle database module")
+	}
+	return nil
+}
+
+func (r *Runtime) verifyManifest(root string) error {
+	manifest := filepath.Join(root, "flyway-manifest.sha256")
+	info, err := os.Stat(manifest)
+	if err != nil || !info.Mode().IsRegular() || info.Size() > maxManifestBytes {
+		return errors.New("flyway-manifest.sha256 is missing or exceeds the size limit")
+	}
+	data, err := os.ReadFile(manifest)
+	if err != nil {
+		return errors.New("flyway-manifest.sha256 missing")
+	}
+	sum := sha256.Sum256(data)
+	if !strings.EqualFold(hex.EncodeToString(sum[:]), r.config.SHA256) {
+		return errors.New("manifest pin mismatch")
+	}
+	entries := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if len(line) < 67 || line[64:66] != "  " {
+			return errors.New("malformed manifest")
+		}
+		digest, rel := strings.ToLower(line[:64]), strings.TrimSpace(line[66:])
+		if !isSHA256(digest) || rel == "" || filepath.IsAbs(rel) || strings.Contains(rel, "\\") || strings.HasPrefix(filepath.Clean(rel), "..") || rel == "flyway-manifest.sha256" {
+			return errors.New("unsafe manifest entry")
+		}
+		if _, exists := entries[rel]; exists {
+			return errors.New("duplicate manifest entry")
+		}
+		entries[rel] = digest
+		if len(entries) > maxDistributionFiles {
+			return errors.New("distribution manifest has too many files")
+		}
+	}
+	actual := map[string]bool{}
+	var totalBytes int64
+	err = filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if path == root {
+			return nil
+		}
+		if d.Type()&os.ModeSymlink != 0 {
+			return errors.New("distribution contains symlink")
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, e := filepath.Rel(root, path)
+		if e != nil {
+			return e
+		}
+		rel = filepath.ToSlash(rel)
+		if rel == "flyway-manifest.sha256" {
+			return nil
+		}
+		if !d.Type().IsRegular() {
+			return errors.New("distribution contains non-regular file")
+		}
+		fileInfo, e := d.Info()
+		if e != nil {
+			return e
+		}
+		if fileInfo.Size() < 0 || totalBytes > maxDistributionBytes-fileInfo.Size() {
+			return errors.New("distribution exceeds size limit")
+		}
+		totalBytes += fileInfo.Size()
+		if len(actual) >= maxDistributionFiles {
+			return errors.New("distribution has too many files")
+		}
+		want, ok := entries[rel]
+		if !ok {
+			return errors.New("unlisted distribution file")
+		}
+		f, e := os.Open(path)
+		if e != nil {
+			return e
+		}
+		h := sha256.New()
+		_, e = io.Copy(h, f)
+		_ = f.Close()
+		if e != nil {
+			return e
+		}
+		if hex.EncodeToString(h.Sum(nil)) != want {
+			return errors.New("distribution file checksum mismatch")
+		}
+		actual[rel] = true
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if len(actual) != len(entries) {
+		return errors.New("manifest references missing file")
+	}
+	return nil
+}
+
+func runtimeJavaHome(root string) (string, bool) {
+	for _, relative := range []string{filepath.Join("jre", "bin", "java"), filepath.Join("jre", "bin", "java.exe"), filepath.Join("runtime", "jre", "bin", "java"), filepath.Join("runtime", "jre", "bin", "java.exe")} {
+		path := filepath.Join(root, relative)
+		info, err := os.Stat(path)
+		if err == nil && info.Mode().IsRegular() && (runtime.GOOS == "windows" || info.Mode().Perm()&0111 != 0) {
+			return filepath.Dir(filepath.Dir(path)), true
+		}
+	}
+	path := "/usr/bin:/bin"
+	if runtime.GOOS == "windows" {
+		path = os.Getenv("SystemRoot") + `\System32`
+	}
+	for _, dir := range filepath.SplitList(path) {
+		name := "java"
+		if runtime.GOOS == "windows" {
+			name += ".exe"
+		}
+		info, err := os.Stat(filepath.Join(dir, name))
+		if err == nil && info.Mode().IsRegular() && (runtime.GOOS == "windows" || info.Mode().Perm()&0111 != 0) {
+			return "", true
+		}
+	}
+	return "", false
+}
+
+func (r *Runtime) runVersion(ctx context.Context) ([]byte, error, bool) {
+	cmdCtx, cancel := context.WithTimeout(ctx, time.Duration(r.config.TimeoutSeconds)*time.Second)
+	defer cancel()
+	work, err := os.MkdirTemp("", "flyway-check-")
+	if err != nil {
+		return nil, err, false
+	}
+	defer os.RemoveAll(work)
+	cmd := exec.CommandContext(cmdCtx, r.config.Executable, "-v")
+	cmd.Dir = work
+	root, rootErr := r.distributionRoot()
+	if rootErr != nil {
+		return nil, rootErr, false
+	}
+	cmd.Env = restrictedEnv(work, root)
+	configureProcessGroup(cmd)
+	out := &boundedBuffer{max: 64 << 10}
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err = cmd.Run()
+	return out.Bytes(), err, cmdCtx.Err() == context.DeadlineExceeded
+}
+
+// Bound verification and Java processes across both job and authenticated HTTP
+// callers, so repeated readiness/preflight requests cannot spawn unbounded JVMs.
+func (r *Runtime) acquire(ctx context.Context) bool {
+	select {
+	case r.slots <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+func (r *Runtime) release() { <-r.slots }
+
+// ConfigurationSnapshot records the exact nonsecret engine policy. Comparing it
+// on dispatch also prevents a future application upgrade changing queued SQL
+// semantics even when the Flyway binary/version remains pinned.
+func ConfigurationSnapshot(req Request) map[string]string {
+	props := configProperties(req)
+	delete(props, "flyway.password")
+	props["outputType"] = "json"
+	props["locations"] = "immutable-run-snapshot"
+	return props
+}
+
+// Structured stdout/stderr are decoded before masking, so alternate JSON escape
+// encodings cannot expose a password through the plain execution log channel.
+func redact(s string, req Request) string {
+	if payload, e := parseJSONOutput([]byte(s)); e == nil {
+		start := strings.IndexByte(s, '{')
+		return redactPlain(s[:start], req) + string(redactJSON(payload, req))
+	}
+	return redactPlain(s, req)
+}

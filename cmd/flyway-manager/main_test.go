@@ -24,7 +24,7 @@ type nativeProcess struct {
 	baseURL string
 }
 
-func launchNative(t *testing.T, dir string, expectReady bool) *nativeProcess {
+func launchNative(t *testing.T, dir string, expectReady bool, configs ...string) *nativeProcess {
 	t.Helper()
 	binary, e := filepath.Abs("../../bin/flyway-manager")
 	if e != nil {
@@ -41,6 +41,9 @@ func launchNative(t *testing.T, dir string, expectReady bool) *nativeProcess {
 		}
 	}
 	cmd.Env = append(env, "FLYWAY_MANAGER_DATA_DIR="+dir, "FLYWAY_MANAGER_LISTEN_ADDRESS=127.0.0.1:0")
+	if len(configs) > 0 {
+		cmd.Env = append(cmd.Env, "FLYWAY_MANAGER_CONFIG="+configs[0])
+	}
 	pipe, e := cmd.StdoutPipe()
 	if e != nil {
 		t.Fatal(e)
@@ -162,7 +165,7 @@ func TestNativeRestartPreservesIdentityRegistryAndEncryptedCredentials(t *testin
 	json.Unmarshal(nativeCall(t, client, p.baseURL, "POST", "/database-targets/native-target/schemas", identity.CSRF, map[string]string{"name": "CORE_BANKING"}, 201), &schema)
 	var account struct{ ID string }
 	json.Unmarshal(nativeCall(t, client, p.baseURL, "POST", "/execution-accounts", identity.CSRF, map[string]any{"target_id": "native-target", "name": "native-deploy", "username": "DEPLOY_ADMIN", "schema_ids": []string{schema.ID}, "password": "native-oracle-password-2026"}, 201), &account)
-	nativeCall(t, client, p.baseURL, "POST", "/migration-runs", identity.CSRF, map[string]string{}, 501)
+	nativeCall(t, client, p.baseURL, "POST", "/migration-runs", identity.CSRF, map[string]string{}, 400)
 	logs := p.stop(t)
 	p = nil
 	for _, value := range []string{"native-password-2026", "native-oracle-password-2026", strings.TrimSpace(string(setup))} {

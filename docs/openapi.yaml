@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Flyway Manager Phase 2 API
-  version: 0.2.0
-  description: Standalone identity and Oracle registry. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
+  title: Flyway Manager Phase 3 API
+  version: 0.3.0
+  description: Standalone identity, Oracle registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
     JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
     plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
     web sessions and cannot access administration. Lists with limit/offset are filtered by authorization before
@@ -1750,68 +1750,31 @@ paths:
           $ref: '#/components/responses/Error'
         '403':
           $ref: '#/components/responses/Error'
-  /migration-runs:
+  /runtime:
     get:
-      summary: Unavailable until Phase 3
-      operationId: get_migration_runs
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
+      summary: Check configured Flyway runtime readiness
+      operationId: get_runtime
       security:
       - Session: []
       - Bearer: []
       responses:
-        '501':
-          description: Capability unavailable.
+        '200':
+          description: Local Flyway binary, integrity, and dependency readiness. Does not verify Oracle connectivity.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-    post:
-      summary: Unavailable until Phase 3
-      operationId: post_migration_runs
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-        CSRF: []
-      - Bearer: []
-      parameters:
-      - name: Origin
-        in: header
-        required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
-  /migration-runs/{id}:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RuntimeReadiness'
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /database-targets/{id}/schemas/{schemaID}/execution-accounts:
     get:
-      summary: Unavailable until Phase 3
-      operationId: get_migration_runs_id
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
+      summary: List active execution accounts mapped to an authorized schema
+      operationId: get_schema_execution_accounts
       security:
       - Session: []
       - Bearer: []
@@ -1819,323 +1782,91 @@ paths:
       - name: id
         in: path
         required: true
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-    post:
-      summary: Unavailable until Phase 3
-      operationId: post_migration_runs_id
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-        CSRF: []
-      - Bearer: []
-      parameters:
-      - name: id
+        schema: {type: string}
+      - name: schemaID
         in: path
         required: true
-        schema:
-          type: string
-      - name: Origin
-        in: header
-        required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
+        schema: {type: string}
       responses:
-        '501':
-          description: Capability unavailable.
+        '200':
+          description: Sanitized execution-account metadata; credentials are never returned.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
-  /migration-runs/{id}/logs:
-    get:
-      summary: Unavailable until Phase 3
-      operationId: get_migration_runs_id_logs
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-    post:
-      summary: Unavailable until Phase 3
-      operationId: post_migration_runs_id_logs
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-        CSRF: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: Origin
-        in: header
-        required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
-  /migration-runs/{id}/events:
-    get:
-      summary: Unavailable until Phase 3
-      operationId: get_migration_runs_id_events
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-    post:
-      summary: Unavailable until Phase 3
-      operationId: post_migration_runs_id_events
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-        CSRF: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: Origin
-        in: header
-        required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
-  /migration-runs/{id}/artifacts:
-    get:
-      summary: Unavailable until Phase 3
-      operationId: get_migration_runs_id_artifacts
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-    post:
-      summary: Unavailable until Phase 3
-      operationId: post_migration_runs_id_artifacts
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-        CSRF: []
-      - Bearer: []
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: Origin
-        in: header
-        required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/ExecutionAccount'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
   /artifacts:
-    get:
-      summary: Unavailable until Phase 3
-      operationId: get_artifacts
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
-      security:
-      - Session: []
-      - Bearer: []
-      responses:
-        '501':
-          description: Capability unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
     post:
-      summary: Unavailable until Phase 3
+      summary: Upload and normalize an immutable SQL migration bundle
       operationId: post_artifacts
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
+      description: >-
+        Multipart file parts are repeated under `files`. Preserve each selected file's original filename, including
+        folder-relative path segments. Total request size is limited to 50 MiB plus 64 KiB multipart overhead;
+        configurable extraction, file-count, per-file, path, and expansion-ratio limits also apply. Archive type is
+        detected from content. Original bytes and normalized SQL are stored in SQLite.
       security:
       - Session: []
         CSRF: []
       - Bearer: []
       parameters:
+      - name: target_id
+        in: query
+        required: true
+        schema: {type: string}
+      - name: schema_id
+        in: query
+        required: true
+        schema: {type: string}
       - name: Origin
         in: header
         required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
+        description: Browser cookie mutations require a matching same-site Origin. Bearer requests are exempt.
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: binary
+              required: [files]
+            encoding:
+              files:
+                contentType: application/octet-stream
+
       responses:
-        '501':
-          description: Capability unavailable.
+        '201':
+          description: Bundle accepted and normalized.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Artifact'}
+                required: [data]
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
   /artifacts/{id}:
     get:
-      summary: Unavailable until Phase 3
+      summary: Read an artifact manifest
       operationId: get_artifacts_id
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
       security:
       - Session: []
       - Bearer: []
@@ -2143,26 +1874,235 @@ paths:
       - name: id
         in: path
         required: true
-        schema:
-          type: string
+        schema: {type: string}
       responses:
-        '501':
-          description: Capability unavailable.
+        '200':
+          description: Immutable artifact manifest without content bytes.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Artifact'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /artifacts/{id}/files:
+    get:
+      summary: Download one normalized SQL file
+      operationId: get_artifacts_id_files
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: path
+        in: query
+        required: true
+        description: Exact normalized relative path from the artifact manifest.
+        schema: {type: string}
+      responses:
+        '200':
+          description: Raw immutable SQL bytes.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /artifacts/{id}/inputs:
+    get:
+      summary: Download one original uploaded input
+      operationId: get_artifacts_id_inputs
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: index
+        in: query
+        required: true
+        schema: {type: integer, minimum: 0}
+      responses:
+        '200':
+          description: Raw original upload bytes.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-preflight:
     post:
-      summary: Unavailable until Phase 3
-      operationId: post_artifacts_id
-      description: Authenticated request always fails with NOT_IMPLEMENTED. No execution, uploads or migration results
-        are produced.
+      summary: Validate local execution gates and perform live Flyway info and validate checks
+      operationId: post_migration_preflight
+      description: >-
+        Checks authorization, active target/schema, mapped credentialed account, runtime, artifact snapshot and stream
+        continuity. Live Flyway checks run only when all local gates pass. Offline readiness is never reported as
+        verified Oracle validation.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: Origin
+        in: header
+        required: false
+        description: Browser cookie mutations require a matching same-site Origin. Bearer requests are exempt.
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RunInput'}
+      responses:
+        '200':
+          description: Preflight result, including blocking findings and live-check status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Preflight'}
+                required: [data]
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs:
+    get:
+      summary: List authorized migration runs with server-side filters
+      operationId: get_migration_runs
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - *id002
+      - *id003
+      - name: status
+        in: query
+        schema: {type: string, enum: [QUEUED, PREFLIGHT, RUNNING, REPAIRING, SUCCEEDED, FAILED, BLOCKED, NEEDS_REVIEW, CANCELLED]}
+      - name: target_id
+        in: query
+        schema: {type: string}
+      - name: schema_id
+        in: query
+        schema: {type: string}
+      - name: actor
+        in: query
+        schema: {type: string}
+      - name: source
+        in: query
+        schema: {type: string, enum: [WEB, API]}
+      - name: from
+        in: query
+        description: Inclusive RFC3339 creation time.
+        schema: {type: string, format: date-time}
+      - name: to
+        in: query
+        description: Inclusive RFC3339 creation time.
+        schema: {type: string, format: date-time}
+      - name: q
+        in: query
+        schema: {type: string}
+      responses:
+        '200':
+          description: Authorized results are filtered before stable pagination.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Run'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      summary: Queue a migration run
+      operationId: post_migration_runs
+      description: Persists the run before dispatch. Repeating the same Idempotency-Key and canonical request returns the original run; reusing the key for a different request conflicts. Failed SQL is never automatically retried.
+      security:
+      - Session: []
+        CSRF: []
+      - Bearer: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema: {type: string, minLength: 1, maxLength: 200}
+      - name: Origin
+        in: header
+        required: false
+        description: Browser cookie mutations require a matching same-site Origin. Bearer requests are exempt.
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RunInput'}
+      responses:
+        '202':
+          description: Durable run accepted for asynchronous processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Run'}
+                required: [data]
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}:
+    get:
+      summary: Read a migration run and its frozen snapshot
+      operationId: get_migration_runs_id
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Run state is independent of HTTP success and may be FAILED or BLOCKED.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Run'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/cancel:
+    post:
+      summary: Cancel a run that is still queued
+      operationId: post_migration_runs_id_cancel
+      description: Cancellation succeeds only before execution starts. Running or terminal jobs cannot be cancelled or replayed.
       security:
       - Session: []
         CSRF: []
@@ -2171,32 +2111,172 @@ paths:
       - name: id
         in: path
         required: true
-        schema:
-          type: string
+        schema: {type: string}
       - name: Origin
         in: header
         required: false
-        description: Required matching browser origin for cookie mutations, login and bootstrap. Bearer-only API
-          requests are exempt.
-        schema:
-          type: string
+        description: Browser cookie mutations require a matching same-site Origin. Bearer requests are exempt.
+        schema: {type: string}
       responses:
-        '501':
-          description: Capability unavailable.
+        '200':
+          description: Run was cancelled.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
-        '400':
-          $ref: '#/components/responses/Error'
-        '409':
-          $ref: '#/components/responses/Error'
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Ok'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/logs:
+    get:
+      summary: Read searchable, paginated execution logs
+      operationId: get_migration_runs_id_logs
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 200, default: 100}
+      - name: offset
+        in: query
+        schema: {type: integer, minimum: 0, default: 0}
+      - name: q
+        in: query
+        schema: {type: string}
+      - name: channel
+        in: query
+        schema: {type: string}
+      responses:
+        '200':
+          description: Log lines ordered by sequence.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/RunLog'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/artifacts:
+    get:
+      summary: Read immutable artifact manifests associated with a run
+      operationId: get_migration_runs_id_artifacts
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Artifact manifests; content is downloaded through separately authorized artifact routes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Artifact'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/executions:
+    get:
+      summary: Read bounded Flyway process execution evidence
+      operationId: get_migration_runs_id_executions
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Flyway command, outcome, bounded output and timestamps.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/RunExecution'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/repair:
+    get:
+      summary: Read conditional repair evidence independently of migration outcome
+      operationId: get_migration_runs_id_repair
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Repair status, reason, before/after history and execution reference.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/Repair'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/record:
+    get:
+      summary: Download a complete JSON run record
+      operationId: get_migration_runs_id_record
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Downloadable JSON envelope with run, logs, process executions, artifacts and repair evidence.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: {$ref: '#/components/schemas/RunRecord'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
     Session:
@@ -2380,7 +2460,8 @@ components:
             authentication: *id001
             registry: *id001
             migration_execution:
-              const: false
+              type: boolean
+              description: Execution API is implemented; runtime readiness and Oracle verification are separate checks.
     Target:
       type: object
       properties:
@@ -2657,6 +2738,212 @@ components:
           type: string
         request_id:
           type: string
+    RuntimeReadiness:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        version:
+          type: string
+        integrity:
+          type: string
+        dependency:
+          type: string
+        blockers:
+          type: array
+          items: {type: string}
+      required: [ready, version, integrity, dependency, blockers]
+    RunContext:
+      type: object
+      additionalProperties: false
+      properties:
+        external_run_id: {type: string, maxLength: 500}
+        commit_sha: {type: string, maxLength: 200}
+        initiated_by: {type: string, maxLength: 500}
+    RunInput:
+      type: object
+      additionalProperties: false
+      properties:
+        target_id: {type: string}
+        schema_id: {type: string}
+        execution_account_id: {type: string}
+        artifact_id: {type: string}
+        context: {$ref: '#/components/schemas/RunContext'}
+      required: [target_id, schema_id, execution_account_id, artifact_id]
+    AccountSnapshot:
+      type: object
+      properties:
+        id: {type: string}
+        name: {type: string}
+        username: {type: string}
+        credential_version: {type: integer}
+      required: [id, name, username, credential_version]
+    ArtifactFile:
+      type: object
+      properties:
+        path: {type: string}
+        sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        kind: {type: string, enum: [versioned, repeatable]}
+        version: {type: string}
+        size: {type: integer, minimum: 0}
+      required: [path, sha256, kind, version, size]
+    ArtifactInput:
+      type: object
+      properties:
+        name: {type: string}
+        sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        size: {type: integer, minimum: 0}
+      required: [name, sha256, size]
+    Artifact:
+      type: object
+      properties:
+        id: {type: string}
+        target_id: {type: string}
+        schema_id: {type: string}
+        uploader_id: {type: string}
+        uploader_kind: {type: string}
+        uploader_name: {type: string}
+        created_at: {$ref: '#/components/schemas/DateTime'}
+        sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        total_bytes: {type: integer, minimum: 0}
+        files:
+          type: array
+          items: {$ref: '#/components/schemas/ArtifactFile'}
+        inputs:
+          type: array
+          items: {$ref: '#/components/schemas/ArtifactInput'}
+      required: [id, target_id, schema_id, uploader_id, uploader_kind, uploader_name, created_at, sha256, total_bytes, files, inputs]
+    Blocker:
+      type: object
+      properties:
+        code: {type: string}
+        message: {type: string}
+      required: [code, message]
+    Diagnostic:
+      type: object
+      properties:
+        name: {type: string}
+        status: {type: string}
+        detail: {type: string}
+      required: [name, status, detail]
+    Preflight:
+      type: object
+      properties:
+        ready: {type: boolean}
+        local_ready: {type: boolean}
+        live_status: {type: string, enum: [VERIFIED, NOT_VERIFIED, FAILED]}
+        blockers:
+          type: array
+          items: {$ref: '#/components/schemas/Blocker'}
+        warnings:
+          type: array
+          items: {type: string}
+        runtime_version: {type: string}
+        files:
+          type: array
+          items: {$ref: '#/components/schemas/ArtifactFile'}
+        diagnostics:
+          type: array
+          items: {$ref: '#/components/schemas/Diagnostic'}
+        info: {}
+        validation: {}
+      required: [ready, local_ready, live_status, blockers, warnings, runtime_version, files, diagnostics]
+    Run:
+      type: object
+      properties:
+        id: {type: string}
+        run_id: {type: string}
+        artifact_name: {type: string}
+        flyway_configuration:
+          type: object
+          additionalProperties: {type: string}
+        status_url: {type: string}
+        logs_url: {type: string}
+        status: {type: string, enum: [QUEUED, PREFLIGHT, RUNNING, REPAIRING, SUCCEEDED, FAILED, BLOCKED, NEEDS_REVIEW, CANCELLED]}
+        target_id: {type: string}
+        schema_id: {type: string}
+        execution_account_id: {type: string}
+        artifact_id: {type: string}
+        context: {$ref: '#/components/schemas/RunContext'}
+        target: {$ref: '#/components/schemas/Target'}
+        schema: {$ref: '#/components/schemas/Schema'}
+        account: {$ref: '#/components/schemas/AccountSnapshot'}
+        actor_id: {type: string}
+        actor_kind: {type: string}
+        actor_name: {type: string}
+        source: {type: string, enum: [WEB, API]}
+        created_at: {$ref: '#/components/schemas/DateTime'}
+        started_at: {$ref: '#/components/schemas/DateTimeOrEmpty'}
+        finished_at: {$ref: '#/components/schemas/DateTimeOrEmpty'}
+        flyway_version: {type: string}
+        exit_code:
+          anyOf:
+          - {type: integer}
+          - {type: 'null'}
+        migration_outcome: {type: string}
+        repair_outcome: {type: string}
+        reason: {type: string}
+        preflight: {$ref: '#/components/schemas/Preflight'}
+      required: [id, run_id, status_url, logs_url, status, target_id, schema_id, execution_account_id, artifact_id, context, target, schema, account, actor_id, actor_kind, actor_name, source, created_at, started_at, finished_at, flyway_version, exit_code, migration_outcome, repair_outcome, reason]
+    RunLog:
+      type: object
+      properties:
+        sequence: {type: integer, format: int64}
+        command: {type: string}
+        channel: {type: string}
+        message: {type: string}
+        created_at: {$ref: '#/components/schemas/DateTime'}
+      required: [sequence, command, channel, message, created_at]
+    RunExecution:
+      type: object
+      properties:
+        id: {type: string}
+        command: {type: string}
+        success: {type: boolean}
+        exit_code: {type: integer}
+        stdout: {type: string}
+        stderr: {type: string}
+        json: {}
+        started_at: {$ref: '#/components/schemas/DateTime'}
+        finished_at: {$ref: '#/components/schemas/DateTime'}
+        ambiguous: {type: boolean}
+      required: [id, command, success, exit_code, stdout, stderr, started_at, finished_at, ambiguous]
+    Repair:
+      type: object
+      properties:
+        outcome: {type: string, enum: [SUCCEEDED, FAILED, SKIPPED, UNSAFE]}
+        reason: {type: string}
+        before: {}
+        after: {}
+        execution_id: {type: string}
+      required: [outcome, reason, before, after, execution_id]
+    RunRecord:
+      type: object
+      properties:
+        run: {$ref: '#/components/schemas/Run'}
+        logs:
+          type: array
+          items: {$ref: '#/components/schemas/RunLog'}
+        executions:
+          type: array
+          items: {$ref: '#/components/schemas/RunExecution'}
+        artifacts:
+          type: array
+          items: {$ref: '#/components/schemas/Artifact'}
+        repair: {$ref: '#/components/schemas/Repair'}
+      required: [run, logs, executions, artifacts, repair]
+    Ok:
+      type: object
+      properties:
+        ok: {type: boolean, const: true}
+      required: [ok]
+    DateTime:
+      type: string
+      format: date-time
+    DateTimeOrEmpty:
+      anyOf:
+      - {$ref: '#/components/schemas/DateTime'}
+      - {type: string, const: ''}
   responses:
     Error:
       description: Typed API error with safe message and optional field.

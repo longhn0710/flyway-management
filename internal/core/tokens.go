@@ -245,6 +245,7 @@ func (s *Service) AuthenticateToken(ctx context.Context, raw, requestID string) 
 	if e != nil {
 		return Actor{}, e
 	}
+	a.TokenID = tid
 	a.Kind = "service"
 	a.Role = "Service"
 	if _, e = tx.ExecContext(ctx, "UPDATE api_tokens SET last_used_at=? WHERE id=?", now(), tid); e != nil {

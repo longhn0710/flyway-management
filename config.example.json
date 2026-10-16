@@ -2,5 +2,20 @@
   "listen_address": "127.0.0.1:8080",
   "data_dir": "~/.flyway-manager",
   "log_level": "info",
-  "public_url": ""
+  "public_url": "",
+  "flyway": {
+    "executable": "",
+    "version": "",
+    "sha256": "",
+    "timeout_seconds": 300
+  },
+  "artifact_limits": {
+    "max_upload_bytes": 52428800,
+    "max_expanded_bytes": 209715200,
+    "max_files": 1000,
+    "max_file_bytes": 20971520,
+    "max_expansion_ratio": 200,
+    "max_path_bytes": 1024,
+    "max_path_depth": 16
+  }
 }

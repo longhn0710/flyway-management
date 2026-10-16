@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"flyway-manager/internal/flyway"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -27,6 +30,9 @@ func main() {
 }
 
 func run() error {
+	if len(os.Args) > 1 && os.Args[1] == "runtime-install" {
+		return installRuntime(os.Args[2:])
+	}
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -56,6 +62,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	runtimePin := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.Flyway.Version+":"+cfg.Flyway.SHA256)))
+	if err = service.StartExecution(ctx, flyway.New(cfg.Flyway, cfg.DataDir), runtimePin, cfg.DataDir, cfg.ArtifactLimits); err != nil {
+		return err
+	}
+	defer service.StopExecution()
 	if required, _ := service.BootstrapRequired(ctx); required {
 		logger.Info("first-run setup required; read the private setup token file", "bootstrap_token_file", service.SetupTokenFile)
 	}

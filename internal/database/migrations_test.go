@@ -46,15 +46,18 @@ func TestParseMigrationsRejectsDuplicateFutureVersions(t *testing.T) {
 
 func migrationFixture(t *testing.T, additions map[string]string) fstest.MapFS {
 	t.Helper()
-	initial, err := migrationFiles.ReadFile("migrations/001_initial.sql")
+	files := fstest.MapFS{}
+	entries, err := fs.ReadDir(migrationFiles, "migrations")
 	if err != nil {
 		t.Fatal(err)
 	}
-	phase2, err := migrationFiles.ReadFile("migrations/002_identity_registry.sql")
-	if err != nil {
-		t.Fatal(err)
+	for _, entry := range entries {
+		contents, e := migrationFiles.ReadFile("migrations/" + entry.Name())
+		if e != nil {
+			t.Fatal(e)
+		}
+		files["migrations/"+entry.Name()] = &fstest.MapFile{Data: contents}
 	}
-	files := fstest.MapFS{"migrations/001_initial.sql": &fstest.MapFile{Data: initial}, "migrations/002_identity_registry.sql": &fstest.MapFile{Data: phase2}}
 	for name, contents := range additions {
 		files["migrations/"+name] = &fstest.MapFile{Data: []byte(contents)}
 	}
@@ -62,7 +65,7 @@ func migrationFixture(t *testing.T, additions map[string]string) fstest.MapFS {
 }
 
 func TestParseMigrationsRejectsMissingAndInvalidVersions(t *testing.T) {
-	for _, name := range []string{"004_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
+	for _, name := range []string{"005_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
 		t.Run(name, func(t *testing.T) {
 			entries, err := fs.ReadDir(migrationFixture(t, map[string]string{name: "SELECT 1"}), "migrations")
 			if err != nil {
@@ -101,8 +104,8 @@ func TestMigrationsRejectInconsistentHistory(t *testing.T) {
 	for name, sql := range map[string]string{
 		"empty ledger":      "DELETE FROM schema_migrations",
 		"missing first":     "DELETE FROM schema_migrations WHERE version=1",
-		"missing last":      "DELETE FROM schema_migrations WHERE version=4",
-		"wrong checkpoint":  "PRAGMA user_version=3",
+		"missing last":      "DELETE FROM schema_migrations WHERE version=5",
+		"wrong checkpoint":  "PRAGMA user_version=4",
 		"missing middle":    "DELETE FROM schema_migrations WHERE version=2",
 		"zero version":      "UPDATE schema_migrations SET version=0 WHERE version=1",
 		"missing checksum":  "UPDATE schema_migrations SET checksum=NULL WHERE version=1",
@@ -116,7 +119,7 @@ func TestMigrationsRejectInconsistentHistory(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer db.Close()
-			files := migrationFixture(t, map[string]string{"003_second.sql": "CREATE TABLE second(value TEXT)", "004_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
+			files := migrationFixture(t, map[string]string{"004_second.sql": "CREATE TABLE second(value TEXT)", "005_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
 			if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {
 				t.Fatal(err)
 			}
@@ -184,7 +187,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { db.Close() }()
-	files := migrationFixture(t, map[string]string{"003_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "004_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
+	files := migrationFixture(t, map[string]string{"004_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "005_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
 	if _, err := migrateFS(context.Background(), db.SQL, files); err == nil {
 		t.Fatal("expected SQL failure")
 	}
@@ -192,7 +195,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if err := db.SQL.QueryRow("SELECT count(*) FROM sqlite_master WHERE name IN ('second', 'partial')").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("partial schema survived: %d %v", count, err)
 	}
-	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 2 {
+	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 3 {
 		t.Fatalf("partial ledger survived: %d %v", count, err)
 	}
 	// A failed startup must be safe to reopen using the previous schema.
@@ -207,8 +210,8 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if db.InstallationID != id {
 		t.Fatal("failed migration changed installation metadata")
 	}
-	files["migrations/004_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
-	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 4 {
+	files["migrations/005_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
+	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 5 {
 		t.Fatalf("retry: version %d, %v", version, err)
 	}
 	if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {

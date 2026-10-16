@@ -139,7 +139,7 @@ func TestAPIEndToEndIdentityRegistryCredentialsAndServiceToken(t *testing.T) {
 	assertStatus(t, f.call("GET", "/database-targets/uat/schemas/"+schema2.ID, nil, nil, bearer), 403)
 	assertStatus(t, f.call("GET", "/access/users", nil, nil, bearer), 403)
 	assertStatus(t, f.call("GET", "/auth/me", nil, nil, bearer), 403)
-	assertStatus(t, f.call("POST", "/migration-runs", map[string]string{}, nil, bearer), 501)
+	assertStatus(t, f.call("POST", "/migration-runs", map[string]string{}, nil, bearer), 400)
 	tokens := f.call("GET", "/access/service-accounts/"+sa.ID+"/tokens", nil, f.cookie, nil)
 	assertStatus(t, tokens, 200)
 	if strings.Contains(tokens.Body.String(), issued.Token) {
@@ -188,7 +188,7 @@ func TestAPICSFRRequestValidationAndNoPreviewBypass(t *testing.T) {
 	assertStatus(t, f.call("POST", "/database-targets", `{} {}`, f.cookie, nil), 400)
 	assertStatus(t, f.call("POST", "/database-targets", map[string]string{}, f.cookie, map[string]string{"Content-Type": "text/plain"}), 415)
 	assertStatus(t, f.call("POST", "/database-targets", `{"name":"`+strings.Repeat("a", 1<<20)+`"}`, f.cookie, nil), 413)
-	for _, path := range []string{"/auth/me", "/auth/sessions", "/access/users", "/access/audit", "/access/service-accounts", "/database-targets", "/database-targets/a/schemas", "/execution-accounts", "/settings/authentication", "/migration-runs", "/artifacts"} {
+	for _, path := range []string{"/auth/me", "/auth/sessions", "/access/users", "/access/audit", "/access/service-accounts", "/database-targets", "/database-targets/a/schemas", "/execution-accounts", "/settings/authentication", "/migration-runs", "/artifacts/unknown"} {
 		assertStatus(t, f.call("GET", path, nil, nil, nil), 401)
 	}
 	// A direct TLS request sets Secure without trusting forwarded headers.

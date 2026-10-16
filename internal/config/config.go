@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"flyway-manager/internal/artifact"
+	"flyway-manager/internal/flyway"
 	"fmt"
 	"io"
 	"net"
@@ -14,10 +16,12 @@ import (
 
 // Config contains native server settings; authentication providers are managed in SQLite.
 type Config struct {
-	ListenAddress string `json:"listen_address"`
-	DataDir       string `json:"data_dir"`
-	LogLevel      string `json:"log_level"`
-	PublicURL     string `json:"public_url"`
+	ListenAddress  string          `json:"listen_address"`
+	DataDir        string          `json:"data_dir"`
+	LogLevel       string          `json:"log_level"`
+	PublicURL      string          `json:"public_url"`
+	Flyway         flyway.Config   `json:"flyway"`
+	ArtifactLimits artifact.Limits `json:"artifact_limits"`
 }
 
 func Load() (Config, error) {
@@ -57,7 +61,18 @@ func Load() (Config, error) {
 	if value, ok := os.LookupEnv("FLYWAY_MANAGER_PUBLIC_URL"); ok {
 		cfg.PublicURL = value
 	}
+	cfg.ArtifactLimits = artifact.EffectiveLimits(cfg.ArtifactLimits)
+	if cfg.ArtifactLimits.MaxUploadBytes > 200<<20 || cfg.ArtifactLimits.MaxExpandedBytes > 1<<30 || cfg.ArtifactLimits.MaxFiles > 10000 || cfg.ArtifactLimits.MaxFileBytes > 200<<20 || cfg.ArtifactLimits.MaxPathDepth > 64 || cfg.ArtifactLimits.MaxPathBytes > 4096 || cfg.ArtifactLimits.MaxExpansionRatio > 1000 {
+		return Config{}, errors.New("artifact limits exceed supported safety ceilings")
+	}
+	if cfg.Flyway.TimeoutSeconds < 0 || cfg.Flyway.TimeoutSeconds > 3600 {
+		return Config{}, errors.New("flyway.timeout_seconds must be between 0 and 3600")
+	}
 	var err error
+	cfg.Flyway.Executable, err = expandHome(cfg.Flyway.Executable)
+	if err != nil {
+		return Config{}, err
+	}
 	cfg.DataDir, err = expandHome(cfg.DataDir)
 	if err != nil {
 		return Config{}, fmt.Errorf("resolve data_dir: %w", err)

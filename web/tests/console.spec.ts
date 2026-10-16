@@ -49,7 +49,9 @@ test("first-run setup is one-time; sessions are server-authoritative", async ({
   await expect(
     page.getByRole("heading", { name: "Run History" }),
   ).toBeVisible();
-  await expect(page.getByText("Unavailable until Phase 3")).toBeVisible();
+  await expect(
+    page.getByText("No migration runs match these filters."),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByText("E2E Administrator · Admin")).toBeVisible();
   const identity = (await (await page.request.get("/api/v1/auth/me")).json())
@@ -254,7 +256,7 @@ test("execution account credentials are write-only and encrypted metadata is liv
   await expect(page.getByLabel("New Oracle password")).toHaveValue("");
 });
 
-test("authentication settings show server configuration and run routes stay unavailable", async ({
+test("authentication settings show server configuration and unavailable runtime is explicit", async ({
   page,
 }) => {
   await page.goto("/settings/authentication");
@@ -270,15 +272,9 @@ test("authentication settings show server configuration and run routes stay unav
     ),
   ).toBeVisible();
   await page.goto("/runs/new");
-  await expect(
-    page.getByText("No bundle upload or Flyway command is available."),
-  ).toBeVisible();
+  await expect(page.getByText("Flyway runtime unavailable")).toBeVisible();
   await page.goto("/runs/e2e-run");
-  await expect(
-    page.getByText(
-      "This application has not executed this migration and has no run details to display.",
-    ),
-  ).toBeVisible();
+  await expect(page.getByText("Resource not found.")).toBeVisible();
 });
 
 for (const width of [1440, 390]) {

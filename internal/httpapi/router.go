@@ -60,7 +60,7 @@ func NewRouter(options RouterOptions) http.Handler {
 			"status": map[bool]string{true: "ok", false: "degraded"}[databaseStatus == "ok"], "database": databaseStatus,
 			"schema_version":  schemaVersion(options.Database),
 			"installation_id": installationID(options.Database),
-			"capabilities":    map[string]bool{"authentication": options.Service != nil, "migration_execution": false, "registry": options.Service != nil},
+			"capabilities":    map[string]bool{"authentication": options.Service != nil, "migration_execution": options.Service != nil && options.Service.ExecutionEnabled(), "registry": options.Service != nil},
 		}
 		writeJSON(w, status, envelope[map[string]any]{Data: data})
 	})

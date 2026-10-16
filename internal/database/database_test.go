@@ -17,8 +17,8 @@ func TestOpenMigratesAndPersistsInstallationMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	firstID := first.InstallationID
-	if first.SchemaVersion != 2 {
-		t.Fatalf("schema version = %d, want 2", first.SchemaVersion)
+	if first.SchemaVersion != 3 {
+		t.Fatalf("schema version = %d, want 3", first.SchemaVersion)
 	}
 	var tables int
 	if err := first.SQL.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('schema_migrations','installation_metadata')").Scan(&tables); err != nil {
@@ -45,8 +45,8 @@ func TestOpenMigratesAndPersistsInstallationMetadata(t *testing.T) {
 	if second.InstallationID != firstID {
 		t.Fatalf("installation ID changed after restart: %q != %q", second.InstallationID, firstID)
 	}
-	if second.SchemaVersion != 2 {
-		t.Fatalf("schema version after restart = %d, want 2", second.SchemaVersion)
+	if second.SchemaVersion != 3 {
+		t.Fatalf("schema version after restart = %d, want 3", second.SchemaVersion)
 	}
 	info, err := os.Stat(dataDir)
 	if err != nil {
@@ -70,7 +70,7 @@ func TestOpenRejectsDatabaseFromNewerSchemaVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SQL.Exec("UPDATE schema_migrations SET version=99 WHERE version=2"); err != nil {
+	if _, err := db.SQL.Exec("UPDATE schema_migrations SET version=99 WHERE version=3"); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {

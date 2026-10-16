@@ -73,6 +73,7 @@ type User struct {
 }
 type Actor struct {
 	ID, Name, Kind, Role, SessionID, CSRF string
+	TokenID                               string
 	ExpiresAt                             int64
 }
 

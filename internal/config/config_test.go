@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -124,5 +125,28 @@ func TestPublicURLValidation(t *testing.T) {
 				t.Fatalf("valid origin rejected: %v", err)
 			}
 		})
+	}
+}
+
+func TestRuntimeAndArtifactConfiguration(t *testing.T) {
+	clearConfigEnv(t)
+	for _, contents := range []string{
+		`{"flyway":{"executable":"/approved/flyway","version":"11.20.0","sha256":"approved-externally","timeout_seconds":60},"artifact_limits":{"max_files":12}}`,
+		`{"flyway":{"timeout_seconds":3601}}`,
+		`{"artifact_limits":{"max_files":10001}}`,
+	} {
+		path := filepath.Join(t.TempDir(), "runtime.json")
+		if e := os.WriteFile(path, []byte(contents), 0600); e != nil {
+			t.Fatal(e)
+		}
+		t.Setenv("FLYWAY_MANAGER_CONFIG", path)
+		cfg, e := Load()
+		if strings.Contains(contents, "approved-externally") {
+			if e != nil || cfg.Flyway.TimeoutSeconds != 60 || cfg.ArtifactLimits.MaxFiles != 12 || cfg.ArtifactLimits.MaxUploadBytes != 50<<20 {
+				t.Fatalf("config %+v %v", cfg, e)
+			}
+		} else if e == nil {
+			t.Fatal("accepted unsafe resource limits")
+		}
 	}
 }

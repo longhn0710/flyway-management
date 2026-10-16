@@ -168,7 +168,7 @@ export function Shell() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="phase-label">PHASE 2</span>
+          <span className="phase-label">PHASE 3</span>
           <p>
             Native Go · SQLite
             <br />
@@ -219,8 +219,9 @@ export function Shell() {
           account, cấu hình xác thực và registry Oracle.
         </p>
         <Notice title="Tình trạng thực thi">
-          Chạy migration, lịch sử và chi tiết lần chạy sẽ có trong Phase 3.
-          Oracle connection probe hiện chưa khả dụng.
+          Migration, lịch sử và log dùng API thực. Kiểm tra Flyway runtime trước
+          khi chạy. Kết nối Oracle chỉ được xác minh khi preflight liên hệ
+          database thành công.
         </Notice>
         <p>
           Hướng dẫn cài đặt, cấu hình và xây dựng ứng dụng nằm trong README.md
