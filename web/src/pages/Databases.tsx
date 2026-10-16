@@ -1,3 +1,4 @@
+import { schemaHref } from "../lib/navigation";
 import ConnectionWizard from "./ConnectionWizard";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -264,9 +265,7 @@ export default function Databases() {
                                   </Badge>
                                 </td>
                                 <td>
-                                  <Link
-                                    to={`/databases/${encodeURIComponent(target.id)}?schema=${encodeURIComponent(schema.id)}`}
-                                  >
+                                  <Link to={schemaHref(target.id, schema.id)}>
                                     Configure stream →
                                   </Link>
                                 </td>
@@ -594,10 +593,12 @@ export function SchemaConfiguration({
   targetID,
   schema,
   canManage,
+  canOperate = false,
 }: {
   targetID: string;
   schema: TargetSchema;
   canManage: boolean;
+  canOperate?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [historySchema, setHistorySchema] = useState(schema.history_schema);
@@ -607,12 +608,18 @@ export function SchemaConfiguration({
   );
   const [active, setActive] = useState(schema.active);
   const accounts = useQuery({
-    queryKey: ["execution-accounts", targetID],
+    queryKey: canManage
+      ? ["execution-accounts", targetID]
+      : ["stream-accounts", targetID, schema.id],
     queryFn: () =>
-      apiList<ExecutionAccount>(
-        `/execution-accounts?target_id=${encodeURIComponent(targetID)}`,
-      ),
-    enabled: canManage,
+      canManage
+        ? apiList<ExecutionAccount>(
+            `/execution-accounts?target_id=${encodeURIComponent(targetID)}`,
+          )
+        : api<ExecutionAccount[]>(
+            `/database-targets/${encodeURIComponent(targetID)}/schemas/${encodeURIComponent(schema.id)}/execution-accounts`,
+          ),
+    enabled: canManage || canOperate,
   });
   const save = useMutation({
     mutationFn: () =>
@@ -700,14 +707,20 @@ export function SchemaConfiguration({
         </Button>
       </Panel>
       <Panel title="Execution account association">
+        {accounts.isSuccess &&
+          !accounts.data.some((a) => a.schema_ids.includes(schema.id)) && (
+            <p className="empty">
+              No execution accounts available for this schema.
+            </p>
+          )}
         <p className="small muted">
           An execution account can be shared between schemas. Flyway schema
           configuration is not an Oracle privilege boundary.
         </p>
-        {!canManage ? (
+        {!canManage && !canOperate ? (
           <Notice>
-            Execution account metadata requires Admin. Use Run Migration to view
-            accounts available to you.
+            Execution account metadata requires operation permission for this
+            schema.
           </Notice>
         ) : accounts.isPending ? (
           <div className="skeleton" role="status" />
@@ -738,9 +751,11 @@ export function SchemaConfiguration({
               </div>
             ))
         )}
-        <Link to={`/instances/${encodeURIComponent(targetID)}/connections`}>
-          Manage execution accounts →
-        </Link>
+        {canManage && (
+          <Link to={`/instances/${encodeURIComponent(targetID)}/connections`}>
+            Manage execution accounts →
+          </Link>
+        )}
       </Panel>
     </div>
   );

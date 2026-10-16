@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { schemaHref } from "../lib/navigation";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,12 +29,12 @@ const states: RunStatus[] = [
   "NEEDS_REVIEW",
   "CANCELLED",
 ];
-export default function History() {
+export default function History({ targetID }: { targetID?: string } = {}) {
   const [params, setParams] = useSearchParams();
-  const [q, setQ] = useState(params.get("q") ?? "");
+  const q = params.get("q") ?? "";
   const filters = {
     status: params.get("status") ?? "",
-    target_id: params.get("target_id") ?? "",
+    target_id: targetID ?? params.get("target_id") ?? "",
     schema_id: params.get("schema_id") ?? "",
     actor: params.get("actor") ?? "",
     source: params.get("source") ?? "",
@@ -97,21 +97,24 @@ export default function History() {
   const targetRows = targets.data ?? [];
   return (
     <>
-      <PageHeading
-        title="Migration history"
-        breadcrumb="Instances / Migration history"
-        description="Review migration and repair outcomes across the Oracle instances and allowed schemas you can access."
-        actions={
-          <Link className="button primary" to="/runs/new">
-            Run migration
-          </Link>
-        }
-      />
+      {targetID ? (
+        <h2>Migration history</h2>
+      ) : (
+        <PageHeading
+          title="Migration history"
+          breadcrumb="Instances / Migration history"
+          description="Review migration and repair outcomes across the Oracle instances and allowed schemas you can access."
+          actions={
+            <Link className="button primary" to="/runs/new">
+              Run migration
+            </Link>
+          }
+        />
+      )}
       <div className="filter-bar">
         <SearchBox
           value={q}
           onChange={(value) => {
-            setQ(value);
             set("q", value);
           }}
           placeholder="Search run, artifact, requester…"
@@ -128,6 +131,7 @@ export default function History() {
         </select>
         <select
           aria-label="Database target"
+          disabled={!!targetID}
           value={filters.target_id}
           onChange={(e) => {
             const next = new URLSearchParams(params);
@@ -234,10 +238,19 @@ export default function History() {
                       {run.target?.environment}
                       <br />
                       <span className="muted">
-                        Oracle · {run.target?.name || run.target_id}
+                        Oracle ·{" "}
+                        <Link
+                          to={`/instances/${encodeURIComponent(run.target_id)}`}
+                        >
+                          {run.target?.name || "View instance"}
+                        </Link>
                       </span>
                     </td>
-                    <td>{run.schema?.name || run.schema_id}</td>
+                    <td>
+                      <Link to={schemaHref(run.target_id, run.schema_id)}>
+                        {run.schema?.name || "View schema"}
+                      </Link>
+                    </td>
                     <td>
                       {run.account?.name || run.execution_account_id}
                       <br />

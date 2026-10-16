@@ -6,7 +6,12 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Database, Play } from "lucide-react";
 import {
@@ -22,7 +27,6 @@ import {
   Badge,
   Button,
   DataTable,
-  Field,
   KeyValues,
   Modal,
   Notice,
@@ -32,19 +36,12 @@ import {
   Status,
 } from "../components/ui";
 import ConnectionWizard from "./ConnectionWizard";
+import History from "./History";
 import { SchemaConfiguration } from "./Databases";
+import { schemaHref } from "../lib/navigation";
+import { canRun } from "../lib/permissions";
 import { CredentialEditor } from "./Credentials";
 
-export function EngineNotice() {
-  return (
-    <Notice title="Engine availability:">
-      Oracle is currently implemented. PostgreSQL, MySQL and SQL Server are
-      future options; connection testing, registration, discovery and execution
-      are unavailable for these engines. Registry activity does not indicate
-      live connection health.
-    </Notice>
-  );
-}
 export function InstanceTabs({ id }: { id: string }) {
   return (
     <nav className="instance-tabs" aria-label="Instance sections">
@@ -73,17 +70,7 @@ export function RunLink({
   schema?: TargetSchema;
 }) {
   const identity = useIdentity();
-  const allowed =
-    target.active &&
-    (!schema || schema.active) &&
-    (["Admin", "Operator"].includes(identity.user.role) &&
-      identity.grants.some(
-        (g) =>
-          g.target_id === target.id &&
-          (!schema || !g.schema_id || g.schema_id === schema.id) &&
-          g.operate &&
-          (target.environment !== "PROD" || g.prod),
-      ));
+  const allowed = canRun(identity, target, schema);
   return allowed ? (
     <Link
       className="button secondary compact"
@@ -181,7 +168,6 @@ export default function Instances() {
           </Button>
         }
       />
-      <EngineNotice />
       {!admin && (
         <Notice>
           Read-only view. Target and schema administration requires Admin.
@@ -325,6 +311,18 @@ export function InstanceDetails() {
             <Link to="/instances">Instances</Link>
             <span>/</span>
             {t.name}
+            {section && (
+              <>
+                <span>/</span>
+                {section === "schemas"
+                  ? "Databases / Schemas"
+                  : section === "history"
+                    ? "Migration History"
+                    : section === "connections"
+                      ? "Connections"
+                      : "Unknown section"}
+              </>
+            )}
           </>
         }
         description="Engine: Oracle · Currently implemented"
@@ -344,7 +342,7 @@ export function InstanceDetails() {
       {section === "connections" ? (
         <Connections key={id} target={t} schemas={schemas.data ?? []} />
       ) : section === "history" ? (
-        <RecentRuns targetID={id} />
+        <History key={id} targetID={id} />
       ) : section === "schemas" ? (
         <SchemaList
           target={t}
@@ -414,16 +412,14 @@ export function InstanceDetails() {
                 schemas.data.map((s) => (
                   <div className="spread inset wrap" key={s.id}>
                     <div>
-                      <strong className="mono">{s.name}</strong>
+                      <Link className="mono" to={schemaHref(id, s.id)}>
+                        {s.name}
+                      </Link>
                       <small className="block mono muted">
                         {s.history_schema}.{s.history_table}
                       </small>
                     </div>
-                    <Link
-                      to={`/instances/${encodeURIComponent(id)}/schemas?schema=${encodeURIComponent(s.id)}`}
-                    >
-                      View schema
-                    </Link>
+                    <Link to={schemaHref(id, s.id)}>View schema</Link>
                   </div>
                 ))
               ) : (
@@ -441,118 +437,242 @@ export function InstanceDetails() {
     </>
   );
 }
-function SchemaList({
-  target,
-  schemas,
-  pending,
-  error,
-  selectedID,
-  catalog = false,
+function SchemaUnavailable() {
+  return (
+    <Notice tone="error" title="Schema not found or unavailable">
+      This schema may have been removed, may belong to another instance, or you
+      may not have access. <Link to="/schemas">Browse available schemas</Link>
+    </Notice>
+  );
+}
+
+type SchemaRow = { target: DatabaseTarget; schema: TargetSchema };
+function SchemaTable({
+  rows,
+  global = false,
+  empty,
 }: {
-  target: DatabaseTarget;
-  schemas: TargetSchema[];
-  pending: boolean;
-  error: Error | null;
-  selectedID: string;
-  catalog?: boolean;
+  rows: SchemaRow[];
+  global?: boolean;
+  empty: string;
 }) {
-  const admin = useIdentity().user.role === "Admin";
-  const selected = schemas.find((s) => s.id === selectedID);
-  const columns: ColumnDef<TargetSchema>[] = [
-    ...(catalog
+  const [params, setParams] = useSearchParams();
+  const requestedSize = Number(params.get("page_size") || 10);
+  const pageSize = [4, 6, 10, 20].includes(requestedSize) ? requestedSize : 10;
+  const requestedPage = Number(params.get("page") || 1);
+  const pageIndex = Math.min(
+    Math.max(0, Number.isSafeInteger(requestedPage) ? requestedPage - 1 : 0),
+    Math.max(0, Math.ceil(rows.length / pageSize) - 1),
+  );
+  const pagination = { pageIndex, pageSize };
+  const columns: ColumnDef<SchemaRow>[] = [
+    {
+      id: "name",
+      accessorFn: (row) => row.schema.name,
+      header: "Schema",
+      cell: ({ row: { original: r } }) => (
+        <Link
+          className="mono"
+          to={schemaHref(r.target.id, r.schema.id, params)}
+        >
+          {r.schema.name}
+        </Link>
+      ),
+    },
+    ...(global
       ? [
           {
             id: "instance",
+            accessorFn: (r: SchemaRow) => r.target.name,
             header: "Instance",
-            cell: () => (
-              <Link to={`/instances/${encodeURIComponent(target.id)}`}>
-                {target.name}
+            cell: ({
+              row: { original: r },
+            }: {
+              row: { original: SchemaRow };
+            }) => (
+              <Link to={`/instances/${encodeURIComponent(r.target.id)}`}>
+                {r.target.name}
               </Link>
             ),
           },
-          { id: "engine", header: "Engine", cell: () => <Badge>Oracle</Badge> },
           {
             id: "environment",
+            accessorFn: (r: SchemaRow) => r.target.environment,
             header: "Environment",
-            cell: () => (
-              <Badge tone={target.environment === "PROD" ? "error" : "accent"}>
-                {target.environment}
+            cell: ({
+              row: { original: r },
+            }: {
+              row: { original: SchemaRow };
+            }) => (
+              <Badge
+                tone={r.target.environment === "PROD" ? "error" : "accent"}
+              >
+                {r.target.environment}
               </Badge>
             ),
           },
         ]
       : []),
     {
-      accessorKey: "name",
-      header: "Schema",
-      cell: ({ row }) => (
-        <Link
-          className="mono"
-          to={`?schema=${encodeURIComponent(row.original.id)}`}
-        >
-          {row.original.name}
-        </Link>
+      id: "active",
+      accessorFn: (r) => r.schema.active,
+      header: "Registry status",
+      cell: ({ row: { original: r } }) => (
+        <Badge tone={r.schema.active ? "success" : "neutral"}>
+          {r.schema.active ? "Active" : "Inactive"}
+        </Badge>
       ),
     },
     {
       id: "history",
+      accessorFn: (r) => `${r.schema.history_schema}.${r.schema.history_table}`,
       header: "History owner / table",
-      cell: ({ row }) => (
+      cell: ({ row: { original: r } }) => (
         <code>
-          {row.original.history_schema}.{row.original.history_table}
+          {r.schema.history_schema}.{r.schema.history_table}
         </code>
-      ),
-    },
-    {
-      accessorKey: "active",
-      header: "Registry status",
-      cell: ({ row }) => (
-        <Badge tone={row.original.active ? "success" : "neutral"}>
-          {row.original.active ? "Active" : "Inactive"}
-        </Badge>
       ),
     },
     {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) => <RunLink target={target} schema={row.original} />,
+      cell: ({ row: { original: r } }) => (
+        <div className="actions wrap">
+          <RunLink target={r.target} schema={r.schema} />
+          <Link
+            to={`/runs?target_id=${encodeURIComponent(r.target.id)}&schema_id=${encodeURIComponent(r.schema.id)}`}
+          >
+            History
+          </Link>
+        </div>
+      ),
     },
   ];
   return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      pagination={pagination}
+      onPaginationChange={(updater) => {
+        const value =
+          typeof updater === "function" ? updater(pagination) : updater;
+        const next = new URLSearchParams(params);
+        if (value.pageIndex) next.set("page", String(value.pageIndex + 1));
+        else next.delete("page");
+        if (value.pageSize !== 10)
+          next.set("page_size", String(value.pageSize));
+        else next.delete("page_size");
+        setParams(next);
+      }}
+      empty={empty}
+    />
+  );
+}
+
+function SchemaList({
+  target,
+  schemas,
+  pending,
+  error,
+  selectedID,
+}: {
+  target: DatabaseTarget;
+  schemas: TargetSchema[];
+  pending: boolean;
+  error: Error | null;
+  selectedID: string;
+}) {
+  const identity = useIdentity();
+  const admin = identity.user.role === "Admin";
+  const [params, setParams] = useSearchParams();
+  const q = params.get("q") ?? "";
+  const status = params.get("status") ?? "";
+  const selected = schemas.find((s) => s.id === selectedID);
+  const update = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.delete("page");
+    setParams(next, { replace: true });
+  };
+  if (pending)
+    return (
+      <div className="skeleton" role="status" aria-label="Loading schemas" />
+    );
+  if (error) return <Notice tone="error">{error.message}</Notice>;
+  if (params.has("schema") && !selected) return <SchemaUnavailable />;
+  return (
     <>
-      <Notice>
-        Oracle privileges are managed in Oracle. Application grants are managed
-        in Users & Permissions.{" "}
-        <Link to={`/instances/${encodeURIComponent(target.id)}/connections`}>
-          Discover and manage allowed schemas
-        </Link>
-        .
-      </Notice>
-      {pending ? (
-        <div className="skeleton" role="status" />
-      ) : error ? (
-        <Notice tone="error">{error.message}</Notice>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={schemas}
-          empty="No schemas registered. Test and discover from Connections to configure an account allowlist."
-        />
-      )}
       {selected && (
-        <>
-          <PageHeading
-            title={selected.name}
-            description="Schema details & stream settings"
-          />
+        <section aria-label="Schema details">
+          <div className="spread wrap section-heading">
+            <div>
+              <h2>{selected.name}</h2>
+              <p className="muted">Registered schema · Oracle</p>
+            </div>
+            <div className="actions wrap">
+              <RunLink target={target} schema={selected} />
+              <Link
+                to={`/runs?target_id=${encodeURIComponent(target.id)}&schema_id=${encodeURIComponent(selected.id)}`}
+              >
+                Schema migration history
+              </Link>
+            </div>
+          </div>
           <SchemaConfiguration
             key={selected.id}
             targetID={target.id}
             schema={selected}
             canManage={admin}
+            canOperate={canRun(identity, target, selected)}
           />
-        </>
+        </section>
       )}
+      <div className="spread wrap section-heading">
+        <h2>Registered schemas</h2>
+        {admin && (
+          <Link to={`/instances/${encodeURIComponent(target.id)}/connections`}>
+            Manage allowed schemas
+          </Link>
+        )}
+      </div>
+      <div className="filter-bar">
+        <SearchBox
+          value={q}
+          onChange={(v) => update("q", v)}
+          placeholder="Search schemas or history…"
+        />
+        <select
+          aria-label="Registry status"
+          value={status}
+          onChange={(e) => update("status", e.target.value)}
+        >
+          <option value="">Status: All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <SchemaTable
+        rows={schemas
+          .filter(
+            (s) =>
+              (!status || s.active === (status === "active")) &&
+              [s.name, s.history_schema, s.history_table]
+                .join(" ")
+                .toLowerCase()
+                .includes(q.toLowerCase()),
+          )
+          .map((schema) => ({ target, schema }))}
+        empty={
+          schemas.length
+            ? "No schemas match these filters. Change search or status."
+            : "No registered schemas are available to you on this instance. Ask an administrator to review registration and access."
+        }
+      />
+      <p className="small muted">
+        Registry status describes application configuration. Live Oracle
+        privileges are checked separately during migration preflight.
+      </p>
     </>
   );
 }
@@ -792,59 +912,147 @@ function Connections({
 export function SchemaCatalog() {
   const [params, setParams] = useSearchParams();
   const id = params.get("instance") ?? "";
+  const q = params.get("q") ?? "";
+  const environment = params.get("environment") ?? "";
   const targets = useQuery({
     queryKey: ["database-targets"],
     queryFn: () => apiList<DatabaseTarget>("/database-targets"),
   });
-  const schemas = useQuery({
-    queryKey: ["schemas", id],
-    queryFn: () =>
-      apiList<TargetSchema>(
-        `/database-targets/${encodeURIComponent(id)}/schemas`,
-      ),
-    enabled: !!id,
+  // Enumerate only authorized targets. Each schema list is independently authorized
+  // by the server and apiList consumes every page before catalog filtering.
+  const schemaQueries = useQueries({
+    queries: (targets.data ?? []).map((target) => ({
+      queryKey: ["schemas", target.id],
+      queryFn: () =>
+        apiList<TargetSchema>(
+          `/database-targets/${encodeURIComponent(target.id)}/schemas`,
+        ),
+    })),
   });
-  const target = targets.data?.find((t) => t.id === id);
+  const pending = targets.isPending || schemaQueries.some((r) => r.isPending);
+  const error = targets.error ?? schemaQueries.find((r) => r.isError)?.error;
+  const rows = (targets.data ?? []).flatMap((target, index) =>
+    (schemaQueries[index].data ?? []).map((schema) => ({ target, schema })),
+  );
+  const update = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.delete("page");
+    setParams(next, { replace: true });
+  };
+  // Legacy schema-only URLs resolve against the full authorized catalog, regardless
+  // of stale filter context. Never substitute an unrelated schema or instance.
+  const selected = rows.find((r) => r.schema.id === params.get("schema"));
+  if (!pending && !error && selected && params.has("schema"))
+    return (
+      <Navigate
+        replace
+        to={schemaHref(selected.target.id, selected.schema.id, params)}
+      />
+    );
   return (
     <>
       <PageHeading
         title="Databases / Schemas"
-        description="Browse registered schemas by authorized instance"
+        description="Registered Oracle schemas across your authorized instances"
       />
-      <EngineNotice />
-      <div className="filter-bar">
-        <Field label="Instance">
-          <select
-            value={id}
-            onChange={(e) =>
-              setParams(e.target.value ? { instance: e.target.value } : {})
-            }
-          >
-            <option value="">Choose an instance</option>
-            {targets.data?.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} · {t.environment}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
-      {targets.isError ? (
-        <Notice tone="error">{targets.error.message}</Notice>
-      ) : targets.isPending ? (
-        <div className="skeleton" />
-      ) : target ? (
-        <SchemaList
-          target={target}
-          schemas={schemas.data ?? []}
-          pending={schemas.isPending}
-          error={schemas.error}
-          selectedID=""
+      {pending ? (
+        <div
+          className="skeleton"
+          role="status"
+          aria-label="Loading schema catalog"
         />
+      ) : error ? (
+        <Notice tone="error" title="Unable to load schema catalog">
+          {error.message}{" "}
+          <Button
+            onClick={() => {
+              void targets.refetch();
+              schemaQueries.forEach((r) => void r.refetch());
+            }}
+          >
+            Retry
+          </Button>
+        </Notice>
+      ) : params.has("schema") ? (
+        <SchemaUnavailable />
       ) : (
-        <p className="empty">
-          Choose an instance to browse its authorized registered schemas.
-        </p>
+        <>
+          <div className="filter-bar">
+            <SearchBox
+              value={q}
+              onChange={(v) => update("q", v)}
+              placeholder="Search schemas, instances or history…"
+            />
+            <select
+              aria-label="Instance"
+              value={id}
+              onChange={(e) => update("instance", e.target.value)}
+            >
+              <option value="">All instances</option>
+              {id && !targets.data?.some((t) => t.id === id) && (
+                <option value={id}>Unavailable instance</option>
+              )}
+              {targets.data?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Environment"
+              value={environment}
+              onChange={(e) => update("environment", e.target.value)}
+            >
+              <option value="">Environment: All</option>
+              {["DEV", "UAT", "PROD"].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+            {(q || id || environment) && (
+              <Button
+                onClick={() => {
+                  const next = new URLSearchParams(params);
+                  ["q", "instance", "environment", "page"].forEach((key) =>
+                    next.delete(key),
+                  );
+                  setParams(next);
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+          <SchemaTable
+            global
+            rows={rows.filter(
+              ({ target, schema }) =>
+                (!id || target.id === id) &&
+                (!environment || target.environment === environment) &&
+                [
+                  schema.name,
+                  target.name,
+                  target.host,
+                  target.service,
+                  schema.history_schema,
+                  schema.history_table,
+                ]
+                  .join(" ")
+                  .toLowerCase()
+                  .includes(q.toLowerCase()),
+            )}
+            empty={
+              rows.length
+                ? "No schemas match these filters. Change search, instance or environment."
+                : "No registered schemas are available to you. Ask an administrator to review instance registration and schema access."
+            }
+          />
+          <p className="small muted">
+            Registry status describes application configuration. Live Oracle
+            privileges are checked separately during migration preflight.
+          </p>
+        </>
       )}
     </>
   );
@@ -880,7 +1088,11 @@ export function RecentRuns({ targetID }: { targetID?: string }) {
         <span>
           {row.original.target?.name ?? "Unknown instance"}
           <small className="block mono muted">
-            {row.original.schema?.name ?? "Unknown schema"}
+            <Link
+              to={schemaHref(row.original.target_id, row.original.schema_id)}
+            >
+              {row.original.schema?.name ?? "Unknown schema"}
+            </Link>
           </small>
         </span>
       ),
@@ -959,7 +1171,6 @@ export function Overview() {
           </Link>
         }
       />
-      <EngineNotice />
       <div className="grid-two">
         <Panel title="Migration runtime">
           {runtime.isPending ? (

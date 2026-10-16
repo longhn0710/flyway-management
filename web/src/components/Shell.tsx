@@ -198,6 +198,10 @@ export function Shell() {
           Manage instances, connections, schema allowlists, migration runs and
           application access.
         </p>
+        <p>
+          Oracle is currently implemented. PostgreSQL, MySQL and SQL Server are
+          future options with connection and execution actions unavailable.
+        </p>
         <Notice title="Migration execution">
           Select an instance and allowed schema, upload an immutable package,
           then review live Oracle preflight before confirming execution.

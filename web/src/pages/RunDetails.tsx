@@ -1,3 +1,4 @@
+import { schemaHref } from "../lib/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -247,15 +248,22 @@ export default function RunDetails() {
                 <div>
                   <dt>Engine / instance</dt>
                   <dd>
-                    Oracle · {row.target?.environment} · {row.target?.name} ·{" "}
-                    {row.target?.service}
+                    Oracle · {row.target?.environment} ·{" "}
+                    <Link
+                      to={`/instances/${encodeURIComponent(row.target_id)}`}
+                    >
+                      {row.target?.name || "View instance"}
+                    </Link>{" "}
+                    · {row.target?.service}
                   </dd>
                 </div>
                 <div>
                   <dt>Allowed schema / Flyway history</dt>
                   <dd>
-                    {row.schema?.name} · {row.schema?.history_schema}.
-                    {row.schema?.history_table}
+                    <Link to={schemaHref(row.target_id, row.schema_id)}>
+                      {row.schema?.name || "View schema"}
+                    </Link>{" "}
+                    · {row.schema?.history_schema}.{row.schema?.history_table}
                   </dd>
                 </div>
                 <div>
