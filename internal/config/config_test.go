@@ -44,6 +44,31 @@ func TestLoadConfigFileAndEnvironmentPrecedence(t *testing.T) {
 	}
 }
 
+func TestLoadMasterKeyFileOverride(t *testing.T) {
+	clearConfigEnv(t)
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(configPath, []byte(`{"master_key_file":"~/from-file/key"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("FLYWAY_MANAGER_CONFIG", configPath)
+	home, _ := os.UserHomeDir()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MasterKeyFile != filepath.Join(home, "from-file", "key") {
+		t.Fatalf("master key path = %q", cfg.MasterKeyFile)
+	}
+	t.Setenv("FLYWAY_MANAGER_MASTER_KEY_FILE", "/run/secrets/master.key")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MasterKeyFile != "/run/secrets/master.key" {
+		t.Fatalf("environment master key path = %q", cfg.MasterKeyFile)
+	}
+}
+
 func TestLoadExpandsTildeInConfigPath(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -91,7 +116,7 @@ func TestLoadRejectsUnknownTrailingAndBlankEnvironmentConfig(t *testing.T) {
 
 func clearConfigEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"FLYWAY_MANAGER_CONFIG", "FLYWAY_MANAGER_LISTEN_ADDRESS", "FLYWAY_MANAGER_DATA_DIR", "FLYWAY_MANAGER_LOG_LEVEL", "FLYWAY_MANAGER_PUBLIC_URL"} {
+	for _, key := range []string{"FLYWAY_MANAGER_CONFIG", "FLYWAY_MANAGER_LISTEN_ADDRESS", "FLYWAY_MANAGER_DATA_DIR", "FLYWAY_MANAGER_MASTER_KEY_FILE", "FLYWAY_MANAGER_LOG_LEVEL", "FLYWAY_MANAGER_PUBLIC_URL"} {
 		value, existed := os.LookupEnv(key)
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatal(err)

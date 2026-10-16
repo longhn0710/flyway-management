@@ -18,6 +18,7 @@ import (
 type Config struct {
 	ListenAddress  string          `json:"listen_address"`
 	DataDir        string          `json:"data_dir"`
+	MasterKeyFile  string          `json:"master_key_file,omitempty"`
 	LogLevel       string          `json:"log_level"`
 	PublicURL      string          `json:"public_url"`
 	Flyway         flyway.Config   `json:"flyway"`
@@ -55,6 +56,9 @@ func Load() (Config, error) {
 	if value, ok := os.LookupEnv("FLYWAY_MANAGER_DATA_DIR"); ok {
 		cfg.DataDir = value
 	}
+	if value, ok := os.LookupEnv("FLYWAY_MANAGER_MASTER_KEY_FILE"); ok {
+		cfg.MasterKeyFile = value
+	}
 	if value, ok := os.LookupEnv("FLYWAY_MANAGER_LOG_LEVEL"); ok {
 		cfg.LogLevel = value
 	}
@@ -76,6 +80,10 @@ func Load() (Config, error) {
 	cfg.DataDir, err = expandHome(cfg.DataDir)
 	if err != nil {
 		return Config{}, fmt.Errorf("resolve data_dir: %w", err)
+	}
+	cfg.MasterKeyFile, err = expandHome(cfg.MasterKeyFile)
+	if err != nil {
+		return Config{}, fmt.Errorf("resolve master_key_file: %w", err)
 	}
 	if cfg.ListenAddress == "" || cfg.DataDir == "" {
 		return Config{}, errors.New("listen_address and data_dir must not be empty")

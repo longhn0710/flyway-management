@@ -320,6 +320,16 @@ func TestCredentialsRestartRotationRevocationAndKeyFailures(t *testing.T) {
 	keyPath := filepath.Join(f.dir, "secrets", "master.key")
 	key, e := os.ReadFile(keyPath)
 	must(t, e)
+	externalKey := filepath.Join(f.dir, "external-master.key")
+	must(t, os.WriteFile(externalKey, make([]byte, 32), 0600))
+	_, e = NewWithMasterKeyFile(testCtx, db, f.dir, "", externalKey)
+	if e == nil || !strings.Contains(e.Error(), "wrong master key") {
+		t.Fatalf("wrong external key accepted: %v", e)
+	}
+	_, e = NewWithMasterKeyFile(testCtx, db, f.dir, "", filepath.Join(f.dir, "missing-external-key"))
+	if e == nil || !strings.Contains(e.Error(), "external master key file is missing") {
+		t.Fatalf("missing external key accepted: %v", e)
+	}
 	must(t, os.WriteFile(keyPath, make([]byte, 32), 0600))
 	_, e = New(testCtx, db, f.dir, "")
 	if e == nil || !strings.Contains(e.Error(), "wrong master key") {
@@ -340,6 +350,25 @@ func TestCredentialsRestartRotationRevocationAndKeyFailures(t *testing.T) {
 		if strings.Contains(event.Target, "oracle-password") || event.ActorID == "" || event.RequestID == "" {
 			t.Fatal("invalid audit attribution or secret leakage")
 		}
+	}
+}
+
+func TestFreshExternalKeyInstallationCreatesBootstrapDirectory(t *testing.T) {
+	dir := t.TempDir()
+	dataDir := filepath.Join(dir, "data")
+	keyPath := filepath.Join(dir, "mounted", "master.key")
+	must(t, os.MkdirAll(filepath.Dir(keyPath), 0700))
+	must(t, os.WriteFile(keyPath, make([]byte, 32), 0600))
+	db, err := database.Open(testCtx, dataDir)
+	must(t, err)
+	defer db.Close()
+	s, err := NewWithMasterKeyFile(testCtx, db, dataDir, "", keyPath)
+	must(t, err)
+	if _, err := os.Stat(s.SetupTokenFile); err != nil {
+		t.Fatalf("external-key startup failed to create bootstrap token: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, "secrets", "master.key")); !os.IsNotExist(err) {
+		t.Fatalf("external-key startup created a local replacement key: %v", err)
 	}
 }
 func TestServiceTokenAuthenticationScopesRotationAndExpiry(t *testing.T) {

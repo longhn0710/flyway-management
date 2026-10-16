@@ -33,6 +33,9 @@ func run() error {
 	if len(os.Args) > 1 && os.Args[1] == "runtime-install" {
 		return installRuntime(os.Args[2:])
 	}
+	if len(os.Args) > 1 && os.Args[1] == "backup" {
+		return backupData(os.Args[2:])
+	}
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -58,7 +61,7 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	service, err := core.New(ctx, db, cfg.DataDir, cfg.PublicURL)
+	service, err := core.NewWithMasterKeyFile(ctx, db, cfg.DataDir, cfg.PublicURL, cfg.MasterKeyFile)
 	if err != nil {
 		return err
 	}

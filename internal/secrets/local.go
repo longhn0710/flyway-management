@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -57,6 +58,55 @@ func NewLocal(keyPath string, encryptedInstallation bool) (*Local, error) {
 		return nil, err
 	}
 	if len(key) != 32 {
+		return nil, errors.New("master key must contain exactly 32 bytes")
+	}
+	block, err := aes.NewCipher(key)
+	clear(key)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	return &Local{aead}, nil
+}
+
+// NewExternal loads a deployment-managed key without changing its path or permissions.
+// Symlinks are resolved first so projected Kubernetes Secret volume links are supported.
+func NewExternal(keyPath string) (*Local, error) {
+	resolved, err := filepath.EvalSymlinks(keyPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errors.New("external master key file is missing")
+		}
+		return nil, fmt.Errorf("resolve external master key file: %w", err)
+	}
+	f, err := os.Open(resolved)
+	if err != nil {
+		return nil, fmt.Errorf("open external master key file: %w", err)
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
+		return nil, errors.New("external master key must resolve to a regular private file (mode 0600 or stricter)")
+	}
+	if info.Size() != 32 {
+		return nil, errors.New("master key must contain exactly 32 bytes")
+	}
+	key, err := io.ReadAll(io.LimitReader(f, 33))
+	if err != nil {
+		return nil, err
+	}
+	return localFromKey(key)
+}
+
+func localFromKey(key []byte) (*Local, error) {
+	if len(key) != 32 {
+		clear(key)
 		return nil, errors.New("master key must contain exactly 32 bytes")
 	}
 	block, err := aes.NewCipher(key)

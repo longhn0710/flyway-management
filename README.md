@@ -1,6 +1,6 @@
 # Flyway Manager
 
-Native Go server with an embedded React console and SQLite. Phase 3 adds immutable SQL bundles, integrity-pinned Flyway CLI execution, durable asynchronous jobs, stream history, logs and guarded automatic repair to the existing identity, RBAC and encrypted registry. **IMPLEMENTED — LIVE ORACLE ACCEPTANCE PENDING.** No Oracle 19c/21c compatibility or production-readiness claim is made from fixture tests.
+Native Go server with an embedded React console and SQLite. Phase 3 adds immutable SQL bundles, integrity-pinned Flyway CLI execution, durable asynchronous jobs, stream history, logs and guarded automatic repair to the existing identity, RBAC and encrypted registry. **IMPLEMENTED — Oracle Free application smoke verified; Oracle 19c/21c remain unverified.** No Oracle 19c/21c compatibility or production-readiness claim is made from fixture tests.
 
 Requirements: Go 1.26.9+, Node.js 22.12+ and npm for building. Make pins Go 1.26.9. The compiled console needs no Go, Node or Docker. Migration execution additionally needs an approved Flyway distribution, compatible Java and Oracle JDBC/module assets. Verification targets Linux amd64; other operating systems require acceptance.
 
@@ -118,3 +118,20 @@ A restart recovers queued work but holds interrupted/claimed work for review. Re
 Flyway processes receive explicit argv, a private config file, restricted environment, private ephemeral workspaces, a 512 MiB Java heap cap, at most four concurrent runtime checks/processes shared across HTTP/jobs, and bounded output. Defaults allow 300 seconds per worker command (configurable up to 3,600); synchronous HTTP preflight/readiness has a separate 50-second overall budget and may honestly return NOT_VERIFIED on a slow environment. Unix cancellation kills the child process group. Logs cap each stdout/stderr at 2 MiB and durable run logs at 50 MiB / 10,000 process-output entries. Snapshots/evidence remain after shutdown; temporary workspace cleanup is best effort on ordinary exit. Crash leftovers are private and require operational housekeeping after confirming no process uses them.
 
 Run records include the exact nonsecret Flyway option snapshot; a later application policy change blocks queued jobs/streams instead of silently changing execution semantics. CLI output is persisted on command completion. An abruptly killed manager can lose buffered in-flight output; the durable run state remains uncertain and startup records independent read-only history reconciliation.
+
+## Homelab deployment
+
+The optional non-production Kubernetes packaging uses one nonroot Manager with
+persistent SQLite and a separately mounted deployment key. See
+[homelab operations](docs/homelab-operations.md) for the GitOps chart location,
+HTTPS, status, restart, backup/isolated restore, and image upgrade commands.
+`FLYWAY_MANAGER_MASTER_KEY_FILE` (or `master_key_file`) selects an existing private
+32-byte key independently of the data directory. An absent/wrong external key
+fails closed; no replacement is generated. Native installations retain their
+existing local key behavior. `flyway-manager backup --output /private/new.db`
+creates a consistent SQLite snapshot; back up the encryption key separately.
+
+The Docker image contains the approved complete Flyway 13.10.3 runtime and needs
+no runtime download. CI verifies the application before publishing a versioned
+GHCR image; GitOps pins its digest. See [external browser acceptance](deploy/acceptance/README.md)
+for the HTTPS browser harness, which never submits migrations.

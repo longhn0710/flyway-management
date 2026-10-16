@@ -37,6 +37,12 @@ type rateEntry struct {
 }
 
 func New(ctx context.Context, db *database.DB, dataDir, publicURL string) (*Service, error) {
+	return NewWithMasterKeyFile(ctx, db, dataDir, publicURL, "")
+}
+
+// NewWithMasterKeyFile accepts an optional externally managed master key path.
+// An empty path preserves the default key stored under dataDir/secrets.
+func NewWithMasterKeyFile(ctx context.Context, db *database.DB, dataDir, publicURL, masterKeyFile string) (*Service, error) {
 	absoluteDir, err := filepath.Abs(dataDir)
 	if err != nil {
 		return nil, err
@@ -51,7 +57,15 @@ func New(ctx context.Context, db *database.DB, dataDir, publicURL string) (*Serv
 	if err = db.SQL.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM credential_secrets)+(SELECT count(*) FROM auth_settings)+(SELECT count(*) FROM oidc_flows)`).Scan(&encrypted); err != nil {
 		return nil, err
 	}
-	store, err := secrets.NewLocal(filepath.Join(dataDir, "secrets", "master.key"), check != "" || encrypted > 0)
+	var store *secrets.Local
+	if masterKeyFile != "" {
+		if err = privateRuntimeDirectory(filepath.Join(dataDir, "secrets")); err != nil {
+			return nil, err
+		}
+		store, err = secrets.NewExternal(masterKeyFile)
+	} else {
+		store, err = secrets.NewLocal(filepath.Join(dataDir, "secrets", "master.key"), check != "" || encrypted > 0)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +158,20 @@ func New(ctx context.Context, db *database.DB, dataDir, publicURL string) (*Serv
 		return nil, err
 	}
 	return s, nil
+}
+
+func privateRuntimeDirectory(dir string) error {
+	info, err := os.Lstat(dir)
+	if err == nil && (!info.IsDir() || info.Mode()&os.ModeSymlink != 0) {
+		return errors.New("secret directory must be a real directory")
+	}
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if err = os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	return os.Chmod(dir, 0700)
 }
 func (s *Service) BootstrapRequired(ctx context.Context) (bool, error) {
 	var n int

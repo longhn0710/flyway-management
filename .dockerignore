@@ -1,0 +1,11 @@
+.git
+bin
+web/node_modules
+web/dist
+web/test-results
+web/playwright-report
+.data
+config.local.json
+*.db*
+**/master.key
+**/bootstrap.token
