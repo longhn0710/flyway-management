@@ -106,21 +106,10 @@ func (s *Service) SaveTarget(ctx context.Context, t Trace, tid string, in Target
 		tid = in.ID
 		in.Active = true
 	}
-	in.Name = strings.TrimSpace(in.Name)
-	in.Host = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(in.Host)), ".")
-	if ip := net.ParseIP(in.Host); ip != nil {
-		in.Host = ip.String()
-	}
-	in.Service = strings.ToUpper(strings.TrimSpace(in.Service))
-	in.Environment = strings.ToUpper(in.Environment)
-	if !identifier.MatchString(tid) || !validText(in.Name, 200) || (!hostname.MatchString(in.Host) && net.ParseIP(in.Host) == nil) || !serviceName.MatchString(in.Service) || in.Port < 1 || in.Port > 65535 {
-		return Target{}, invalid("target", "Valid stable ID, name, host, port (1–65535) and Oracle service/PDB are required.")
-	}
-	if in.Environment != "DEV" && in.Environment != "UAT" && in.Environment != "PROD" {
-		return Target{}, invalid("environment", "Environment must be DEV, UAT or PROD.")
-	}
-	if in.Transport != "TCP" && in.Transport != "TCPS" {
-		return Target{}, invalid("transport", "Transport must be TCP or TCPS.")
+	var err error
+	in, err = normalizeTarget(tid, in)
+	if err != nil {
+		return Target{}, err
 	}
 	action := "target.update"
 	if create {
@@ -515,4 +504,24 @@ func (s *Service) ReplaceCredential(ctx context.Context, t Trace, aid, password 
 	}
 	account, e := s.Account(ctx, t.Actor, aid)
 	return account.Credential, e
+}
+
+func normalizeTarget(tid string, in TargetInput) (TargetInput, error) {
+	in.Name = strings.TrimSpace(in.Name)
+	in.Host = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(in.Host)), ".")
+	if ip := net.ParseIP(in.Host); ip != nil {
+		in.Host = ip.String()
+	}
+	in.Service = strings.ToUpper(strings.TrimSpace(in.Service))
+	in.Environment = strings.ToUpper(in.Environment)
+	if !identifier.MatchString(tid) || !validText(in.Name, 200) || (!hostname.MatchString(in.Host) && net.ParseIP(in.Host) == nil) || !serviceName.MatchString(in.Service) || in.Port < 1 || in.Port > 65535 {
+		return in, invalid("target", "Valid stable ID, name, host, port (1–65535) and Oracle service/PDB are required.")
+	}
+	if in.Environment != "DEV" && in.Environment != "UAT" && in.Environment != "PROD" {
+		return in, invalid("environment", "Environment must be DEV, UAT or PROD.")
+	}
+	if in.Transport != "TCP" && in.Transport != "TCPS" {
+		return in, invalid("transport", "Transport must be TCP or TCPS.")
+	}
+	return in, nil
 }

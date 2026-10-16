@@ -258,15 +258,8 @@ func validateRequest(r Request) error {
 	if !safeIdentifier.MatchString(r.Schema) || !safeIdentifier.MatchString(r.HistorySchema) || !safeIdentifier.MatchString(r.HistoryTable) || !safeIdentifier.MatchString(r.Username) {
 		return errors.New("invalid Oracle schema, history table, or username")
 	}
-	if r.Password == "" || strings.ContainsRune(r.Password, '\x00') || !utf8.ValidString(r.Password) {
-		return errors.New("missing Oracle credential")
-	}
-	// Flyway 13's documented !{...} literal resolver uses a Java regex without
-	// DOTALL. These line terminators prevent it from recognizing the wrapper.
-	// Reject before launching a process rather than silently changing a secret
-	// or moving credentials into argv/the inherited environment.
-	if strings.ContainsAny(r.Password, "\r\n\u0085\u2028\u2029") {
-		return errors.New("Oracle credential contains a line break unsupported by Flyway's literal-value resolver")
+	if err := ValidateCredential(r.Password); err != nil {
+		return err
 	}
 	if len(r.Files) == 0 && (r.Command == "migrate" || r.Command == "validate" || r.Command == "repair") {
 		return errors.New("SQL snapshot is empty")
@@ -929,4 +922,19 @@ func redact(s string, req Request) string {
 		return redactPlain(s[:start], req) + string(redactJSON(payload, req))
 	}
 	return redactPlain(s, req)
+}
+
+// ValidateCredential preserves the existing Flyway literal-resolver boundary.
+func ValidateCredential(password string) error {
+	if password == "" || strings.ContainsRune(password, '\x00') || !utf8.ValidString(password) {
+		return errors.New("missing Oracle credential")
+	}
+	// Flyway 13's documented !{...} literal resolver uses a Java regex without
+	// DOTALL. These line terminators prevent it from recognizing the wrapper.
+	// Reject before launching a process rather than silently changing a secret
+	// or moving credentials into argv/the inherited environment.
+	if strings.ContainsAny(password, "\r\n\u0085\u2028\u2029") {
+		return errors.New("Oracle credential contains a line break unsupported by Flyway's literal-value resolver")
+	}
+	return nil
 }

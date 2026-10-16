@@ -1,10 +1,12 @@
 package database
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -65,7 +67,7 @@ func migrationFixture(t *testing.T, additions map[string]string) fstest.MapFS {
 }
 
 func TestParseMigrationsRejectsMissingAndInvalidVersions(t *testing.T) {
-	for _, name := range []string{"005_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
+	for _, name := range []string{"006_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
 		t.Run(name, func(t *testing.T) {
 			entries, err := fs.ReadDir(migrationFixture(t, map[string]string{name: "SELECT 1"}), "migrations")
 			if err != nil {
@@ -104,8 +106,8 @@ func TestMigrationsRejectInconsistentHistory(t *testing.T) {
 	for name, sql := range map[string]string{
 		"empty ledger":      "DELETE FROM schema_migrations",
 		"missing first":     "DELETE FROM schema_migrations WHERE version=1",
-		"missing last":      "DELETE FROM schema_migrations WHERE version=5",
-		"wrong checkpoint":  "PRAGMA user_version=4",
+		"missing last":      "DELETE FROM schema_migrations WHERE version=6",
+		"wrong checkpoint":  "PRAGMA user_version=5",
 		"missing middle":    "DELETE FROM schema_migrations WHERE version=2",
 		"zero version":      "UPDATE schema_migrations SET version=0 WHERE version=1",
 		"missing checksum":  "UPDATE schema_migrations SET checksum=NULL WHERE version=1",
@@ -119,7 +121,7 @@ func TestMigrationsRejectInconsistentHistory(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer db.Close()
-			files := migrationFixture(t, map[string]string{"004_second.sql": "CREATE TABLE second(value TEXT)", "005_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
+			files := migrationFixture(t, map[string]string{"005_second.sql": "CREATE TABLE second(value TEXT)", "006_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
 			if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +189,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { db.Close() }()
-	files := migrationFixture(t, map[string]string{"004_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "005_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
+	files := migrationFixture(t, map[string]string{"005_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "006_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
 	if _, err := migrateFS(context.Background(), db.SQL, files); err == nil {
 		t.Fatal("expected SQL failure")
 	}
@@ -195,7 +197,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if err := db.SQL.QueryRow("SELECT count(*) FROM sqlite_master WHERE name IN ('second', 'partial')").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("partial schema survived: %d %v", count, err)
 	}
-	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 3 {
+	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 4 {
 		t.Fatalf("partial ledger survived: %d %v", count, err)
 	}
 	// A failed startup must be safe to reopen using the previous schema.
@@ -210,8 +212,8 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if db.InstallationID != id {
 		t.Fatal("failed migration changed installation metadata")
 	}
-	files["migrations/005_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
-	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 5 {
+	files["migrations/006_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
+	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 6 {
 		t.Fatalf("retry: version %d, %v", version, err)
 	}
 	if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {
@@ -220,5 +222,50 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	var value string
 	if err := db.SQL.QueryRow("SELECT value FROM second").Scan(&value); err != nil || value != "persisted" {
 		t.Fatalf("value = %q, %v", value, err)
+	}
+}
+
+func TestVersionThreeUpgradePreservesRegistryAndAudit(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "manager.db")
+	legacy, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := migrationFixture(t, nil)
+	delete(files, "migrations/004_connection_wizard.sql")
+	if version, err := migrateFS(context.Background(), legacy, files); err != nil || version != 3 {
+		t.Fatal(version, err)
+	}
+	if _, err = legacy.Exec(`INSERT INTO installation_metadata VALUES('installation_id','prior-installation');
+ INSERT INTO database_targets VALUES('prior','Prior','DEV','oracle.example',1521,'APP','TCP',1,1);
+ INSERT INTO execution_accounts VALUES('account','prior','Prior account','APP',1,1);
+ INSERT INTO target_schemas VALUES('schema','prior','APP','APP','flyway_schema_history','account',1,1);
+ INSERT INTO account_schema_grants VALUES('account','schema','prior');
+ INSERT INTO credential_secrets VALUES('account',X'010203',7,1,0);
+ INSERT INTO audit_events(actor_id,actor_type,actor_name,action,target,timestamp,outcome,request_id) VALUES('actor','user','Actor','prior.audit','prior',1,'success','request');`); err != nil {
+		t.Fatal(err)
+	}
+	if err = legacy.Close(); err != nil {
+		t.Fatal(err)
+	}
+	upgraded, err := Open(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+	if upgraded.SchemaVersion != 4 || upgraded.InstallationID != "prior-installation" {
+		t.Fatal("installation changed")
+	}
+	var version int
+	var payload []byte
+	if err = upgraded.SQL.QueryRow("SELECT payload,version FROM credential_secrets WHERE account_id='account'").Scan(&payload, &version); err != nil || version != 7 || !bytes.Equal(payload, []byte{1, 2, 3}) {
+		t.Fatal("credential changed", err)
+	}
+	for _, table := range []string{"database_targets", "target_schemas", "execution_accounts", "account_schema_grants", "audit_events"} {
+		var count int
+		if err = upgraded.SQL.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 1 {
+			t.Fatal(table, count, err)
+		}
 	}
 }

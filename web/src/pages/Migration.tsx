@@ -28,6 +28,18 @@ import {
 } from "../components/ui";
 
 const newKey = () => crypto.randomUUID();
+type MigrationStateGroup = "applied" | "pending" | "failed" | "other";
+const migrationStateGroup = (state = ""): MigrationStateGroup => {
+  const normalized = state.toLowerCase();
+  if (normalized.includes("fail")) return "failed";
+  if (normalized.includes("pending")) return "pending";
+  if (
+    normalized.includes("success") ||
+    ["baseline", "out of order", "out_of_order"].includes(normalized)
+  )
+    return "applied";
+  return "other";
+};
 export default function Migration() {
   return <MigrationPage />;
 }
@@ -63,21 +75,26 @@ function MigrationPage() {
     queryFn: () => api<RuntimeStatus>("/runtime"),
   });
   const targets = useQuery({
-    queryKey: ["database-targets"],
-    queryFn: () => apiList<DatabaseTarget>("/database-targets"),
+    // Keep operationally authorized rows isolated from the Admin registry cache.
+    queryKey: ["migration-connections"],
+    queryFn: () => apiList<DatabaseTarget>("/migration-connections"),
   });
   const selectedTargetID =
-    targetID || targets.data?.find((t) => t.active)?.id || "";
+    (targets.data?.some((t) => t.id === targetID && t.active)
+      ? targetID
+      : targets.data?.find((t) => t.active)?.id) || "";
   const schemas = useQuery({
-    queryKey: ["schemas", selectedTargetID],
+    queryKey: ["migration-schemas", selectedTargetID],
     queryFn: () =>
       apiList<TargetSchema>(
-        `/database-targets/${encodeURIComponent(selectedTargetID)}/schemas`,
+        `/migration-connections/${encodeURIComponent(selectedTargetID)}/schemas`,
       ),
     enabled: !!selectedTargetID,
   });
   const selectedSchemaID =
-    schemaID || schemas.data?.find((s) => s.active)?.id || "";
+    (schemas.data?.some((s) => s.id === schemaID && s.active)
+      ? schemaID
+      : schemas.data?.find((s) => s.active)?.id) || "";
   const accounts = useQuery({
     queryKey: ["stream-accounts", selectedTargetID, selectedSchemaID],
     queryFn: () =>
@@ -203,6 +220,14 @@ function MigrationPage() {
     !!preflight?.ready &&
     preflight.live_status === "VERIFIED" &&
     preflightFor === selectedInputSignature;
+  const migrationCounts = (preflight?.info?.migrations ?? []).reduce(
+    (counts, migration) => {
+      const group = migrationStateGroup(migration.state);
+      if (group !== "other") counts[group] += 1;
+      return counts;
+    },
+    { applied: 0, pending: 0, failed: 0 },
+  );
   return (
     <>
       <PageHeading
@@ -490,7 +515,10 @@ function MigrationPage() {
           </Panel>
         )}
         {artifact && (
-          <Panel title="4 · Preflight and review">
+          <Panel
+            title="4 · Preflight and review"
+            className="flyway-review-panel"
+          >
             <Button
               variant="primary"
               disabled={
@@ -527,17 +555,43 @@ function MigrationPage() {
                     {w}
                   </Notice>
                 ))}
-                {preflight.diagnostics.map((d) => (
-                  <p key={d.name} className="small">
-                    <strong>{d.name}</strong> · {d.status} — {d.detail}
-                  </p>
-                ))}
+                {preflight.diagnostics.length > 0 && (
+                  <details className="advanced-diagnostics">
+                    <summary>
+                      Advanced diagnostics · {preflight.diagnostics.length}
+                    </summary>
+                    <div className="diagnostic-list">
+                      {preflight.diagnostics.map((d) => (
+                        <p key={d.name} className="small">
+                          <strong>{d.name}</strong> · {d.status} — {d.detail}
+                        </p>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 {preflight.info?.migrations && (
-                  <div>
+                  <div className="flyway-preview">
                     <h3>Flyway migration preview</h3>
                     <p className="small muted">
                       Applied and pending migrations in Flyway order.
                     </p>
+                    <div
+                      className="migration-state-summary"
+                      aria-label="Migration summary"
+                    >
+                      <div>
+                        <span>Applied</span>
+                        <strong>{migrationCounts.applied}</strong>
+                      </div>
+                      <div>
+                        <span>Pending</span>
+                        <strong>{migrationCounts.pending}</strong>
+                      </div>
+                      <div>
+                        <span>Failed</span>
+                        <strong>{migrationCounts.failed}</strong>
+                      </div>
+                    </div>
                     {preflight.info.migrations.length === 0 ? (
                       <p className="empty">No migrations are recorded yet.</p>
                     ) : (

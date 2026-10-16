@@ -15,11 +15,13 @@ import (
 	"sync"
 
 	"flyway-manager/internal/database"
+	"flyway-manager/internal/oracle"
 	"flyway-manager/internal/secrets"
 	"golang.org/x/crypto/argon2"
 )
 
 type Service struct {
+	oracleProbe    func(context.Context, oracle.Config) (oracle.Result, error)
 	db             *sql.DB
 	vault          secrets.Store
 	SetupTokenFile string

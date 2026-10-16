@@ -17,10 +17,10 @@ func (s *Service) Runtime(ctx context.Context) flyway.Readiness {
 }
 func (s *Service) ExecutionEnabled() bool { return s.execution != nil }
 func (s *Service) StreamAccounts(ctx context.Context, a Actor, target, schema string) ([]ExecutionAccount, error) {
-	if e := s.Authorize(ctx, a, "operate", target, schema); e != nil {
+	if e := s.authorizeExecution(ctx, s.db, a, target, schema); e != nil {
 		return nil, e
 	}
-	rows, e := s.db.QueryContext(ctx, `SELECT a.id,a.target_id,a.name,a.username,a.active,a.created_at,c.version,c.updated_at,c.revoked FROM execution_accounts a JOIN account_schema_grants g ON g.account_id=a.id LEFT JOIN credential_secrets c ON c.account_id=a.id WHERE a.target_id=? AND g.schema_id=? AND a.active=1 ORDER BY a.name,a.id`, target, schema)
+	rows, e := s.db.QueryContext(ctx, `SELECT a.id,a.target_id,a.name,a.username,a.active,a.created_at,c.version,c.updated_at,c.revoked FROM execution_accounts a JOIN account_schema_grants g ON g.account_id=a.id LEFT JOIN credential_secrets c ON c.account_id=a.id WHERE a.target_id=? AND g.schema_id=? AND a.active=1 AND `+allowedAccountSQL+` ORDER BY a.name,a.id`, target, schema)
 	if e != nil {
 		return nil, e
 	}

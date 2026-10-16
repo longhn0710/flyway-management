@@ -66,6 +66,12 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 	if e != sql.ErrNoRows {
 		return Run{}, e
 	}
+	if e := connectionSchemaAllowed(ctx, s.db, in.TargetID, in.SchemaID); e != nil {
+		return Run{}, e
+	}
+	if e := connectionAccountAllowed(ctx, s.db, in.TargetID, in.SchemaID, in.ExecutionAccountID); e != nil {
+		return Run{}, e
+	}
 	if s.execution == nil {
 		return Run{}, &Error{503, "RUNTIME_UNAVAILABLE", "Flyway runtime is not configured.", ""}
 	}

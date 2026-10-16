@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Flyway Manager Phase 3 API
-  version: 0.3.0
+  title: Flyway Manager API
+  version: 0.4.0
   description: Standalone identity, Oracle registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
     JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
     plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
@@ -2277,6 +2277,226 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
         default: {$ref: '#/components/responses/Error'}
+  /connections/test:
+    post:
+      summary: Test a transient Oracle connection and discover every visible schema
+      operationId: test_connection
+      description: Admin browser session required. Metadata never verifies arbitrary migration DDL. Save independently repeats discovery. Each account has an independent allowlist. Existing history and other accounts are retained when mappings are removed.
+      security:
+      - Session: []
+        CSRF: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConnectionInput'}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/ConnectionDiscovery'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /connections:
+    post:
+      summary: Atomically register Oracle target, encrypted account, selected schemas and allowlist
+      operationId: create_connection
+      description: Admin browser session required. Metadata never verifies arbitrary migration DDL. Save independently repeats discovery. Each account has an independent allowlist. Existing history and other accounts are retained when mappings are removed.
+      security:
+      - Session: []
+        CSRF: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConnectionInput'}
+      responses:
+        '201':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/Connection'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /connections/{id}/test:
+    post:
+      summary: Test supplied or saved encrypted credentials without changing registry
+      operationId: test_saved_connection
+      description: Admin browser session required. Metadata never verifies arbitrary migration DDL. Save independently repeats discovery. Each account has an independent allowlist. Existing history and other accounts are retained when mappings are removed.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConnectionInput'}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/ConnectionDiscovery'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /connections/{id}:
+    get:
+      summary: Read wizard configuration and credential metadata
+      operationId: get_connection
+      description: Admin browser session required. Metadata never verifies arbitrary migration DDL. Save independently repeats discovery. Each account has an independent allowlist. Existing history and other accounts are retained when mappings are removed.
+      security:
+      - Session: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: account_id
+        in: query
+        required: false
+        description: Inspect this execution account on the target; defaults to the last wizard-edited account.
+        schema: {type: string}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/Connection'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+    put:
+      summary: Atomically edit mappings or rotate credentials after fresh Oracle discovery
+      operationId: save_connection
+      description: Admin browser session required. Metadata never verifies arbitrary migration DDL. Save independently repeats discovery. Each account has an independent allowlist. Existing history and other accounts are retained when mappings are removed.
+      security:
+      - Session: []
+        CSRF: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConnectionInput'}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/Connection'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-connections:
+    get:
+      summary: List usable connections filtered by current operational RBAC and schema allowlist
+      operationId: get_migration_connections
+      parameters:
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+      - name: offset
+        in: query
+        schema: {type: integer, minimum: 0, default: 0}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Target'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-connections/{id}/schemas:
+    get:
+      summary: List allowed active schemas with mapped credentials for the operator
+      operationId: get_migration_schemas
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+      - name: offset
+        in: query
+        schema: {type: integer, minimum: 0, default: 0}
+      responses:
+        '200':
+          description: Success. Connection diagnostics include sanitized error states; test never persists credentials.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/Schema'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
     Session:
@@ -2462,6 +2682,65 @@ components:
             migration_execution:
               type: boolean
               description: Execution API is implemented; runtime readiness and Oracle verification are separate checks.
+    ConnectionInput:
+      type: object
+      additionalProperties: false
+      required: [target, username]
+      properties:
+        target: {$ref: '#/components/schemas/TargetInput'}
+        account_id: {type: string, description: Existing account on this target. Empty creates an account. Allowlist updates affect this account only.}
+        username: {type: string}
+        password: {type: string, writeOnly: true, maxLength: 4096, description: Required for creation. Empty on edit reuses the encrypted saved credential.}
+        timeout_seconds: {type: integer, minimum: 5, maximum: 30, default: 20}
+        schemas: {type: array, items: {type: string}, description: Explicit selected schema names. Nonempty on Save; unsupported schemas rejected.}
+        acknowledge_unknown: {type: boolean, default: false}
+        grant_current_user: {type: boolean, default: false, description: Explicitly grant current user schema-scoped read and operation rights.}
+        grant_prod: {type: boolean, default: false, description: Separate explicit PROD authorization; requires grant_current_user on a PROD target.}
+    Connection:
+      type: object
+      required: [target, account, schemas, timeout_seconds]
+      properties:
+        target: {$ref: '#/components/schemas/Target'}
+        account: {$ref: '#/components/schemas/ExecutionAccount'}
+        schemas: {type: array, items: {$ref: '#/components/schemas/Schema'}}
+        timeout_seconds: {type: integer}
+    SchemaCandidate:
+      type: object
+      required: [name, own, object_count, known_privileges, migration_capability, capability_reason]
+      properties:
+        name: {type: string}
+        own: {type: boolean}
+        object_count: {type: integer, description: Count of accessible objects; not necessarily the schema's full object count.}
+        known_privileges: {type: array, items: {type: string}}
+        migration_capability: {type: string, enum: [potential, unknown, unsupported]}
+        capability_reason: {type: string}
+    ConnectionDiscovery:
+      type: object
+      required: [network_state, authentication_state, actual_user, current_schema, database_service, pdb_name, schema_total, schemas, warnings, capabilities]
+      properties:
+        network_state: {type: string, enum: [verified, failed, unknown]}
+        authentication_state: {type: string, enum: [verified, failed, unknown]}
+        error_code: {type: string}
+        error_message: {type: string}
+        actual_user: {type: string}
+        current_schema: {type: string}
+        database_service: {type: string}
+        pdb_name: {type: string}
+        own_schema: {type: string}
+        schema_total: {type: integer, description: Complete returned count without arbitrary truncation. Warnings explain inaccessible or timed out metadata.}
+        schemas: {type: array, items: {$ref: '#/components/schemas/SchemaCandidate'}}
+        system_privileges: {type: array, items: {type: string}}
+        enabled_roles: {type: array, items: {type: string}}
+        warnings: {type: array, items: {type: string}}
+        capabilities:
+          type: array
+          items:
+            type: object
+            required: [view, status, detail]
+            properties:
+              view: {type: string}
+              status: {type: string}
+              detail: {type: string}
     Target:
       type: object
       properties:

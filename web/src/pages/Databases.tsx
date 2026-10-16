@@ -1,3 +1,4 @@
+import ConnectionWizard from "./ConnectionWizard";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
@@ -80,14 +81,13 @@ export default function Databases() {
         breadcrumb="Target administration / Database & Schema"
         actions={
           <>
-            <Button disabled>Test Oracle connection · Unavailable</Button>
             <Button
               variant="primary"
               disabled={!admin}
               onClick={() => setCreate(true)}
             >
               <Plus size={16} />
-              Add database
+              Add connection
             </Button>
           </>
         }
@@ -191,7 +191,7 @@ export default function Databases() {
                       {target.active ? "Active" : "Disabled"}
                     </Badge>
                     <small className="block muted">
-                      Oracle probe unavailable
+                      Test via connection wizard
                     </small>
                   </span>
                   <div className="inline wrap">
@@ -296,17 +296,17 @@ export default function Databases() {
       )}
       <Notice title="Target and schema boundaries">
         <ShieldCheck size={15} />
-        Application grants are separate from Oracle privileges. Connection tests
-        and migration execution are unavailable in this phase.
+        Application grants and the connection schema allowlist are enforced
+        separately from Oracle privileges.
       </Notice>
-      <TargetCreate
-        open={create}
-        onOpenChange={setCreate}
-        onCreated={() => {
-          setCreate(false);
-          refresh();
-        }}
-      />
+      {create && (
+        <ConnectionWizard
+          onClose={() => {
+            setCreate(false);
+            refresh();
+          }}
+        />
+      )}
       <SchemaCreate
         open={!!schemaTarget}
         target={schemaTarget ?? undefined}
@@ -322,143 +322,6 @@ export default function Databases() {
         onClose={() => setSchemaTarget(null)}
       />
     </>
-  );
-}
-function TargetCreate({
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: () => void;
-}) {
-  const [id, setID] = useState("");
-  const [name, setName] = useState("");
-  const [environment, setEnvironment] =
-    useState<DatabaseTarget["environment"]>("UAT");
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("1521");
-  const [service, setService] = useState("");
-  const [transport, setTransport] =
-    useState<DatabaseTarget["transport"]>("TCPS");
-  const create = useMutation({
-    mutationFn: () =>
-      api<DatabaseTarget>("/database-targets", {
-        method: "POST",
-        body: JSON.stringify({
-          id,
-          name,
-          environment,
-          host,
-          port: Number(port),
-          service,
-          transport,
-        }),
-      }),
-    onSuccess: onCreated,
-  });
-  return (
-    <Modal
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Register database target"
-      description="Registers connection metadata only. It does not create or modify anything in Oracle."
-    >
-      <form
-        onSubmit={(event: FormEvent) => {
-          event.preventDefault();
-          create.mutate();
-        }}
-      >
-        <Field label="Display name" required>
-          <input
-            required
-            maxLength={120}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </Field>
-        <Field
-          label="Stable ID"
-          required
-          hint="Lowercase letters, digits and hyphens."
-        >
-          <input
-            required
-            pattern="[a-z0-9-]+"
-            minLength={2}
-            maxLength={100}
-            value={id}
-            onChange={(event) => setID(event.target.value)}
-          />
-        </Field>
-        <div className="grid-two">
-          <Field label="Environment">
-            <select
-              value={environment}
-              onChange={(event) =>
-                setEnvironment(
-                  event.target.value as DatabaseTarget["environment"],
-                )
-              }
-            >
-              <option>DEV</option>
-              <option>UAT</option>
-              <option>PROD</option>
-            </select>
-          </Field>
-          <Field label="Transport">
-            <select
-              value={transport}
-              onChange={(event) =>
-                setTransport(event.target.value as DatabaseTarget["transport"])
-              }
-            >
-              <option value="TCPS">TCPS / TLS</option>
-              <option value="TCP">TCP</option>
-            </select>
-          </Field>
-        </div>
-        <div className="grid-two">
-          <Field label="Hostname" required>
-            <input
-              required
-              maxLength={255}
-              value={host}
-              onChange={(event) => setHost(event.target.value)}
-            />
-          </Field>
-          <Field label="Port" required>
-            <input
-              required
-              type="number"
-              min="1"
-              max="65535"
-              value={port}
-              onChange={(event) => setPort(event.target.value)}
-            />
-          </Field>
-        </div>
-        <Field label="Oracle service / PDB" required>
-          <input
-            required
-            maxLength={255}
-            value={service}
-            onChange={(event) => setService(event.target.value)}
-          />
-        </Field>
-        {create.isError && <Notice tone="error">{create.error.message}</Notice>}
-        <div className="dialog-actions">
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" disabled={create.isPending}>
-            {create.isPending ? "Registering…" : "Register target"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
   );
 }
 function SchemaCreate({
@@ -566,6 +429,7 @@ export function DatabaseDetails() {
       ),
     enabled: !!id,
   });
+  const [editConnection, setEditConnection] = useState(false);
   const [schemaID, setSchemaID] = useState(searchParams.get("schema") ?? "");
   const [showCreate, setShowCreate] = useState(
     searchParams.get("newSchema") === "1",
@@ -624,7 +488,9 @@ export function DatabaseDetails() {
               <ArrowLeft size={15} />
               Back to databases
             </Link>
-            <Button disabled>Test connection · Unavailable</Button>
+            <Button disabled={!admin} onClick={() => setEditConnection(true)}>
+              Edit connection / Test
+            </Button>
           </>
         }
       />
@@ -655,8 +521,8 @@ export function DatabaseDetails() {
           ))}
         </div>
         <Notice tone="warning">
-          Oracle reachability, credentials, and privilege probes are
-          unavailable. No connection is attempted.
+          Use Edit connection / Test to authenticate, discover schemas, update
+          the allowlist or rotate the encrypted credential.
         </Notice>
         <Button
           variant={target.data.active ? "danger" : "secondary"}
@@ -700,6 +566,15 @@ export function DatabaseDetails() {
           targetID={id}
           schema={selectedSchema}
           canManage={admin}
+        />
+      )}
+      {editConnection && (
+        <ConnectionWizard
+          target={target.data}
+          onClose={() => {
+            setEditConnection(false);
+            void queryClient.invalidateQueries();
+          }}
         />
       )}
       <SchemaCreate

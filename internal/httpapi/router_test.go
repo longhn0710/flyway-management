@@ -74,7 +74,7 @@ func TestHealthAndSystemMetadata(t *testing.T) {
 		if result.Data["installation_id"] == "" {
 			t.Fatalf("GET %s has no installation ID", target)
 		}
-		if result.Data["schema_version"] != float64(3) {
+		if result.Data["schema_version"] != float64(4) {
 			t.Fatalf("GET %s schema version = %v", target, result.Data["schema_version"])
 		}
 	}

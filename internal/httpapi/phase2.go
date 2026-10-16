@@ -353,6 +353,7 @@ func (h phase2) register(r chi.Router) {
 				return h.s.Schema(r.Context(), actor(r), pathID(r), chi.URLParam(r, "schemaID"))
 			}))
 			h.registerExecution(r)
+			h.registerConnections(r)
 
 			r.Group(func(r chi.Router) {
 				r.Use(h.admin)

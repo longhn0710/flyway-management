@@ -31,6 +31,9 @@ func streamConfiguration(snap RunSnapshot) string {
 func (s *Service) executionSnapshot(ctx context.Context, q queryer, in RunInput) (RunSnapshot, []byte, error) {
 	var snap RunSnapshot
 	var e error
+	if e = connectionAccountAllowed(ctx, q, in.TargetID, in.SchemaID, in.ExecutionAccountID); e != nil {
+		return snap, nil, e
+	}
 	snap.Target, e = targetScan(q.QueryRowContext(ctx, "SELECT "+targetColumns+" FROM database_targets WHERE id=?", in.TargetID))
 	if e != nil {
 		return snap, nil, e
@@ -197,6 +200,12 @@ func fillPlan(p *Preflight, plan executionPlan) {
 func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Preflight, error) {
 	p := preflightBase()
 	if e := s.Authorize(ctx, t.Actor, "operate", in.TargetID, in.SchemaID); e != nil {
+		return p, e
+	}
+	if e := connectionSchemaAllowed(ctx, s.db, in.TargetID, in.SchemaID); e != nil {
+		return p, e
+	}
+	if e := connectionAccountAllowed(ctx, s.db, in.TargetID, in.SchemaID, in.ExecutionAccountID); e != nil {
 		return p, e
 	}
 	if s.execution == nil {

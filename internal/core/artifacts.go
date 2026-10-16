@@ -123,6 +123,9 @@ func (s *Service) ArtifactBytes(ctx context.Context, a Actor, aid, path string, 
 
 // Recheck current principal, token/session and grants inside every execution write/claim.
 func (s *Service) authorizeExecution(ctx context.Context, q queryer, a Actor, target, schema string) error {
+	if e := connectionSchemaAllowed(ctx, q, target, schema); e != nil {
+		return e
+	}
 	var env string
 	var active, enabled bool
 	if e := q.QueryRowContext(ctx, `SELECT t.environment,t.active,s.active FROM database_targets t JOIN target_schemas s ON s.target_id=t.id WHERE t.id=? AND s.id=?`, target, schema).Scan(&env, &active, &enabled); e != nil {

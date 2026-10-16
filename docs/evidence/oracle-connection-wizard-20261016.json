@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-16",
+  "lab": "flyway-manager-oracle-lab/oracle-free",
+  "service": "FREEPDB1",
+  "oracle_discovery": {
+    "view": {
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "schema_total": 46,
+      "classification_counts": {
+        "potential": 0,
+        "unknown": 16,
+        "unsupported": 30
+      },
+      "own_schema": "FWM_WZ260_VIEW"
+    },
+    "none": {
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "schema_total": 46,
+      "classification_counts": {
+        "potential": 0,
+        "unknown": 16,
+        "unsupported": 30
+      },
+      "own_schema": "FWM_WZ260_NONE"
+    },
+    "multi": {
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "schema_total": 46,
+      "classification_counts": {
+        "potential": 2,
+        "unknown": 14,
+        "unsupported": 30
+      },
+      "own_schema": "FWM_WZ260_MULTI",
+      "FWM_WZ260_A": {
+        "migration_capability": "potential",
+        "known_privileges": [
+          "CREATE ANY TABLE"
+        ],
+        "reason": "Metadata shows potentially relevant DDL privileges; actual Flyway DDL authorization was not tested."
+      },
+      "FWM_WZ260_B": {
+        "migration_capability": "potential",
+        "known_privileges": [
+          "CREATE ANY TABLE"
+        ],
+        "reason": "Metadata shows potentially relevant DDL privileges; actual Flyway DDL authorization was not tested."
+      }
+    },
+    "schema_a": {
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "schema_total": 46,
+      "classification_counts": {
+        "potential": 1,
+        "unknown": 16,
+        "unsupported": 29
+      },
+      "own_schema": "FWM_WZ260_A",
+      "own_candidate": {
+        "name": "FWM_WZ260_A",
+        "migration_capability": "potential",
+        "known_privileges": [
+          "CREATE TABLE"
+        ]
+      }
+    },
+    "FWM_LAB": {
+      "network_state": "verified",
+      "authentication_state": "verified",
+      "schema_total": 46,
+      "classification_counts": {
+        "potential": 1,
+        "unknown": 16,
+        "unsupported": 29
+      },
+      "own_schema": "FWM_LAB"
+    }
+  },
+  "local_ui": {
+    "discovered": 46,
+    "actual_user": "FWM_WZ260_A",
+    "preflight_ready": true,
+    "run_id": "mbnbuUylHj9OHY8kiWBe0k",
+    "status": "SUCCEEDED",
+    "log_entries": 11,
+    "artifact_id": "Dv8H3fCrwiyrw-3n1ihT3d",
+    "full_width_info_and_collapsed_diagnostics": true
+  },
+  "api_acceptance": {
+    "discovery_count": 46,
+    "multi_candidates": [
+      "FWM_WZ260_A",
+      "FWM_WZ260_B"
+    ],
+    "multi_selected": [
+      "FWM_WZ260_A"
+    ],
+    "unselected_schema_direct_preflight_submit_accounts": "403_despite_Oracle_potential_DDL_and_app_grant_and_mapping",
+    "add_remove_all_mappings": "passed",
+    "prior_history": "unchanged_SUCCEEDED",
+    "other_account_allowlist": "preserved",
+    "credential_rotation_version": 2,
+    "wrong_password": "ORA-01017",
+    "missing_network": "ORA-17002",
+    "unauthorized_operator": "403",
+    "no_usable_target": "no_potential_candidates_and_registration_rejected",
+    "credential_api": "metadata_only"
+  },
+  "independent_baseline": {
+    "observed_before_migration": true,
+    "fwm_lab": {
+      "identity": "FWM_LAB,FREEPDB1",
+      "probe_rows": 4,
+      "history": [
+        "1:success",
+        "2:success",
+        "3:success",
+        "4:success"
+      ],
+      "visible_object_count": 5
+    },
+    "fwm_guard_canary": [
+      "1,unchanged-lab-canary"
+    ],
+    "schema_a": {
+      "visible_object_count": 0,
+      "table_count": 0,
+      "flyway_history_tables": 0
+    }
+  },
+  "checks": {
+    "build_vet_go_tests": "passed",
+    "race": "passed",
+    "frontend_lint": "passed",
+    "frontend_unit": 11,
+    "chromium": 15,
+    "npm_vulnerabilities": 0,
+    "go_reachable_vulnerabilities": 0,
+    "go_module_only_advisories": 1,
+    "openapi": "passed_with_existing_public_route_warnings",
+    "jdbc_live": "passed_with_documented_inherited_credential_compatibility_limit"
+  },
+  "runtime": {
+    "flyway": "13.10.3",
+    "jdbc": "21.18.0.0",
+    "manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c",
+    "helper_sha256": "0ba58c363c440c9432d84643663258d28532ec1bed41aac8801dfdc6df1f27c8"
+  },
+  "limitations": [
+    "TCPS and Oracle19c/21c not live accepted",
+    "Cross-schema DDL not proved by metadata",
+    "Pinned JDBC21 rejects tested Oracle23/26 extended40 and whitespace/Unicode30 credentials; bytes preserved; no vendor runtime change"
+  ],
+  "delivery": "CI immutable image and non-production GitOps promotion follow homelab-operations.md"
+}

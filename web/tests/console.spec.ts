@@ -84,17 +84,88 @@ test.beforeEach(async ({ page }) => {
   if (initialized) await login(page);
 });
 
-test("register database and schema, then create and scope a user", async ({
-  page,
-}) => {
+test("connect a database, then create and scope a user", async ({ page }) => {
+  await page.route("**/api/v1/connections/test", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          network_state: "verified",
+          authentication_state: "verified",
+          actual_user: "E2E_DEPLOY",
+          current_schema: "E2E_SCHEMA",
+          database_service: "E2EUAT",
+          pdb_name: "E2EUAT",
+          schema_total: 1,
+          schemas: [
+            {
+              name: "E2E_SCHEMA",
+              own: true,
+              object_count: 1,
+              known_privileges: ["CREATE TABLE"],
+              migration_capability: "potential",
+              capability_reason: "Login schema with metadata evidence.",
+            },
+          ],
+          warnings: [],
+        },
+      }),
+    }),
+  );
+  await page.route("**/api/v1/connections", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ data: {} }),
+    });
+  });
   await page.goto("/databases");
-  await page.getByRole("button", { name: "Add database" }).click();
-  await page.getByLabel("Display name").fill("E2E Oracle UAT");
-  await page.getByLabel("Stable ID").fill("e2e-db");
-  await page.getByLabel("Hostname").fill("oracle.invalid");
-  await page.getByRole("spinbutton", { name: "Port" }).fill("1521");
-  await page.getByLabel("Oracle service / PDB").fill("E2EUAT");
-  await page.getByRole("button", { name: "Register target" }).click();
+  await page.getByRole("button", { name: "Add connection" }).click();
+  const connection = page.getByRole("dialog");
+  await connection.getByLabel("Connection display name").fill("E2E Oracle UAT");
+  await connection.getByLabel("Environment").selectOption("UAT");
+  await connection.getByLabel("Host").fill("oracle.invalid");
+  await connection.getByRole("spinbutton", { name: "Port" }).fill("1521");
+  await connection.getByLabel("Oracle service / PDB").fill("E2EUAT");
+  await connection.getByLabel("Oracle username").fill("E2E_DEPLOY");
+  await connection.getByLabel("Oracle password").fill("temporary-e2e-password");
+  await connection.getByRole("button", { name: "Test Connection" }).click();
+  await connection
+    .getByRole("button", { name: "Choose allowed schemas" })
+    .click();
+  await expect(
+    connection.getByRole("checkbox", { name: /E2E_SCHEMA/ }),
+  ).toBeChecked();
+  await connection.getByRole("button", { name: "Save connection" }).click();
+  await expect(connection).toHaveCount(0);
+
+  const identity = (await (await page.request.get("/api/v1/auth/me")).json())
+    .data as { csrf_token: string };
+  const headers = {
+    Origin: new URL(page.url()).origin,
+    "X-CSRF-Token": identity.csrf_token,
+  };
+  const registeredTarget = await page.request.post("/api/v1/database-targets", {
+    headers,
+    data: {
+      id: "e2e-db",
+      name: "E2E Oracle UAT",
+      environment: "UAT",
+      host: "oracle.invalid",
+      port: 1521,
+      service: "E2EUAT",
+      transport: "TCP",
+    },
+  });
+  expect(registeredTarget.status()).toBe(201);
+  const registeredSchema = await page.request.post(
+    "/api/v1/database-targets/e2e-db/schemas",
+    { headers, data: { name: "E2E_SCHEMA" } },
+  );
+  expect(registeredSchema.status()).toBe(201);
+  await page.reload();
   await expect(page.getByText("E2E Oracle UAT", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Toggle schemas E2E Oracle UAT" })

@@ -172,6 +172,17 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
+
+	// Repair also mutates Oracle history, so revoked account mappings and
+	// allowlists must stop it even if the migration already failed.
+	repairPlan, authErr := s.planJob(durable, s.db, t.Actor, run)
+	clear(repairPlan.password)
+	if authErr != nil {
+		if e = s.finishRepair(durable, rid, "UNSAFE", "Current execution authorization or mapping changed; repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+			completed = true
+		}
+		return
+	}
 	if e = s.changeRun(durable, rid, "REPAIRING", "One eligible failed versioned history row; repairing history once without replaying SQL.", "FAILED", "PENDING", nil, false, false); e != nil {
 		return
 	}

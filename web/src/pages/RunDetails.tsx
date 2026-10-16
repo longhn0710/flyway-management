@@ -75,6 +75,7 @@ export default function RunDetails() {
       api<RunExecution[]>(
         `/migration-runs/${encodeURIComponent(id)}/executions`,
       ),
+    refetchInterval: run.data && !settled(run.data) ? 2000 : false,
   });
   const repair = useQuery({
     queryKey: ["run-repair", id, run.data?.repair_outcome],
@@ -84,6 +85,15 @@ export default function RunDetails() {
       !!run.data?.repair_outcome && run.data.repair_outcome !== "PENDING",
   });
   const row = run.data;
+  const progressStatus =
+    row?.status === "FAILED" &&
+    (!row.repair_outcome || row.repair_outcome === "PENDING")
+      ? "REPAIRING"
+      : row?.status;
+  const stageIndex = progressStatus
+    ? ["QUEUED", "PREFLIGHT", "RUNNING", "REPAIRING"].indexOf(progressStatus)
+    : -1;
+  const progressIndex = progressStatus ? (stageIndex < 0 ? 4 : stageIndex) : -1;
   return (
     <>
       <PageHeading
@@ -110,14 +120,65 @@ export default function RunDetails() {
       ) : (
         row && (
           <>
-            <div className="inline">
-              <Status value={row.status} />
-              <span className="mono">{row.run_id || row.id}</span>
-              <Badge>{row.source}</Badge>
-              <span className="muted">
-                Requested by {row.actor_name} ({row.actor_kind})
-              </span>
-            </div>
+            <section className="run-overview" aria-label="Run status">
+              <div className="run-overview-heading">
+                <div>
+                  <p className="eyebrow">Migration run</p>
+                  <h2 className="mono">{row.run_id || row.id}</h2>
+                </div>
+                <Status value={row.status} />
+              </div>
+              <div className="run-progress" aria-live="polite">
+                <div
+                  className="run-progress-track"
+                  aria-label={`Current stage: ${progressStatus}`}
+                >
+                  {[
+                    ["QUEUED", "Queued"],
+                    ["PREFLIGHT", "Preflight"],
+                    ["RUNNING", "Migration"],
+                    ["REPAIRING", "Repair"],
+                    [
+                      "SUCCEEDED",
+                      row.status === "SUCCEEDED" ? "Succeeded" : "Outcome",
+                    ],
+                  ].map(([stage, label], index) => {
+                    const complete =
+                      index < progressIndex || row.status === "SUCCEEDED";
+                    const current =
+                      index === progressIndex ||
+                      (index === 4 &&
+                        ["BLOCKED", "NEEDS_REVIEW", "CANCELLED"].includes(
+                          row.status,
+                        ));
+                    const failed =
+                      index === 4 && row.status !== "SUCCEEDED" && settled(row);
+                    return (
+                      <div
+                        className={`run-progress-step${complete ? " complete" : ""}${current ? " current" : ""}${failed ? " failed" : ""}`}
+                        key={stage}
+                        aria-current={current ? "step" : undefined}
+                      >
+                        <span className="run-progress-dot" />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {!settled(row) && (
+                  <p className="small muted">
+                    This run is still active. Status, execution evidence and
+                    logs refresh automatically.
+                  </p>
+                )}
+              </div>
+              <div className="run-overview-meta">
+                <Badge>{row.source}</Badge>
+                <span>
+                  Requested by {row.actor_name} ({row.actor_kind})
+                </span>
+              </div>
+            </section>
             {row.status === "FAILED" && (
               <Notice tone="error" title="Migration failed">
                 {row.reason || "Flyway reported a failed migration."} Oracle DDL
@@ -213,10 +274,13 @@ export default function RunDetails() {
                     "Flyway repair evidence is recorded separately."}{" "}
                   The original migration SQL was not rerun.
                 </Notice>
-                <pre className="code-card">
-                  Before: {JSON.stringify(repair.data.before, null, 2)}
-                  {"\n"}After: {JSON.stringify(repair.data.after, null, 2)}
-                </pre>
+                <details className="advanced-diagnostics">
+                  <summary>Repair diagnostics</summary>
+                  <pre className="code-card">
+                    Before: {JSON.stringify(repair.data.before, null, 2)}
+                    {"\n"}After: {JSON.stringify(repair.data.after, null, 2)}
+                  </pre>
+                </details>
               </Panel>
             )}
             <Panel title="Artifact manifest">
@@ -276,7 +340,7 @@ export default function RunDetails() {
                 ))
               )}
             </Panel>
-            <Panel title="Flyway executions">
+            <Panel title="Flyway execution diagnostics">
               {executions.isPending ? (
                 <div className="skeleton" role="status" />
               ) : executions.isError ? (
@@ -301,6 +365,7 @@ export default function RunDetails() {
             </Panel>
             <Panel
               title="Searchable logs"
+              className="run-details-logs"
               aside={
                 <div className="inline">
                   <select
