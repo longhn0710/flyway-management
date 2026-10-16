@@ -310,8 +310,15 @@ func TestNativeFlywayHTTPWorkflowAndIdempotencyAcrossRestart(t *testing.T) {
 	raw := nativeJSONCall(t, client, p.baseURL, http.MethodPost, "/migration-runs", csrf, input, map[string]string{"Idempotency-Key": idem}, http.StatusAccepted)
 	run := decodeNative[map[string]any](t, raw)
 	runID := fmt.Sprint(run["id"])
-	if runID == "" || runID == "<nil>" || run["status"] != "QUEUED" {
+	if runID == "" || runID == "<nil>" || run["run_id"] != runID {
 		t.Fatalf("unexpected accepted run: %+v", run)
+	}
+	// The durable worker may advance before the submit handler reloads the run.
+	// A 202 acknowledges the job; it does not freeze its current execution state.
+	switch run["status"] {
+	case "QUEUED", "PREFLIGHT", "RUNNING", "SUCCEEDED":
+	default:
+		t.Fatalf("accepted success-fixture run has an unexpected state: %+v", run)
 	}
 	finished := waitNativeStatus(t, client, p, csrf, runID, "SUCCEEDED")
 	if finished["flyway_version"] != nativeFlywayVersion || finished["migration_outcome"] != "SUCCEEDED" {
