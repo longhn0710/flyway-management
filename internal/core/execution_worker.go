@@ -211,6 +211,13 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 }
 func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allowHeld ...bool) (executionPlan, error) {
 	plan := executionPlan{}
+	var engine string
+	if e := q.QueryRowContext(ctx, "SELECT engine FROM database_targets WHERE id=?", run.TargetID).Scan(&engine); e != nil {
+		return plan, e
+	}
+	if engine == "postgresql" {
+		return plan, conflict("PostgreSQL migration is disabled pending Gate E/F acceptance.")
+	}
 	var unfinished int
 	if e := q.QueryRowContext(ctx, `SELECT count(*) FROM run_dependencies d JOIN migration_runs r ON r.id=d.predecessor_id WHERE d.run_id=? AND r.status<>'SUCCEEDED'`, run.ID).Scan(&unfinished); e != nil {
 		return plan, e

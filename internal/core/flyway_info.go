@@ -116,7 +116,14 @@ func (s *Service) LatestInfo(ctx context.Context, a Actor, target, schema, runID
 			return nil, e
 		}
 		old := latest.Snapshot
-		if t.Host != old.Target.Host || t.Port != old.Target.Port || t.Service != old.Target.Service || t.Transport != old.Target.Transport || sc.Name != old.Schema.Name || sc.HistorySchema != old.Schema.HistorySchema || sc.HistoryTable != old.Schema.HistoryTable {
+		profileDrift := false
+		if t.Engine == "postgresql" {
+			profile, err := loadProfile(ctx, s.db, target)
+			if err != nil || old.Profile == nil || profile.CASHA256 != old.Profile.CASHA256 || profile.Revision != old.Profile.Revision {
+				profileDrift = true
+			}
+		}
+		if t.Environment != old.Target.Environment || engineOf(t.Engine) != engineOf(old.Target.Engine) || t.DatabaseName != old.Target.DatabaseName || profileDrift || t.Host != old.Target.Host || t.Port != old.Target.Port || t.Service != old.Target.Service || t.Transport != old.Target.Transport || sc.Name != old.Schema.Name || sc.HistorySchema != old.Schema.HistorySchema || sc.HistoryTable != old.Schema.HistoryTable {
 			latest.Warnings = append(latest.Warnings, "Destination or history configuration has changed since capture. This evidence describes the original snapshot.")
 		}
 	}

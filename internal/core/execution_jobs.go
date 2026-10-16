@@ -53,6 +53,9 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 	if e := s.Authorize(ctx, t.Actor, "operate", in.TargetID, in.SchemaID); e != nil {
 		return Run{}, e
 	}
+	if e := s.migrationEngineGate(ctx, t.Actor, in.TargetID); e != nil {
+		return Run{}, e
+	}
 	request, _ := json.Marshal(in)
 	requestHash := digest(string(request))
 	var existing, hash string

@@ -8,6 +8,11 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"testing/fstest"
+
+	"database/sql"
+	"fmt"
+	"io/fs"
 )
 
 func TestOpenMigratesAndPersistsInstallationMetadata(t *testing.T) {
@@ -17,8 +22,8 @@ func TestOpenMigratesAndPersistsInstallationMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	firstID := first.InstallationID
-	if first.SchemaVersion != 7 {
-		t.Fatalf("schema version = %d, want 7", first.SchemaVersion)
+	if first.SchemaVersion != 8 {
+		t.Fatalf("schema version = %d, want 8", first.SchemaVersion)
 	}
 	var tables int
 	if err := first.SQL.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('schema_migrations','installation_metadata')").Scan(&tables); err != nil {
@@ -45,8 +50,8 @@ func TestOpenMigratesAndPersistsInstallationMetadata(t *testing.T) {
 	if second.InstallationID != firstID {
 		t.Fatalf("installation ID changed after restart: %q != %q", second.InstallationID, firstID)
 	}
-	if second.SchemaVersion != 7 {
-		t.Fatalf("schema version after restart = %d, want 7", second.SchemaVersion)
+	if second.SchemaVersion != 8 {
+		t.Fatalf("schema version after restart = %d, want 8", second.SchemaVersion)
 	}
 	info, err := os.Stat(dataDir)
 	if err != nil {
@@ -70,7 +75,7 @@ func TestOpenRejectsDatabaseFromNewerSchemaVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SQL.Exec("UPDATE schema_migrations SET version=99 WHERE version=7"); err != nil {
+	if _, err := db.SQL.Exec("UPDATE schema_migrations SET version=99 WHERE version=8"); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -78,6 +83,123 @@ func TestOpenRejectsDatabaseFromNewerSchemaVersion(t *testing.T) {
 	}
 	if _, err := Open(context.Background(), dataDir); err == nil || !strings.Contains(err.Error(), "newer than supported") {
 		t.Fatalf("Open error = %v, want newer schema rejection", err)
+	}
+}
+
+func migrationSet(t *testing.T, through int) fstest.MapFS {
+	t.Helper()
+	files := fstest.MapFS{}
+	for version := 1; version <= through; version++ {
+		name := fmt.Sprintf("%03d_", version)
+		entries, err := fs.ReadDir(migrationFiles, "migrations")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, entry := range entries {
+			if strings.HasPrefix(entry.Name(), name) {
+				data, err := fs.ReadFile(migrationFiles, "migrations/"+entry.Name())
+				if err != nil {
+					t.Fatal(err)
+				}
+				files["migrations/"+entry.Name()] = &fstest.MapFile{Data: data}
+			}
+		}
+	}
+	return files
+}
+
+func legacyV7DB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetMaxOpenConns(1)
+	if _, err := db.Exec("PRAGMA foreign_keys=ON"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := migrateFS(context.Background(), db, migrationSet(t, 7)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO database_targets(id,name,environment,host,port,service,transport,created_at) VALUES('target-1','Oracle','DEV','db.example',1521,'FREEPDB1','TCPS',123)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO execution_accounts(id,target_id,name,username,created_at) VALUES('account-1','target-1','app','APP',124)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO credential_secrets(account_id,payload,version,updated_at) VALUES('account-1',x'00ff7f80',1,125)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO target_schemas(id,target_id,name,history_schema,history_table,created_at) VALUES('schema-1','target-1','APP','APP','flyway_schema_history',126)`); err != nil {
+		t.Fatal(err)
+	}
+	return db
+}
+
+func TestV8UpgradePreservesPopulatedV7AndEnforcesEngineProfiles(t *testing.T) {
+	db := legacyV7DB(t)
+	defer db.Close()
+	var beforeID, beforePayload string
+	if err := db.QueryRow(`SELECT t.id||'|'||t.name, hex(c.payload) FROM database_targets t JOIN credential_secrets c ON c.account_id='account-1' WHERE t.id='target-1'`).Scan(&beforeID, &beforePayload); err != nil {
+		t.Fatal(err)
+	}
+	version, err := migrateFS(context.Background(), db, migrationSet(t, 8))
+	if err != nil || version != 8 {
+		t.Fatalf("v8 migration = %d, %v", version, err)
+	}
+	var idName, payload, engine, databaseName string
+	if err := db.QueryRow(`SELECT t.id||'|'||t.name, hex(c.payload), t.engine, t.database_name FROM database_targets t JOIN credential_secrets c ON c.account_id='account-1' WHERE t.id='target-1'`).Scan(&idName, &payload, &engine, &databaseName); err != nil {
+		t.Fatal(err)
+	}
+	if idName != beforeID || payload != beforePayload || engine != "oracle" || databaseName != "" {
+		t.Fatalf("legacy data changed: %q %q %q %q", idName, payload, engine, databaseName)
+	}
+	if _, err := db.Exec(`INSERT INTO database_targets(id,name,environment,host,port,service,transport,engine,database_name,created_at) VALUES('pg1','PG one','DEV','pg.example',5432,'','TCPS','postgresql','appdb',1),('pg2','PG two','DEV','pg.example',5432,'','TCP','postgresql','otherdb',1)`); err != nil {
+		t.Fatalf("distinct database targets rejected: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO target_connection_profiles(target_id,auth_kind,tls_mode,ca_pem,ca_sha256,revision) VALUES('pg1','password','verify-full','-----BEGIN CERTIFICATE-----x',printf('%064d',0),1)`); err != nil {
+		t.Fatalf("valid connection profile rejected: %v", err)
+	}
+	for _, stmt := range []string{
+		`INSERT INTO target_connection_profiles(target_id,auth_kind,tls_mode,ca_pem,ca_sha256,revision) VALUES('missing','password','verify-full','x',printf('%064d',0),1)`,
+		`INSERT INTO target_connection_profiles(target_id,auth_kind,tls_mode,ca_pem,ca_sha256,revision) VALUES('pg2','password','disable','x',printf('%064d',0),1)`,
+		`INSERT INTO target_connection_profiles(target_id,auth_kind,tls_mode,ca_pem,ca_sha256,revision) VALUES('pg2','password','verify-full','x',printf('%064d',0),0)`,
+		`INSERT INTO database_targets(id,name,environment,host,port,service,transport,engine,database_name,created_at) VALUES('pg3','PG dup','DEV','pg.example',5432,'','TCP','postgresql','appdb',1)`,
+		`INSERT INTO database_targets(id,name,environment,host,port,service,transport,created_at) VALUES('ora-dup','Oracle duplicate','DEV','db.example',1521,'FREEPDB1','TCP',1)`,
+		`INSERT INTO database_targets(id,name,environment,host,port,service,transport,engine,database_name,created_at) VALUES('bad','Bad','DEV','x',5432,'svc','TCP','postgresql','appdb',1)`,
+	} {
+		if _, err := db.Exec(stmt); err == nil {
+			t.Fatalf("constraint accepted invalid statement: %s", stmt)
+		}
+	}
+	var violations int
+	if err := db.QueryRow("SELECT count(*) FROM pragma_foreign_key_check").Scan(&violations); err != nil || violations != 0 {
+		t.Fatalf("foreign key violations=%d err=%v", violations, err)
+	}
+}
+
+func TestV8UpgradeRejectsCustomTargetObjectsAndRestoresForeignKeys(t *testing.T) {
+	db := legacyV7DB(t)
+	defer db.Close()
+	if _, err := db.Exec(`CREATE INDEX custom_target_idx ON database_targets(host)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := migrateFS(context.Background(), db, migrationSet(t, 8)); err == nil || !strings.Contains(err.Error(), "unexpected custom indexes or triggers") {
+		t.Fatalf("migration error = %v", err)
+	}
+	var version, fk int
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRow("PRAGMA foreign_keys").Scan(&fk); err != nil {
+		t.Fatal(err)
+	}
+	if version != 7 || fk != 1 {
+		t.Fatalf("rollback state version=%d foreign_keys=%d", version, fk)
+	}
+	var count int
+	if err := db.QueryRow("SELECT count(*) FROM database_targets WHERE id='target-1'").Scan(&count); err != nil || count != 1 {
+		t.Fatalf("v7 target after rollback count=%d err=%v", count, err)
 	}
 }
 
