@@ -10,6 +10,12 @@ import type {
   RunLog,
 } from "../lib/execution";
 import {
+  repairNotice,
+  repairStepLabel,
+  repairStepState,
+  summarizeFlywayResult,
+} from "../lib/run-details";
+import {
   Badge,
   Button,
   Notice,
@@ -85,6 +91,9 @@ export default function RunDetails() {
       !!run.data?.repair_outcome && run.data.repair_outcome !== "PENDING",
   });
   const row = run.data;
+  const repairState = row
+    ? repairStepState(row.status, row.repair_outcome)
+    : "not-started";
   const progressStatus =
     row?.status === "FAILED" &&
     (!row.repair_outcome || row.repair_outcome === "PENDING")
@@ -94,6 +103,10 @@ export default function RunDetails() {
     ? ["QUEUED", "PREFLIGHT", "RUNNING", "REPAIRING"].indexOf(progressStatus)
     : -1;
   const progressIndex = progressStatus ? (stageIndex < 0 ? 4 : stageIndex) : -1;
+  const repairSummary =
+    row && repair.data
+      ? repairNotice(row.status, repair.data.outcome, repair.data.reason)
+      : null;
   return (
     <>
       <PageHeading
@@ -143,24 +156,37 @@ export default function RunDetails() {
                       row.status === "SUCCEEDED" ? "Succeeded" : "Outcome",
                     ],
                   ].map(([stage, label], index) => {
-                    const complete =
-                      index < progressIndex || row.status === "SUCCEEDED";
+                    const isRepair = stage === "REPAIRING";
+                    const complete = isRepair
+                      ? repairState === "complete"
+                      : index < progressIndex ||
+                        (row.status === "SUCCEEDED" && index < 3);
                     const current =
-                      index === progressIndex ||
+                      (isRepair
+                        ? repairState === "running"
+                        : index === progressIndex) ||
                       (index === 4 &&
                         ["BLOCKED", "NEEDS_REVIEW", "CANCELLED"].includes(
                           row.status,
                         ));
-                    const failed =
-                      index === 4 && row.status !== "SUCCEEDED" && settled(row);
+                    const failed = isRepair
+                      ? repairState === "failed"
+                      : index === 4 &&
+                        row.status !== "SUCCEEDED" &&
+                        settled(row);
+                    const skipped = isRepair && repairState === "skipped";
                     return (
                       <div
-                        className={`run-progress-step${complete ? " complete" : ""}${current ? " current" : ""}${failed ? " failed" : ""}`}
+                        className={`run-progress-step${complete ? " complete" : ""}${current ? " current" : ""}${failed ? " failed" : ""}${skipped ? " skipped" : ""}`}
                         key={stage}
                         aria-current={current ? "step" : undefined}
                       >
                         <span className="run-progress-dot" />
-                        <span>{label}</span>
+                        <span>
+                          {isRepair
+                            ? repairStepLabel(repairState, row.repair_outcome)
+                            : label}
+                        </span>
                       </div>
                     );
                   })}
@@ -263,16 +289,15 @@ export default function RunDetails() {
               )}
             </Panel>
             {repair.data && (
-              <Panel title={`Conditional repair · ${repair.data.outcome}`}>
+              <Panel title={`Repair · ${repair.data.outcome}`}>
                 <Notice
-                  tone={
-                    repair.data.outcome === "SUCCEEDED" ? "warning" : "error"
-                  }
-                  title="Repair does not change migration outcome"
+                  tone={repairSummary?.tone ?? "info"}
+                  title={repairSummary?.title ?? "Repair status"}
                 >
-                  {repair.data.reason ||
-                    "Flyway repair evidence is recorded separately."}{" "}
-                  The original migration SQL was not rerun.
+                  {repairSummary?.message}
+                  {repair.data.outcome !== "SKIPPED" && (
+                    <> The original migration SQL was not rerun.</>
+                  )}
                 </Notice>
                 <details className="advanced-diagnostics">
                   <summary>Repair diagnostics</summary>
@@ -346,21 +371,55 @@ export default function RunDetails() {
               ) : executions.isError ? (
                 <Notice tone="error">{executions.error.message}</Notice>
               ) : (
-                (executions.data ?? []).map((item) => (
-                  <details key={item.id}>
-                    <summary>
-                      <Status value={item.success ? "SUCCEEDED" : "FAILED"} />{" "}
-                      {item.command} · exit {item.exit_code ?? "—"}
-                    </summary>
-                    <pre className="code-card">
-                      {item.stdout}
-                      {item.stderr ? `\n${item.stderr}` : ""}
-                      {item.json !== undefined
-                        ? `\n${JSON.stringify(item.json, null, 2)}`
-                        : ""}
-                    </pre>
-                  </details>
-                ))
+                (executions.data ?? []).map((item) => {
+                  const summary = summarizeFlywayResult(
+                    item.command,
+                    item.json,
+                    item.success,
+                  );
+                  const plainStdout = item.stdout
+                    .split(/\r?\n/)
+                    .filter(
+                      (line) =>
+                        !summarizeFlywayResult(
+                          item.command,
+                          line,
+                          item.success,
+                        ),
+                    )
+                    .join("\n");
+                  return (
+                    <details key={item.id}>
+                      <summary>
+                        <Status value={item.success ? "SUCCEEDED" : "FAILED"} />{" "}
+                        {item.command} · exit {item.exit_code ?? "—"}
+                        {summary ? ` · ${summary.message}` : ""}
+                      </summary>
+                      {summary && (
+                        <div className="flyway-log-summary">
+                          <strong>{summary.title}</strong>
+                          <p>{summary.message}</p>
+                        </div>
+                      )}
+                      {(plainStdout || item.stderr) && (
+                        <pre className="code-card">
+                          {plainStdout}
+                          {item.stderr ? `\n${item.stderr}` : ""}
+                        </pre>
+                      )}
+                      {summary ? (
+                        <details className="flyway-log-raw">
+                          <summary>Original Flyway JSON</summary>
+                          <pre className="code-card">{summary.prettyJson}</pre>
+                        </details>
+                      ) : item.json !== undefined ? (
+                        <pre className="code-card">
+                          {JSON.stringify(item.json, null, 2)}
+                        </pre>
+                      ) : null}
+                    </details>
+                  );
+                })
               )}
             </Panel>
             <Panel
@@ -404,19 +463,47 @@ export default function RunDetails() {
               ) : (
                 <>
                   <div className="log-viewer">
-                    {logs.data.map((line) => (
-                      <div
-                        className="log-row"
-                        key={`${line.sequence}-${line.created_at}`}
-                      >
-                        <span className="muted">
-                          {new Date(line.created_at).toLocaleTimeString()}
-                        </span>
-                        <Badge>{line.channel}</Badge>
-                        <code>{line.command}</code>
-                        <pre>{line.message}</pre>
-                      </div>
-                    ))}
+                    {logs.data.map((line) => {
+                      const execution = (executions.data ?? []).find(
+                        (item) =>
+                          item.command === line.command &&
+                          item.stdout.split(/\r?\n/).includes(line.message),
+                      );
+                      const summary =
+                        line.channel === "stdout"
+                          ? summarizeFlywayResult(
+                              line.command,
+                              line.message,
+                              execution?.success,
+                            )
+                          : null;
+                      return (
+                        <div
+                          className="log-row"
+                          key={`${line.sequence}-${line.created_at}`}
+                        >
+                          <span className="muted">
+                            {new Date(line.created_at).toLocaleTimeString()}
+                          </span>
+                          <Badge>{line.channel}</Badge>
+                          <code>{line.command}</code>
+                          {summary ? (
+                            <div className="flyway-log-entry">
+                              <div className="flyway-log-summary">
+                                <strong>{summary.title}</strong>
+                                <p>{summary.message}</p>
+                              </div>
+                              <details className="flyway-log-raw">
+                                <summary>Original Flyway JSON</summary>
+                                <pre>{summary.prettyJson}</pre>
+                              </details>
+                            </div>
+                          ) : (
+                            <pre>{line.message}</pre>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="inline">
                     <Button

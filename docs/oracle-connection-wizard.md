@@ -24,6 +24,14 @@ Direct API acceptance additionally checks an unselected B even with broader Orac
 
 Before migration, independent SQL observed the existing FWM_LAB V1–V4 history, four probe rows, unchanged guard canary and zero objects in new schema A. After V1, independent SQL confirmed one successful V1 and one probe row in A, with FWM_LAB and the guard canary unchanged. Only dedicated schema A's approved acceptance migrations are submitted by this workflow.
 
+## Deployed acceptance
+
+CI run [38868584222](https://github.com/longhn0710/flyway-management/actions/runs/38868584222) passed every required verify/publish gate. GitOps commit `eabe1df7ed8671a5a9f31462dd928fed39714e58` promoted the immutable feature image, and Argo reported Synced/Healthy with a ready application pod. The original installation ID, encryption key and two historical runs were preserved through additive schema migration 004. A quiet-window native SQLite backup and the original key were exported separately before promotion.
+
+The HTTPS UI registered the dedicated A account through the wizard, discovered 46 schemas, defaulted only A, saved scoped application access, uploaded the guarded V2 artifact, passed preflight and completed run `DG5lFUs-8nPKq7_Ra8hqNB` successfully. All five Flyway executions (`info`, `validate`, `migrate`, `info`, `validate`) exited successfully, and 11 immutable logs were available. The deployed direct API checks repeated the allowlist, multi-account preservation, mapping edits, credential rotation, invalid password, unavailable network and denied-operator cases successfully. B remained forbidden despite its Oracle schema privilege, application grant and legacy account mapping.
+
+Independent read-only Oracle inspection confirmed successful V1/V2 in A and the two expected probe rows. A retains only CREATE SESSION and CREATE TABLE, no roles and its 8 MiB quota. Existing FWM_LAB V1–V4/four rows and the separate guard canary are unchanged. A later read-only UI preflight reported both files applied. Final readability refinements give skipped repair a neutral state and summarize structured logs, with original JSON available on demand; these use the same CI/GitOps gates and require no further SQL.
+
 ## Checks and operating boundaries
 
 Established build/vet/unit/integration, race, frontend lint/unit, Chromium and vulnerability checks are required. The browser suite has 15 cases. Tests cover atomic rollback, credential version races, per-account authorization, pagination beyond 200 schemas, immutable history, queued revocation, repair revocation, schema-3 to schema-4 data preservation, partial metadata, output limits and case-sensitive discovery identities. OpenAPI recommended validation passes with the two existing public-route response warnings and established style exclusions.

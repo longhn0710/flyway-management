@@ -136,7 +136,7 @@
     "build_vet_go_tests": "passed",
     "race": "passed",
     "frontend_lint": "passed",
-    "frontend_unit": 11,
+    "frontend_unit": 16,
     "chromium": 15,
     "npm_vulnerabilities": 0,
     "go_reachable_vulnerabilities": 0,
@@ -156,7 +156,14 @@
     "Cross-schema DDL not proved by metadata",
     "Pinned JDBC21 rejects tested Oracle23/26 extended40 and whitespace/Unicode30 credentials; bytes preserved; no vendor runtime change"
   ],
-  "delivery": "CI immutable image and non-production GitOps promotion follow homelab-operations.md",
+  "delivery": {
+    "feature_ci": "https://github.com/longhn0710/flyway-management/actions/runs/38868584222",
+    "feature_source": "7e32043c809b589919de574e33345483dbc8b631",
+    "feature_gitops": "eabe1df7ed8671a5a9f31462dd928fed39714e58",
+    "feature_image_digest": "sha256:fc72704f754a666ac3d6906368d0d168cc627403b767beaab9b8a602df312e41",
+    "verified": "Argo Synced/Healthy; ready pod; HTTPS schema4; encrypted credentials and original history preserved",
+    "final_readability_refinement": "UI-only followup uses the same required CI and GitOps process; no further SQL submitted"
+  },
   "independent_after_local": {
     "local_migration_run": "mbnbuUylHj9OHY8kiWBe0k",
     "schema_a": {
@@ -184,5 +191,77 @@
     "fwm_guard_canary": [
       "1,unchanged-lab-canary"
     ]
+  },
+  "independent_after_deployed": {
+    "deployed_migration_run": "DG5lFUs-8nPKq7_Ra8hqNB",
+    "schema_a": {
+      "probe_rows": [
+        "1,connection-wizard-local-acceptance",
+        "2,connection-wizard-deployed-acceptance"
+      ],
+      "history": [
+        "1:success",
+        "2:success"
+      ],
+      "system_grants": [
+        "CREATE SESSION",
+        "CREATE TABLE"
+      ],
+      "roles": [],
+      "quota": [
+        "USERS,8388608"
+      ]
+    },
+    "fwm_lab": {
+      "history": [
+        "1:success",
+        "2:success",
+        "3:success",
+        "4:success"
+      ],
+      "probe_rows": 4
+    },
+    "fwm_guard_canary": [
+      "1,unchanged-lab-canary"
+    ]
+  },
+  "deployed_api_acceptance": {
+    "discovery_count": 46,
+    "multi_candidates": [
+      "FWM_WZ260_A",
+      "FWM_WZ260_B"
+    ],
+    "multi_selected": [
+      "FWM_WZ260_A"
+    ],
+    "unselected_schema_direct_preflight_submit_accounts": "403_despite_Oracle_potential_DDL_and_app_grant_and_mapping",
+    "add_remove_all_mappings": "passed",
+    "prior_history": "unchanged_SUCCEEDED",
+    "other_account_allowlist": "preserved",
+    "credential_rotation_version": 2,
+    "wrong_password": "ORA-01017",
+    "missing_network": "ORA-17002",
+    "unauthorized_operator": "403",
+    "no_usable_target": "no_potential_candidates_and_registration_rejected",
+    "credential_api": "metadata_only"
+  },
+  "deployed_ui": {
+    "url": "https://flyway-manager.apps.drgdevlab.com",
+    "run_id": "DG5lFUs-8nPKq7_Ra8hqNB",
+    "status": "SUCCEEDED",
+    "schema": "FWM_WZ260_A",
+    "service": "FREEPDB1",
+    "old_runs_preserved": 2,
+    "successful_flyway_executions": [
+      "info",
+      "validate",
+      "migrate",
+      "info",
+      "validate"
+    ],
+    "log_entries": 11,
+    "read_only_followup_preflight": "VERIFIED; V1 and V2 applied",
+    "installation_id_preserved": true,
+    "schema_version": 4
   }
 }

@@ -2334,6 +2334,15 @@ tbody tr:hover {
   border-color: #16845b;
   background: #16845b;
 }
+.run-progress-step.skipped {
+  color: #71828b;
+  font-weight: 500;
+}
+.run-progress-step.skipped .run-progress-dot {
+  border-style: dashed;
+  border-color: #9ba9b0;
+  background: #f1f4f5;
+}
 .run-progress-step.current {
   color: var(--accent);
   font-weight: 600;
@@ -2392,6 +2401,42 @@ tbody tr:hover {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font: inherit;
+}
+.flyway-log-entry {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.flyway-log-summary {
+  padding: 10px 12px;
+  border: 1px solid #dce8e8;
+  border-radius: 8px;
+  background: #f4f9f9;
+}
+.flyway-log-summary p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.flyway-log-raw {
+  color: var(--muted);
+  font-size: 12px;
+}
+.flyway-log-raw > summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.flyway-log-raw pre {
+  max-height: 420px;
+  margin: 8px 0 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: 12px/1.55 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
 }
 @media (max-width: 767px) {
   .flyway-review-panel {

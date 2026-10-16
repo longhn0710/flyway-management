@@ -289,7 +289,9 @@ async function uploadAndPreflight(page: Page, fileName = "V1__browser.sql") {
   const preview = page.getByRole("table").filter({
     has: page.getByRole("columnheader", { name: "State", exact: true }),
   });
-  await expect(preview.getByRole("cell", { name: "V1__browser.sql", exact: true })).toBeVisible();
+  await expect(
+    preview.getByRole("cell", { name: "V1__browser.sql", exact: true }),
+  ).toBeVisible();
   await expect(preview).not.toContainText("/private/flyway-run-fixture");
   await page
     .getByRole("button", { name: "Review and submit migration" })
@@ -422,12 +424,28 @@ test("controlled fake Flyway completes the real UI workflow through download and
     await expect(
       page.getByText("SUCCEEDED", { exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".run-progress-step.skipped")).toContainText(
+      "Repair skipped",
+    );
+    await expect(
+      page.getByText("No repair needed", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Repair does not change migration outcome"),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Searchable logs" }),
     ).toBeVisible();
     await page.getByPlaceholder("Search logs…").fill("migrationsExecuted");
     await expect(
-      page.locator(".log-viewer").getByText(/"operation":"migrate"/),
+      page.locator(".log-viewer").getByText(/1 migration executed/),
+    ).toBeVisible();
+    const originalJSON = page
+      .locator(".log-viewer")
+      .getByText("Original Flyway JSON");
+    await originalJSON.click();
+    await expect(
+      page.locator(".log-viewer").getByText(/"migrationsExecuted": 1/),
     ).toBeVisible();
     const [download] = await Promise.all([
       page.waitForEvent("download"),
@@ -469,7 +487,7 @@ test("controlled fake Flyway keeps a failed migration failed after one safe repa
       { timeout: 20_000 },
     );
     await expect(
-      page.getByText("Repair does not change migration outcome"),
+      page.getByText("Repair completed; migration remains failed"),
     ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.getByText("The original migration SQL was not rerun."),
