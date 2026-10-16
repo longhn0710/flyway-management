@@ -1,0 +1,8 @@
+Description:
+    Drops all objects in the configured schemas
+
+Configuration parameters: (Format: -key=value)
+    cleanDisabled  Whether to disable clean
+
+Example:
+    flyway clean -cleanDisabled=false

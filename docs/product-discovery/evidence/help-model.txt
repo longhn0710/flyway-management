@@ -1,0 +1,18 @@
+Description:
+    Saves the changes from flyway diff to the schema model
+    The schema model must have been used as a source or target in the diff
+
+Configuration parameters: (Format: -key=value)
+    model.changes           A comma separated list of change ids. If unspecified, all changes will be used.
+                            May specify - to read changes from stdin
+    model.artifactFilename  The location of the diff artifact to apply to the target.
+                            Defaults: diff.artifactFilename, %temp%/flyway.artifact.diff
+    model.dryRun            When set to true, the list of files that would be updated is returned, along with the dependency information and any warnings, but no update is performed. Defaults to false.
+
+Example:
+    flyway model -model.artifactFilename=flyway.diff -model.changes=id1,id2,id3
+
+
+
+Description:
+    Allows differences found by running the diff command to be applied to the schema model

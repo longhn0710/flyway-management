@@ -1,0 +1,56 @@
+Description:
+    Produces reports to increase confidence in your deployments
+
+Configuration parameters: (Format: -key=value)
+    check.appliedMigrations               A comma-separated list of migration ids (migration versions or repeatable descriptions) to apply to create snapshots
+    check.buildEnvironment                Environment for the build database. Defaults to 'default_build'
+    check.buildPassword                   [DEPRECATED] Password for the build database. Defaults to 'flyway.password'. Will be replaced by check.buildEnvironment in Flyway 10.0
+    check.buildUrl                        [DEPRECATED] URL for the build database. Note: This database will be cleaned! Will be replaced by check.buildEnvironment in Flyway 10.0
+    check.buildUser                       [DEPRECATED] Username for the build database. Defaults to 'flyway.user'. Will be replaced by check.buildEnvironment in Flyway 10.0
+    check.changesSource                   The deployment source to generate a change report from.
+                                          Valid values: migrations|schemaModel Default: migrations
+    check.code.failOnError                Specify whether the code analysis should fail when an error-level violation is detected
+    check.code.noqaSeverity               Severity level of ignoring issues with a noqa comment. Defaults to WARNING.
+    check.code.profile                    The name of the code review profile to run, whose rules are excluded from the run. Defaults to running every enabled rule
+    check.code.profiles                   A table, keyed by profile name, of the rules and rule groups each profile excludes
+    check.deployedSnapshot                The location of a snapshot matching the state of the target database when the last deployment happened. Valid values:
+                                           - snapshotHistory:<<name>> - entry in the snapshot history table in the target environment ("snapshotHistory:current" is most recent snapshot)
+                                           - <<path>> or filesystem:<<path>> - a location on disk
+                                          The default is "snapshotHistory:current".
+    check.deployedSnapshotSchemas         The schemas to use for the deployed snapshot
+    check.driftResolutionFolder           The folder in which to generate drift resolution scripts when drift is detected. Relative paths are resolved against the working directory. Defaults to 'drift-resolution'.
+    check.failOnDrift                     Specify whether the check operation should fail when drift is detected
+    check.filterFile                      A filter configuration can be passed through to the underlying comparison engine that will be used in change and drift reports
+    check.generateDriftResolutionScripts  Whether to generate scripts when drift is detected to help incorporate it, revert it, or filter it out. Defaults to true.
+    check.generateReport                  Specify whether an HTML report file should be generated. Defaults to true
+    check.majorRules                      [DEPRECATED] A comma-separated list of rule codes that are considered to be 'major' issues
+    check.majorTolerance                  [DEPRECATED] The number of 'major' issues to be tolerated before throwing an error
+    check.minorRules                      [DEPRECATED] A comma-separated list of rule codes that are considered to be 'minor' issues
+    check.minorTolerance                  [DEPRECATED] The number of 'minor' issues to be tolerated before throwing an error
+    check.nextSnapshot                    A snapshot containing all migrations including those that are pending
+    check.nextSnapshotSchemas             The schemas to use for the deployed snapshot
+    check.regexEnabled                    Enable Regular Expression for code analysis checks
+    check.rulesConfig                     Specify the configuration file for SQLFluff code analysis
+    check.rulesDialect                    The dialect of SQL to be validated by `-code`. Default is determined by database or TEXT
+    check.rulesLocation                   File location to scan for Regex Rule files. Defaults to `rules/` in installation directory
+    check.scope                           Specify the scope of files to include in code analysis
+    check.scriptFilename                  Specify an individual script to run code analysis on. Only used if scope is 'SCRIPT'
+    check.sqlfluffCustomRulesPath         Path to a SQLFluff plugin package folder (containing __init__.py) that exposes custom rules
+    check.sqlfluffEnabled                 Enable SQLFluff for code analysis checks
+
+Flags:
+    -drift                                [enterprise] Compares current database with applied migrations
+    -changes                              [enterprise] Compares current database with your changes source
+    -code                                 Performs a code review on your migrations
+    -dryrun                               [teams] Performs a 'dry run', showing what changes would be applied in a real deployment
+
+Example:
+    flyway check -drift -environment=production -failOnDrift=true
+    flyway check -changes -buildEnvironment=build -environment=production
+    flyway check -code -regexEnabled=false -failOnError=true
+    flyway check -dryrun
+
+
+
+Description:
+    Produces reports to increase confidence in your migrations

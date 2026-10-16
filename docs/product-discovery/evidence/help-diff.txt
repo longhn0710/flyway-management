@@ -1,0 +1,32 @@
+Description:
+    Compares two comparison sources and returns a summary of the differences
+    A comparison source can be a database environment, a schema model folder, a snapshot, or empty
+    Additionally, diff will generate a difference artifact that can be used with generate, model and diffText commands
+
+Configuration parameters: (Format: -key=value)
+    diff.source [REQUIRED]     The source to use for the diff operation. Valid values:
+                                - <<env>> - uses the environment named <<env>>
+                                - empty - models an empty database
+                                - schemaModel - the schema model folder referenced by schemaModelLocation
+                                - migrations - uses a buildEnvironment to represent the state of database after specified migrations have been applied
+                                - snapshot:<<path>> - uses a snapshot file at the specified path
+                                - snapshotHistory:<<name>> - uses a snapshot entry in the snapshot history table; entries are either identified by name, or `current` for the most recent snapshot, or `previous` for the most recent but one
+                               In the case where an environment shares a name with one of the other values, it can be prefixed with env:
+    diff.target [REQUIRED]     The target to use for the diff operation. See: diff.source
+    diff.buildEnvironment      If source/target is migrations, this specifies the environment to use as the build environment
+    diff.buildVersion          If source/target is migrations, this specifies migration version to migrate the build environment to
+    diff.buildCherryPick       If source/target is migrations, this specifies list of migrations to migrate the build environment with
+    diff.rebuild               If source/target is migrations, forces a reprovision (rebuild) of the build environment
+    diff.snapshotSchemas       The schemas used for a snapshot comparison source/target
+    diff.includeDefinitions    Include object definitions in the diff output (json only)
+    diff.includeFlywayObjects  Should the diff include flyway objects (e.g. schema history table)
+    diff.artifactFilename      The output location of the diff artifact.
+                               Default: %temp%/flyway.artifact.diff
+
+Example:
+    flyway diff -diff.source=schemaModel -diff.target=env:dev -diff.artifactFilename=flyway.diff
+
+
+
+Description:
+    Calculates the differences between a specified source and target. The result of a diff command can then be used with the generate, model and diffText commands to generate scripts and apply changes

@@ -1,0 +1,295 @@
+{
+  "captured_at_utc": "2026-10-16T17:03:36.421457+00:00",
+  "source_commit": "c93f15884fa06a326549badfdc828cb91e31d003",
+  "version": "13.10.3",
+  "manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c",
+  "verified_files": 1458,
+  "mismatches": [],
+  "method": "Isolated temporary cwd and HOME; explicit minimal environment; only help, version and list-engines. No endpoint, credential, config, database connection or command execution other than these metadata commands.",
+  "invocations": [
+    {
+      "argv": [
+        "flyway",
+        "-?"
+      ],
+      "exit_code": 0,
+      "file": "help.txt",
+      "sha256": "7252c708a325f8198d331df2776bcce5a215034d7aa7eda16b2d1060c4d26c02",
+      "original_output_sha256": "be22c38bddfa4c2669716bf080e73229a4f52e22a75baf89dc5a762618b586f5"
+    },
+    {
+      "argv": [
+        "flyway",
+        "-v"
+      ],
+      "exit_code": 0,
+      "file": "version.txt",
+      "sha256": "62176f0468b126b3254625a5a7f1e29e4b593ddbefe966f2ed8f053fcdba6001",
+      "original_output_sha256": "7491548bc7709b51ed680388a0deac7312bebefb58df5f93c060aed0e0bcd9f3"
+    },
+    {
+      "argv": [
+        "flyway",
+        "list-engines"
+      ],
+      "exit_code": 0,
+      "file": "list-engines.txt",
+      "sha256": "988abd5a352370bb116602c25b88faf1b1aa39c42ed518207729b21b04ee8dbc",
+      "original_output_sha256": "126f5eaebe5284ab51bc8e433c175a4f37210baa7c05c32fb766b8d957c987b6"
+    },
+    {
+      "argv": [
+        "flyway",
+        "list-engines",
+        "-outputType=json"
+      ],
+      "exit_code": 0,
+      "file": "list-engines-json.txt",
+      "sha256": "7150f10c5928745826e0f12268d7368c7efe03c4224f44b5640f6498194fd89c",
+      "original_output_sha256": "7150f10c5928745826e0f12268d7368c7efe03c4224f44b5640f6498194fd89c"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "check"
+      ],
+      "exit_code": 0,
+      "file": "help-check.txt",
+      "sha256": "dabe1f4731b71f5d98ccfaa76dcf43d9d2277ee4abf4ace852a2574a58b6edc4",
+      "original_output_sha256": "009b3fce122a6c489d65356563bebca481d03592f1ba47c69f5fd0985288dbc4"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "deploy"
+      ],
+      "exit_code": 0,
+      "file": "help-deploy.txt",
+      "sha256": "a52517c45f67635b4b73f5dda2d2fb1493bd0db60f94f00f05a9bfea6a4b650b",
+      "original_output_sha256": "e3c757c82209d05ea16595027a50cbf1307d0673e50b0047b9cdf11216a80c7e"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "init"
+      ],
+      "exit_code": 0,
+      "file": "help-init.txt",
+      "sha256": "711936e9e059ccf1b1f9396c19400920fbdf41221eab68f378789dfed74f74ab",
+      "original_output_sha256": "06333b85cd12c2d16187f10548c2b61fb599e2270d2e3dd315c1340b5f611318"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "prepare"
+      ],
+      "exit_code": 0,
+      "file": "help-prepare.txt",
+      "sha256": "904a358c5acf8548d95d60027cb6cbe6cb94c635d0ae8070cb48a61068cca498",
+      "original_output_sha256": "0dcfb734cf0d4f70ceadf442eccbac775c165ee3609019e7d934610f1e49d81f"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "testConnection"
+      ],
+      "exit_code": 0,
+      "file": "help-testConnection.txt",
+      "sha256": "e3bf35b17d66c442a8d36625e71b589f7ed925afb2c57493754e1b05516d33b4",
+      "original_output_sha256": "3194cf197ccd36082b4dccbcc9a3541f2dd842103ef2ed480645ad764345059c"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "list-engines"
+      ],
+      "exit_code": 0,
+      "file": "help-list-engines.txt",
+      "sha256": "7252c708a325f8198d331df2776bcce5a215034d7aa7eda16b2d1060c4d26c02",
+      "original_output_sha256": "be22c38bddfa4c2669716bf080e73229a4f52e22a75baf89dc5a762618b586f5"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "diff"
+      ],
+      "exit_code": 0,
+      "file": "help-diff.txt",
+      "sha256": "dea9cf94d9fcce1be98224c83e6da49c8688b0840cd744744e18a9b9d21af92e",
+      "original_output_sha256": "9d148640dbe50c27cf496629a1bc973c0e5867d5ddbc33fa2cfabefe1c2b8bff"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "objects"
+      ],
+      "exit_code": 0,
+      "file": "help-objects.txt",
+      "sha256": "f52b4cdaeee3e88e8c367ddd1bf8f64d072f6ff9a53f6c6be2db50e8c2dcc183",
+      "original_output_sha256": "d5c168c0cdd6e340f11c35aa8c7830c1423622432ace05e9c0f0021d968d06cd"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "diffText"
+      ],
+      "exit_code": 0,
+      "file": "help-diffText.txt",
+      "sha256": "24b483206709a4be9a2a49d4677f577fae0da77ce316726796a62112d437a335",
+      "original_output_sha256": "6f947bb40385fa57130253ecca7097569d874cf4d6b1d51dbacb6ec596a0451d"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "snapshot"
+      ],
+      "exit_code": 0,
+      "file": "help-snapshot.txt",
+      "sha256": "dec7022deaf32ba2f0ae8338b99b5124f1e0e4905b5c562120ae865b6fd33b59",
+      "original_output_sha256": "8df83ff8b9a31d08b089f4e39444cf7749fa01720aa5e23b2cdcfb7302c80b33"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "model"
+      ],
+      "exit_code": 0,
+      "file": "help-model.txt",
+      "sha256": "18e2b0b4910218a53c767ffc58633987d704b1271aa7614c36d8aa5a4c1faac1",
+      "original_output_sha256": "04e1e9fe6d5eab311be05974f398f0d68f19a695cbd8bf2cc129692b82aad3e8"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "generate"
+      ],
+      "exit_code": 0,
+      "file": "help-generate.txt",
+      "sha256": "ffe896404cf736ad3c636ecc2c4ca312c9ac83826d72441ca8014d72ab2226f8",
+      "original_output_sha256": "47c5f17aa8e76a417883e2cabe11023c6589a3c1b07f8242bef5c79760c96e80"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "add"
+      ],
+      "exit_code": 0,
+      "file": "help-add.txt",
+      "sha256": "903aa4dbeb1907d02713b37b556cadaa507a14b576ae5a9e0add50abb4cc7748",
+      "original_output_sha256": "77022bc5c7cb269f1cbc5ae69b163ed6498de9ed0f5ea926af92ac74b72d1df6"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "mcp"
+      ],
+      "exit_code": 1,
+      "file": "help-mcp.txt",
+      "sha256": "49817fda3156711f69d1fc6e7965c08d3dc7163c8414e249fe8c17ac0acb8a6c",
+      "original_output_sha256": "49817fda3156711f69d1fc6e7965c08d3dc7163c8414e249fe8c17ac0acb8a6c"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "auth"
+      ],
+      "exit_code": 0,
+      "file": "help-auth.txt",
+      "sha256": "d9c5ca1ae4a2a17263ab9c9d162a77c63c56842c5ad52764746850b2b7309569",
+      "original_output_sha256": "be7c7034314ca9f0ede9ac880404efb70b642cee71df54e4dc213d2ee1928f15"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "baseline"
+      ],
+      "exit_code": 0,
+      "file": "help-baseline.txt",
+      "sha256": "7ed77a3d1d85e762f22fd8397dad5dd8d258e30890f35594c9fa5a9d5cbbc39e",
+      "original_output_sha256": "dcdaad201b6c121e91f96f5ee0f61e8d58530ae798ad4315a4f9d08dbaef0c2d"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "clean"
+      ],
+      "exit_code": 0,
+      "file": "help-clean.txt",
+      "sha256": "c7c94276ccbb8dcfcc2eaa25251b46c28a9075983d32a5d486d4d4c62f1a4697",
+      "original_output_sha256": "39ea2ad10b18370165bca7a4b61c883ff85004692848252e4ac0db057f4f7a1a"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "info"
+      ],
+      "exit_code": 0,
+      "file": "help-info.txt",
+      "sha256": "48dad14ac812ac87115b7d6255bb9b5bae85cec28eb0e80fecc2a6e9ea6f21ef",
+      "original_output_sha256": "77f72663363c7dd4083bfb3b39aa45d6dd546930a6d74e37f3470731400dd5b2"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "migrate"
+      ],
+      "exit_code": 0,
+      "file": "help-migrate.txt",
+      "sha256": "6a33cf882d6cbc935b533b2468da55f8687c8c6cf57dc669479f349a8e9ca6b8",
+      "original_output_sha256": "7f28c4f3eb558375894fc71c58fde2f79ddb408d0986ed0207c1581077e374ba"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "repair"
+      ],
+      "exit_code": 0,
+      "file": "help-repair.txt",
+      "sha256": "a7efc5cba8a53098d6a92294adbebd42214205ee728b819be9f5703ae3f6898b",
+      "original_output_sha256": "4851acf7fd3bd034cfc7fcf20dda4ab168e957a004d2edb8c420645bf74594b2"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "validate"
+      ],
+      "exit_code": 0,
+      "file": "help-validate.txt",
+      "sha256": "f817f2b933d085b5bc5ae340267c2e1631716dce662206e3e6017f75567af7ff",
+      "original_output_sha256": "75ed187d09471bbc16b944911982dfbaa3a1d31083918534fdc86e2eb368e64b"
+    },
+    {
+      "argv": [
+        "flyway",
+        "help",
+        "undo"
+      ],
+      "exit_code": 0,
+      "file": "help-undo.txt",
+      "sha256": "d9775a2baa101ee86edb5e25e4024021b022a2457bbcfe3b4a7404ff229dccd5",
+      "original_output_sha256": "c7a60cc182fdf944ac15c4d7c410446387a5a335e8a80150e60ca4740b0d1bd5"
+    }
+  ],
+  "publication_normalization": "Remove trailing whitespace from lines and extra blank lines at EOF; preserve all printed text and leading/internal whitespace. sha256 identifies the published transcript; original_output_sha256 identifies original captured bytes."
+}

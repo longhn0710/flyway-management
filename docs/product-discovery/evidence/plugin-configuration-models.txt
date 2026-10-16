@@ -1,0 +1,819 @@
+Compiled from "ChangesConfigurationExtension.java"
+public class org.flywaydb.check.changes.configuration.ChangesConfigurationExtension extends org.flywaydb.check.comparison.configuration.ComparisonBasedCheckConfiguration {
+  public org.flywaydb.check.changes.configuration.ChangesConfigurationExtension();
+  public java.lang.String getReportType();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getBuildUrl();
+  public java.lang.String getBuildUser();
+  public java.lang.String getBuildPassword();
+  public java.lang.String getBuildEnvironment();
+  public java.lang.String getDeployedSnapshot();
+  public java.lang.String[] getDeployedSnapshotSchemas();
+  public java.lang.String getFilterFile();
+  public boolean isGenerateReport();
+  public org.flywaydb.check.changes.configuration.ChangesSource getChangesSource();
+  public java.lang.String getNextSnapshot();
+  public java.lang.String[] getNextSnapshotSchemas();
+  public java.lang.String[] getAppliedMigrations();
+  public void setBuildUrl(java.lang.String);
+  public void setBuildUser(java.lang.String);
+  public void setBuildPassword(java.lang.String);
+  public void setBuildEnvironment(java.lang.String);
+  public void setDeployedSnapshot(java.lang.String);
+  public void setDeployedSnapshotSchemas(java.lang.String[]);
+  public void setFilterFile(java.lang.String);
+  public void setGenerateReport(boolean);
+  public void setChangesSource(org.flywaydb.check.changes.configuration.ChangesSource);
+  public void setNextSnapshot(java.lang.String);
+  public void setNextSnapshotSchemas(java.lang.String[]);
+  public void setAppliedMigrations(java.lang.String[]);
+}
+Compiled from "CodeReviewConfigurationExtension.java"
+public class org.flywaydb.check.codereview.configuration.CodeReviewConfigurationExtension implements org.flywaydb.core.internal.reports.ReportGenerationConfiguration {
+  public org.flywaydb.check.codereview.configuration.CodeReviewConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getReportType();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public boolean isSqlfluffEnabled();
+  public boolean isRegexEnabled();
+  public java.lang.String getRulesLocation();
+  public org.flywaydb.check.codereview.configuration.RulesEngineDialect getRulesDialect();
+  public org.flywaydb.check.codereview.configuration.CodeReviewScope getScope();
+  public java.lang.String getRulesConfig();
+  public org.flywaydb.check.codereview.configuration.CodeOptionsModel getCode();
+  public java.lang.String getScriptFilename();
+  public boolean isGenerateReport();
+  public java.lang.String getSqlfluffCustomRulesPath();
+  public void setSqlfluffEnabled(boolean);
+  public void setRegexEnabled(boolean);
+  public void setRulesLocation(java.lang.String);
+  public void setRulesDialect(org.flywaydb.check.codereview.configuration.RulesEngineDialect);
+  public void setScope(org.flywaydb.check.codereview.configuration.CodeReviewScope);
+  public void setRulesConfig(java.lang.String);
+  public void setCode(org.flywaydb.check.codereview.configuration.CodeOptionsModel);
+  public void setScriptFilename(java.lang.String);
+  public void setGenerateReport(boolean);
+  public void setSqlfluffCustomRulesPath(java.lang.String);
+}
+Compiled from "DriftConfigurationExtension.java"
+public class org.flywaydb.check.drift.configuration.DriftConfigurationExtension extends org.flywaydb.check.comparison.configuration.ComparisonBasedCheckConfiguration {
+  public org.flywaydb.check.drift.configuration.DriftConfigurationExtension();
+  public java.lang.String getReportType();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getBuildUrl();
+  public java.lang.String getBuildUser();
+  public java.lang.String getBuildPassword();
+  public java.lang.String getBuildEnvironment();
+  public java.lang.String getDeployedSnapshot();
+  public java.lang.String[] getDeployedSnapshotSchemas();
+  public java.lang.String getFilterFile();
+  public boolean isGenerateReport();
+  public boolean isFailOnDrift();
+  public boolean isGenerateDriftResolutionScripts();
+  public java.lang.String getDriftResolutionFolder();
+  public void setBuildUrl(java.lang.String);
+  public void setBuildUser(java.lang.String);
+  public void setBuildPassword(java.lang.String);
+  public void setBuildEnvironment(java.lang.String);
+  public void setDeployedSnapshot(java.lang.String);
+  public void setDeployedSnapshotSchemas(java.lang.String[]);
+  public void setFilterFile(java.lang.String);
+  public void setGenerateReport(boolean);
+  public void setFailOnDrift(boolean);
+  public void setGenerateDriftResolutionScripts(boolean);
+  public void setDriftResolutionFolder(java.lang.String);
+}
+Compiled from "DryRunConfigurationExtension.java"
+public class org.flywaydb.check.dryrun.DryRunConfigurationExtension implements org.flywaydb.core.internal.reports.ReportGenerationConfiguration {
+  public org.flywaydb.check.dryrun.DryRunConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getReportType();
+  public boolean isGenerateReport();
+}
+Compiled from "CherryPickConfigurationExtension.java"
+public class org.flywaydb.cherrypick.CherryPickConfigurationExtension extends org.flywaydb.core.internal.proprietaryStubs.CherryPickConfigurationExtensionStub {
+  public org.flywaydb.cherrypick.CherryPickConfigurationExtension();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public boolean isLicensed(org.flywaydb.core.api.configuration.Configuration);
+  public org.flywaydb.core.api.MigrationPattern[] getMigrationPatterns(org.flywaydb.core.api.configuration.Configuration);
+  public int getPriority();
+  public boolean isStub();
+  org.flywaydb.cherrypick.CherryPickConfigurationExtension(org.flywaydb.cherrypick.CherryPickFromTagsProvider);
+  public java.util.List<java.lang.String> getCherryPick();
+  public void setCherryPick(java.util.List<java.lang.String>);
+}
+Compiled from "ClickHouseConfigurationExtension.java"
+public class org.flywaydb.community.database.clickhouse.ClickHouseConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.community.database.clickhouse.ClickHouseConfigurationExtension();
+  public java.lang.String getNamespace();
+  public void extractParametersFromConfiguration(java.util.Map<java.lang.String, java.lang.String>);
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public java.lang.String getClusterName();
+  public java.lang.String getZookeeperPath();
+}
+Compiled from "DB2ZConfigurationExtension.java"
+public class org.flywaydb.community.database.db2z.DB2ZConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  public void extractParametersFromConfiguration(java.util.Map<java.lang.String, java.lang.String>);
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.community.database.db2z.DB2ZConfigurationExtension();
+  public java.lang.String getDatabaseName();
+  public java.lang.String getSqlId();
+  public void setDatabaseName(java.lang.String);
+  public void setSqlId(java.lang.String);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+Compiled from "TimeplusConfigurationExtension.java"
+public class org.flywaydb.community.database.timeplus.TimeplusConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.community.database.timeplus.TimeplusConfigurationExtension();
+  public java.lang.String getNamespace();
+  public void extractParametersFromConfiguration(java.util.Map<java.lang.String, java.lang.String>);
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public java.lang.String getClusterName();
+  public java.lang.String getZookeeperPath();
+}
+Compiled from "RedgateCompareConfigurationExtension.java"
+public class org.flywaydb.comparison.core.config.RedgateCompareConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  public java.lang.String getFilterFile();
+  public java.lang.String getSchemaModelFormat();
+  public java.util.List<org.flywaydb.comparison.core.config.StaticDataTableModel> getStaticDataTables();
+  public java.util.Map<java.lang.String, java.lang.String> getSchemaMapping();
+  public org.flywaydb.comparison.core.config.sqlserver.SqlServerOptionsModel getSqlserver();
+  public org.flywaydb.comparison.core.config.mysql.MySqlOptionsModel getMysql();
+  public org.flywaydb.comparison.core.config.postgresql.PostgreSqlOptionsModel getPostgresql();
+  public org.flywaydb.comparison.core.config.oracle.OracleOptionsModel getOracle();
+  public org.flywaydb.comparison.core.config.sqlite.SqliteOptionsModel getSqlite();
+  public void setFilterFile(java.lang.String);
+  public void setSchemaModelFormat(java.lang.String);
+  public void setStaticDataTables(java.util.List<org.flywaydb.comparison.core.config.StaticDataTableModel>);
+  public void setSchemaMapping(java.util.Map<java.lang.String, java.lang.String>);
+  public void setSqlserver(org.flywaydb.comparison.core.config.sqlserver.SqlServerOptionsModel);
+  public void setMysql(org.flywaydb.comparison.core.config.mysql.MySqlOptionsModel);
+  public void setPostgresql(org.flywaydb.comparison.core.config.postgresql.PostgreSqlOptionsModel);
+  public void setOracle(org.flywaydb.comparison.core.config.oracle.OracleOptionsModel);
+  public void setSqlite(org.flywaydb.comparison.core.config.sqlite.SqliteOptionsModel);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+  public org.flywaydb.comparison.core.config.RedgateCompareConfigurationExtension();
+}
+Compiled from "BaselineMigrationConfigurationExtension.java"
+public class org.flywaydb.core.api.migration.baseline.BaselineMigrationConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.core.api.migration.baseline.BaselineMigrationConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public java.lang.String getBaselineMigrationPrefix();
+  public void setBaselineMigrationPrefix(java.lang.String);
+}
+Compiled from "ConfigurationExtension.java"
+public interface org.flywaydb.core.extensibility.ConfigurationExtension extends org.flywaydb.core.extensibility.Plugin {
+  public static final boolean JACKSON_DATABIND_PRESENT;
+  public abstract java.lang.String getNamespace();
+  public default void extractParametersFromConfiguration(java.util.Map<java.lang.String, java.lang.String>);
+  public default java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public default org.flywaydb.core.extensibility.Plugin copy();
+  public default boolean isStub();
+  static {};
+}
+Compiled from "SecretsManagerConfigurationExtension.java"
+public interface org.flywaydb.core.internal.configuration.extensions.SecretsManagerConfigurationExtension extends org.flywaydb.core.extensibility.ConfigurationExtension {
+  public abstract java.lang.String getSecretManagerId();
+  public abstract boolean isConfigured();
+}
+Compiled from "OracleConfigurationExtension.java"
+public class org.flywaydb.database.oracle.OracleConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.database.oracle.OracleConfigurationExtension();
+  public java.lang.Boolean getSqlplus();
+  public java.lang.Boolean getSqlplusWarn();
+  public java.lang.String getKerberosCacheFile();
+  public java.lang.String getWalletLocation();
+  public java.lang.Boolean getChecksumIncludeReferencedScripts();
+  public void setSqlplus(java.lang.Boolean);
+  public void setSqlplusWarn(java.lang.Boolean);
+  public void setKerberosCacheFile(java.lang.String);
+  public void setWalletLocation(java.lang.String);
+  public void setChecksumIncludeReferencedScripts(java.lang.Boolean);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+Compiled from "PostgreSQLConfigurationExtension.java"
+public class org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public boolean isTransactionalLock();
+  public void setTransactionalLock(boolean);
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public java.lang.String getNamespace();
+  public org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension();
+  public org.flywaydb.database.postgresql.TransactionalModel getTransactional();
+  public void setTransactional(org.flywaydb.database.postgresql.TransactionalModel);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+Compiled from "SQLServerConfigurationExtension.java"
+public class org.flywaydb.database.sqlserver.SQLServerConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  static final java.lang.String SQLSERVER_KERBEROS_LOGIN_FILE;
+  static final java.lang.String KERBEROS_LOGIN_FILE;
+  static final java.lang.String CLEAN_MODE;
+  static final java.lang.String CLEAN_SCHEMAS_EXCLUDE;
+  public org.flywaydb.database.sqlserver.SQLServerConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.database.sqlserver.KerberosModel getKerberos();
+  public void setKerberos(org.flywaydb.database.sqlserver.KerberosModel);
+  public org.flywaydb.core.internal.command.clean.CleanModel getClean();
+  public void setClean(org.flywaydb.core.internal.command.clean.CleanModel);
+  static {};
+}
+Compiled from "DeployConfigurationExtension.java"
+public class org.flywaydb.deploy.configuration.DeployConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.deploy.configuration.DeployConfigurationExtension();
+  public java.lang.String getNamespace();
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getScriptFilename();
+  public boolean isSaveSnapshot();
+  public void setScriptFilename(java.lang.String);
+  public void setSaveSnapshot(boolean);
+  static {};
+}
+Compiled from "PrepareScriptFilenameConfigurationExtension.java"
+public class org.flywaydb.deploy.configuration.PrepareScriptFilenameConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.deploy.configuration.PrepareScriptFilenameConfigurationExtension();
+  public java.lang.String getNamespace();
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getScriptFilename();
+  public java.lang.String getUndoFilename();
+  public void setScriptFilename(java.lang.String);
+  public void setUndoFilename(java.lang.String);
+  static {};
+}
+Compiled from "DesktopConfigurationExtension.java"
+public class org.flywaydb.develop.DesktopConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.DesktopConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getDevelopmentEnvironment();
+  public java.lang.String getShadowEnvironment();
+  public java.lang.String getSchemaModel();
+  public java.util.List<java.lang.String> getRepeatableTypes();
+  public org.flywaydb.develop.DesktopConfigurationExtension$DesktopGenerateSettings getGenerate();
+  public void setDevelopmentEnvironment(java.lang.String);
+  public void setShadowEnvironment(java.lang.String);
+  public void setSchemaModel(java.lang.String);
+  public void setRepeatableTypes(java.util.List<java.lang.String>);
+  public void setGenerate(org.flywaydb.develop.DesktopConfigurationExtension$DesktopGenerateSettings);
+}
+Compiled from "DesktopConfigurationExtension.java"
+public class org.flywaydb.develop.DesktopConfigurationExtension$DesktopGenerateSettings {
+  public org.flywaydb.develop.DesktopConfigurationExtension$DesktopGenerateSettings();
+  public boolean isUndoScripts();
+  public void setUndoScripts(boolean);
+}
+Compiled from "DevelopConfigurationExtension.java"
+public class org.flywaydb.develop.DevelopConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public static final java.lang.String DEFAULT_SCHEMA_MODEL_LOCATION;
+  public org.flywaydb.develop.DevelopConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getSchemaModelLocation();
+  public java.util.Collection<java.lang.String> getSchemaModelSchemas();
+  public void setSchemaModelLocation(java.lang.String);
+  public void setSchemaModelSchemas(java.util.Collection<java.lang.String>);
+}
+Compiled from "DiffConfigurationExtension.java"
+public final class org.flywaydb.develop.diff.DiffConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension,org.flywaydb.develop.comparison.ComparisonSourceArgs {
+  public org.flywaydb.develop.diff.DiffConfigurationExtension();
+  public org.flywaydb.comparison.core.models.ComparisonMetadata getComparisonMetadata();
+  public org.flywaydb.develop.builddatabase.BuildDatabaseArgs getBuildEnvironmentArgs();
+  public java.lang.String getNamespace();
+  static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getArtifactFilename();
+  public java.lang.String getSource();
+  public java.lang.String getTarget();
+  public java.lang.String getBuildEnvironment();
+  public java.lang.String getBuildVersion();
+  public java.util.Collection<java.lang.String> getBuildCherryPick();
+  public boolean isRebuild();
+  public java.util.Collection<java.lang.String> getSnapshotSchemas();
+  public boolean isIncludeDefinitions();
+  public boolean isIncludeFlywayObjects();
+  public boolean isCommunityEditionAllowed();
+  public void setArtifactFilename(java.lang.String);
+  public void setSource(java.lang.String);
+  public void setTarget(java.lang.String);
+  public void setBuildEnvironment(java.lang.String);
+  public void setBuildVersion(java.lang.String);
+  public void setBuildCherryPick(java.util.Collection<java.lang.String>);
+  public void setRebuild(boolean);
+  public void setSnapshotSchemas(java.util.Collection<java.lang.String>);
+  public void setIncludeDefinitions(boolean);
+  public void setIncludeFlywayObjects(boolean);
+  public void setCommunityEditionAllowed(boolean);
+}
+Compiled from "DiffTextConfigurationExtension.java"
+public class org.flywaydb.develop.difftext.DiffTextConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.difftext.DiffTextConfigurationExtension();
+  org.flywaydb.develop.difftext.DiffTextConfigurationExtension(java.io.InputStream);
+  public java.lang.String getNamespace();
+  org.flywaydb.develop.configuration.ChangeSet getChangeSet();
+  static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public void setArtifactFilename(java.lang.String);
+  public void setChanges(java.util.Collection<java.lang.String>);
+  public java.lang.String getArtifactFilename();
+  public java.util.Collection<java.lang.String> getChanges();
+}
+Compiled from "GenerateConfigurationExtension.java"
+public class org.flywaydb.develop.generate.config.GenerateConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.generate.config.GenerateConfigurationExtension();
+  public org.flywaydb.develop.generate.config.IncludeTimestampOption getTimestamp();
+  public java.lang.String getNamespace();
+  public java.util.Collection<org.flywaydb.develop.generate.config.MigrationScriptType> getTypesSet();
+  public void validate(org.flywaydb.core.api.configuration.Configuration);
+  org.flywaydb.develop.configuration.ChangeSet getChangeSet();
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getArtifactFilename();
+  public java.lang.String getTarget();
+  public java.util.Collection<java.lang.String> getChanges();
+  public java.util.Collection<org.flywaydb.develop.generate.config.MigrationScriptType> getTypes();
+  public java.lang.String getDescription();
+  public java.lang.String getVersion();
+  public java.lang.String getLocation();
+  public java.lang.String getBaselineFilename();
+  public java.lang.String getVersionedFilename();
+  public java.lang.String getUndoFilename();
+  public boolean isAddTimestamp();
+  public java.util.Collection<java.lang.String> getRepeatableObjectTypes();
+  public boolean isForce();
+  public org.flywaydb.develop.generate.config.IncrementType getIncrement();
+  public boolean isUsePlaceholders();
+  public void setArtifactFilename(java.lang.String);
+  public void setTarget(java.lang.String);
+  public void setChanges(java.util.Collection<java.lang.String>);
+  public void setTypes(java.util.Collection<org.flywaydb.develop.generate.config.MigrationScriptType>);
+  public void setDescription(java.lang.String);
+  public void setVersion(java.lang.String);
+  public void setLocation(java.lang.String);
+  public void setBaselineFilename(java.lang.String);
+  public void setVersionedFilename(java.lang.String);
+  public void setUndoFilename(java.lang.String);
+  public void setTimestamp(org.flywaydb.develop.generate.config.IncludeTimestampOption);
+  public void setAddTimestamp(boolean);
+  public void setRepeatableObjectTypes(java.util.Collection<java.lang.String>);
+  public void setForce(boolean);
+  public void setIncrement(org.flywaydb.develop.generate.config.IncrementType);
+  public void setUsePlaceholders(boolean);
+  org.flywaydb.develop.generate.config.GenerateConfigurationExtension(java.io.InputStream);
+}
+Compiled from "ModelConfigurationExtension.java"
+public class org.flywaydb.develop.model.ModelConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.model.ModelConfigurationExtension();
+  public java.lang.String getNamespace();
+  org.flywaydb.develop.configuration.ChangeSet getChangeSet();
+  static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getArtifactFilename();
+  public java.util.Collection<java.lang.String> getChanges();
+  public boolean isDryRun();
+  public void setArtifactFilename(java.lang.String);
+  public void setChanges(java.util.Collection<java.lang.String>);
+  public void setDryRun(boolean);
+  org.flywaydb.develop.model.ModelConfigurationExtension(java.io.InputStream);
+}
+Compiled from "ObjectsConfigurationExtension.java"
+public final class org.flywaydb.develop.objects.ObjectsConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension,org.flywaydb.develop.comparison.ComparisonSourceArgs {
+  public org.flywaydb.develop.objects.ObjectsConfigurationExtension();
+  public org.flywaydb.develop.builddatabase.BuildDatabaseArgs getBuildEnvironmentArgs();
+  public java.lang.String getNamespace();
+  static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getArtifactFilename();
+  public java.lang.String getSource();
+  public java.lang.String getBuildEnvironment();
+  public java.lang.String getBuildVersion();
+  public java.util.Collection<java.lang.String> getBuildCherryPick();
+  public boolean isRebuild();
+  public java.util.Collection<java.lang.String> getSnapshotSchemas();
+  public void setArtifactFilename(java.lang.String);
+  public void setSource(java.lang.String);
+  public void setBuildEnvironment(java.lang.String);
+  public void setBuildVersion(java.lang.String);
+  public void setBuildCherryPick(java.util.Collection<java.lang.String>);
+  public void setRebuild(boolean);
+  public void setSnapshotSchemas(java.util.Collection<java.lang.String>);
+}
+Compiled from "MigrateSnapshotConfigurationExtension.java"
+public class org.flywaydb.develop.snapshot.callbacks.MigrateSnapshotConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.snapshot.callbacks.MigrateSnapshotConfigurationExtension();
+  public java.lang.String getNamespace();
+  public boolean isSaveSnapshot();
+  public void setSaveSnapshot(boolean);
+}
+Compiled from "UndoSnapshotConfigurationExtension.java"
+public class org.flywaydb.develop.snapshot.callbacks.UndoSnapshotConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.develop.snapshot.callbacks.UndoSnapshotConfigurationExtension();
+  public java.lang.String getNamespace();
+  public boolean isSaveSnapshot();
+  public void setSaveSnapshot(boolean);
+}
+Compiled from "SnapshotConfigurationExtension.java"
+public class org.flywaydb.develop.snapshot.config.SnapshotConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension,org.flywaydb.develop.comparison.ComparisonSourceArgs {
+  public static final java.lang.String COMMAND;
+  static final java.lang.String SNAPSHOT_FILENAME;
+  public static final java.lang.String SNAPSHOT_HISTORY_TABLE_DEFAULT;
+  public static final java.lang.String SNAPSHOT_NAME_DEFAULT_PREFIX;
+  public org.flywaydb.develop.snapshot.config.SnapshotConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public void validate();
+  public org.flywaydb.develop.builddatabase.BuildDatabaseArgs getBuildEnvironmentArgs();
+  public java.util.List<java.lang.String> getSnapshotSchemas();
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getFilename();
+  public java.lang.String getSource();
+  public java.lang.String getBuildEnvironment();
+  public java.lang.String getBuildVersion();
+  public java.util.List<java.lang.String> getBuildCherryPick();
+  public boolean isRebuild();
+  public java.lang.String getHistoryTable();
+  public int getHistoryLimit();
+  public void setFilename(java.lang.String);
+  public void setSource(java.lang.String);
+  public void setBuildEnvironment(java.lang.String);
+  public void setBuildVersion(java.lang.String);
+  public void setBuildCherryPick(java.util.List<java.lang.String>);
+  public void setRebuild(boolean);
+  public void setHistoryTable(java.lang.String);
+  public void setHistoryLimit(int);
+  public java.util.Collection getSnapshotSchemas();
+}
+Compiled from "DryRunConfigurationExtension.java"
+public class org.flywaydb.dryrun.DryRunConfigurationExtension extends org.flywaydb.core.internal.proprietaryStubs.DryRunConfigurationExtensionStub {
+  public org.flywaydb.dryrun.DryRunConfigurationExtension();
+  public java.io.OutputStream getOrResolveOutputStream(java.lang.String, org.flywaydb.core.api.configuration.Configuration);
+  public int getPriority();
+  public boolean isStub();
+}
+Compiled from "InitConfigurationExtension.java"
+public final class org.flywaydb.init.configuration.InitConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.init.configuration.InitConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getProjectName();
+  public java.lang.String getDatabaseType();
+  public java.lang.String getFileName();
+  public java.lang.String getFrom();
+  public java.lang.String getFromType();
+  public void setProjectName(java.lang.String);
+  public void setDatabaseType(java.lang.String);
+  public void setFileName(java.lang.String);
+  public void setFrom(java.lang.String);
+  public void setFromType(java.lang.String);
+}
+Compiled from "LicensingConfigurationExtension.java"
+public class org.flywaydb.licensing.key.LicensingConfigurationExtension extends org.flywaydb.core.internal.proprietaryStubs.LicensingConfigurationExtensionStub {
+  public org.flywaydb.licensing.key.LicensingConfigurationExtension();
+  public void setLicenseKey(java.lang.String);
+  public java.lang.String getLicenseKey();
+  public int getPriority();
+  public boolean isStub();
+}
+Compiled from "OfflinePermitConfigurationExtension.java"
+public class org.flywaydb.licensing.redgate.OfflinePermitConfigurationExtension extends org.flywaydb.core.internal.proprietaryStubs.OfflinePermitConfigurationExtensionStub {
+  public org.flywaydb.licensing.redgate.OfflinePermitConfigurationExtension();
+  public void setOfflinePermitPath(java.lang.String);
+  public java.lang.String getOfflinePermitPath();
+  public int getPriority();
+  public boolean isStub();
+}
+Compiled from "PATTokenConfigurationExtension.java"
+public class org.flywaydb.licensing.redgate.PATTokenConfigurationExtension extends org.flywaydb.core.internal.proprietaryStubs.PATTokenConfigurationExtensionStub {
+  public org.flywaydb.licensing.redgate.PATTokenConfigurationExtension();
+  public void setEmail(java.lang.String);
+  public void setToken(java.lang.String);
+  public java.lang.String getEmail();
+  public java.lang.String getToken();
+  public int getPriority();
+  public boolean isStub();
+}
+Compiled from "StdioMcpServerConfigurationExtension.java"
+public class org.flywaydb.mcp.server.configuration.StdioMcpServerConfigurationExtension extends org.flywaydb.mcp.McpConfigurationExtensionBase {
+  public org.flywaydb.mcp.server.configuration.StdioMcpServerConfigurationExtension();
+  public int getMaxLogs();
+  public void setMaxLogs(int);
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.util.List<org.flywaydb.mcp.server.tools.Toolset> getToolsets();
+  public void setToolsets(java.util.List<org.flywaydb.mcp.server.tools.Toolset>);
+}
+Compiled from "UndoConfigurationExtension.java"
+public class org.flywaydb.migration.undo.UndoConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.migration.undo.UndoConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public boolean isLicensed(org.flywaydb.core.api.configuration.Configuration);
+  public java.lang.String getUndoSqlMigrationPrefix();
+  public void setUndoSqlMigrationPrefix(java.lang.String);
+}
+Compiled from "PrepareConfigurationExtension.java"
+public class org.flywaydb.prepare.configuration.PrepareConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.prepare.configuration.PrepareConfigurationExtension();
+  public java.lang.String getNamespace();
+  public org.flywaydb.develop.configuration.ChangeSet getChangeSet();
+  public static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  org.flywaydb.prepare.configuration.PrepareConfigurationExtension(java.io.InputStream);
+  public java.lang.String getSource();
+  public java.lang.String getTarget();
+  public java.lang.String getArtifactFilename();
+  public org.flywaydb.prepare.configuration.AbortOnWarningSeverity getAbortOnWarningSeverity();
+  public java.util.Collection<java.lang.String> getChanges();
+  public boolean isForce();
+  public java.util.Collection<org.flywaydb.prepare.configuration.PrepareScriptType> getTypes();
+  public void setSource(java.lang.String);
+  public void setTarget(java.lang.String);
+  public void setArtifactFilename(java.lang.String);
+  public void setAbortOnWarningSeverity(org.flywaydb.prepare.configuration.AbortOnWarningSeverity);
+  public void setChanges(java.util.Collection<java.lang.String>);
+  public void setForce(boolean);
+  public void setTypes(java.util.Collection<org.flywaydb.prepare.configuration.PrepareScriptType>);
+}
+Compiled from "BackupProvisionerConfigurationExtension.java"
+public class org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  public org.flywaydb.provisioner.backup.config.sqlserver.SqlServerBackupRestorerSettings createSqlServerBackupRestorerSettings(org.flywaydb.core.internal.configuration.resolvers.PropertyResolverContext, org.flywaydb.core.ProgressLogger);
+  public org.flywaydb.provisioner.backup.config.oracle.OracleBackupRestorerSettings createOracleBackupRestorerSettings(org.flywaydb.core.internal.configuration.resolvers.PropertyResolverContext, org.flywaydb.core.ProgressLogger);
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension();
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension(java.lang.String, java.lang.String, org.flywaydb.provisioner.backup.config.sqlserver.SqlServerConfig, org.flywaydb.provisioner.backup.config.oracle.OracleConfig);
+  public java.lang.String getBackupVersion();
+  public java.lang.String getBackupFilePath();
+  public org.flywaydb.provisioner.backup.config.sqlserver.SqlServerConfig getSqlserver();
+  public org.flywaydb.provisioner.backup.config.oracle.OracleConfig getOracle();
+  public void setBackupVersion(java.lang.String);
+  public void setBackupFilePath(java.lang.String);
+  public void setSqlserver(org.flywaydb.provisioner.backup.config.sqlserver.SqlServerConfig);
+  public void setOracle(org.flywaydb.provisioner.backup.config.oracle.OracleConfig);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension withBackupVersion(java.lang.String);
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension withBackupFilePath(java.lang.String);
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension withSqlserver(org.flywaydb.provisioner.backup.config.sqlserver.SqlServerConfig);
+  public org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension withOracle(org.flywaydb.provisioner.backup.config.oracle.OracleConfig);
+}
+Compiled from "BackupProvisionerConfigurationExtension.java"
+final class org.flywaydb.provisioner.backup.config.BackupProvisionerConfigurationExtension$ResolvedSharedBackupSettings extends java.lang.Record {
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String resolvedBackupFilePath();
+  public java.lang.String resolvedBackupVersion();
+}
+Compiled from "CreateDatabaseProvisionerConfigurationExtension.java"
+public class org.flywaydb.provisioner.createdatabase.CreateDatabaseProvisionerConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  org.flywaydb.provisioner.createdatabase.ReprovisionStrategy getReprovisionStrategy();
+  public org.flywaydb.provisioner.createdatabase.CreateDatabaseProvisionerConfigurationExtension();
+  public org.flywaydb.provisioner.createdatabase.CreateDatabaseProvisionerConfigurationExtension(boolean, org.flywaydb.provisioner.createdatabase.ReprovisionStrategy);
+  public boolean isAllowClean();
+  public org.flywaydb.provisioner.createdatabase.ReprovisionStrategy getReprovisionMethod();
+  public void setAllowClean(boolean);
+  public void setReprovisionMethod(org.flywaydb.provisioner.createdatabase.ReprovisionStrategy);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+Compiled from "DockerComposeEnvironmentProvisionerConfigurationExtension.java"
+public final class org.flywaydb.provisioner.docker.compose.DockerComposeEnvironmentProvisionerConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.provisioner.docker.compose.DockerComposeEnvironmentProvisionerConfigurationExtension(java.lang.String, java.util.Collection<java.lang.String>, java.lang.String);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String composeFile();
+  public java.util.Collection<java.lang.String> services();
+  public java.lang.String waitTimeout();
+}
+Compiled from "DockerEnvironmentProvisionerConfigurationExtension.java"
+public final class org.flywaydb.provisioner.docker.config.DockerEnvironmentProvisionerConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.provisioner.docker.config.DockerEnvironmentProvisionerConfigurationExtension(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Boolean, java.lang.Boolean, java.lang.String, java.util.Collection<java.lang.String>);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String sourceEnvironment();
+  public java.lang.String databaseEngine();
+  public java.lang.String databaseEngineVersion();
+  public java.lang.String waitTimeout();
+  public java.lang.Boolean keepAlive();
+  public java.lang.Boolean iAgreeToTheDBVendorsEula();
+  public java.lang.String composeFile();
+  public java.util.Collection<java.lang.String> services();
+}
+Compiled from "SnapshotEnvironmentProvisionerConfigurationExtension.java"
+public final class org.flywaydb.provisioner.snapshots.SnapshotEnvironmentProvisionerConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.provisioner.snapshots.SnapshotEnvironmentProvisionerConfigurationExtension(java.lang.String, java.lang.String, boolean);
+  public java.lang.String getNamespace();
+  void validate(java.lang.String);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String filename();
+  public java.lang.String snapshotVersion();
+  public boolean cleanOnReprovision();
+}
+Compiled from "FlywayServicePublishConfigurationExtension.java"
+public class org.flywaydb.publish.redgate.configuration.FlywayServicePublishConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.publish.redgate.configuration.FlywayServicePublishConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public void setBaseUri(java.net.URI);
+  public void setPipelineId(java.lang.String);
+  public void setPublishReport(boolean);
+  public void setUseFakeAccessToken(boolean);
+  public java.net.URI getBaseUri();
+  public java.lang.String getPipelineId();
+  public boolean isPublishReport();
+  public boolean isUseFakeAccessToken();
+}
+Compiled from "PublishConfigurationExtension.java"
+public class org.flywaydb.publish.redgate.configuration.PublishConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.publish.redgate.configuration.PublishConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public boolean isPublishResult();
+  public boolean isCheckDriftOnMigrate();
+  public void setPublishResult(boolean);
+  public void setCheckDriftOnMigrate(boolean);
+}
+Compiled from "LakebaseResolverConfigurationExtension.java"
+public final class org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public java.lang.String getNamespace();
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension withWorkspaceUrl(java.lang.String);
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension withProject(java.lang.String);
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension withBranch(java.lang.String);
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension withCompute(java.lang.String);
+  public org.flywaydb.resolverdatabricks.LakebaseResolverConfigurationExtension withRedirectUri(java.lang.String);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String workspaceUrl();
+  public java.lang.String project();
+  public java.lang.String branch();
+  public java.lang.String compute();
+  public java.lang.String redirectUri();
+}
+Compiled from "AzureAdInteractionPropertyResolverConfigurationExtension.java"
+public final class org.flywaydb.resolversqlserver.AzureAdInteractionPropertyResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.resolversqlserver.AzureAdInteractionPropertyResolverConfigurationExtension(java.lang.String, java.lang.String, java.lang.String);
+  public java.lang.String getNamespace();
+  public org.flywaydb.resolversqlserver.AzureAdInteractionPropertyResolverConfigurationExtension withClientId(java.lang.String);
+  public org.flywaydb.resolversqlserver.AzureAdInteractionPropertyResolverConfigurationExtension withTenantId(java.lang.String);
+  public org.flywaydb.resolversqlserver.AzureAdInteractionPropertyResolverConfigurationExtension withRedirectUri(java.lang.String);
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String clientId();
+  public java.lang.String tenantId();
+  public java.lang.String redirectUri();
+}
+Compiled from "LocalDbPropertyResolverConfigurationExtension.java"
+public final class org.flywaydb.resolversqlserver.LocalDbPropertyResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.resolversqlserver.LocalDbPropertyResolverConfigurationExtension(java.lang.String);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String instanceName();
+}
+Compiled from "AkvConfigurationExtension.java"
+public class org.flywaydb.secretsmanagement.AkvConfigurationExtension implements org.flywaydb.core.internal.configuration.extensions.SecretsManagerConfigurationExtension {
+  static final java.lang.String AKV_VAULT_URL;
+  static final java.lang.String AKV_SECRETS;
+  public org.flywaydb.secretsmanagement.AkvConfigurationExtension();
+  public java.lang.String getSecretManagerId();
+  public boolean isConfigured();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.secretsmanagement.AkvModel getAkv();
+  public void setAkv(org.flywaydb.secretsmanagement.AkvModel);
+  static {};
+}
+Compiled from "AzureKeyVaultResolverConfigurationExtension.java"
+public final class org.flywaydb.secretsmanagement.AzureKeyVaultResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.secretsmanagement.AzureKeyVaultResolverConfigurationExtension(java.lang.String);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String vaultUrl();
+}
+Compiled from "DaprConfigurationExtension.java"
+public class org.flywaydb.secretsmanagement.DaprConfigurationExtension implements org.flywaydb.core.internal.configuration.extensions.SecretsManagerConfigurationExtension {
+  static final java.lang.String DAPR_URL;
+  static final java.lang.String DAPR_SECRETS;
+  public org.flywaydb.secretsmanagement.DaprConfigurationExtension();
+  public java.lang.String getSecretManagerId();
+  public boolean isConfigured();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.secretsmanagement.DaprModel getDapr();
+  public void setDapr(org.flywaydb.secretsmanagement.DaprModel);
+  static {};
+}
+Compiled from "DaprResolverConfigurationExtension.java"
+public final class org.flywaydb.secretsmanagement.DaprResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.secretsmanagement.DaprResolverConfigurationExtension(java.lang.String);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String url();
+}
+Compiled from "GcsmConfigurationExtension.java"
+public class org.flywaydb.secretsmanagement.GcsmConfigurationExtension implements org.flywaydb.core.internal.configuration.extensions.SecretsManagerConfigurationExtension {
+  static final java.lang.String GCSM_PROJECT;
+  static final java.lang.String GCSM_SECRETS;
+  public org.flywaydb.secretsmanagement.GcsmConfigurationExtension();
+  public java.lang.String getSecretManagerId();
+  public boolean isConfigured();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.secretsmanagement.GcsmModel getGcsm();
+  public void setGcsm(org.flywaydb.secretsmanagement.GcsmModel);
+  static {};
+}
+Compiled from "GoogleSecretsResolverConfigurationExtension.java"
+public final class org.flywaydb.secretsmanagement.GoogleSecretsResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.secretsmanagement.GoogleSecretsResolverConfigurationExtension(java.lang.String);
+  public java.lang.String getNamespace();
+  public final java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String project();
+}
+Compiled from "HashicorpVaultResolverConfigurationExtension.java"
+public final class org.flywaydb.secretsmanagement.HashicorpVaultResolverConfigurationExtension extends java.lang.Record implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.secretsmanagement.HashicorpVaultResolverConfigurationExtension(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public java.lang.String getNamespace();
+  public java.lang.String toString();
+  public final int hashCode();
+  public final boolean equals(java.lang.Object);
+  public java.lang.String url();
+  public java.lang.String token();
+  public java.lang.String engineName();
+  public java.lang.String engineVersion();
+}
+Compiled from "VaultConfigurationExtension.java"
+public class org.flywaydb.secretsmanagement.VaultConfigurationExtension implements org.flywaydb.core.internal.configuration.extensions.SecretsManagerConfigurationExtension {
+  static final java.lang.String VAULT_URL;
+  static final java.lang.String VAULT_TOKEN;
+  static final java.lang.String VAULT_SECRETS;
+  public org.flywaydb.secretsmanagement.VaultConfigurationExtension();
+  public java.lang.String getSecretManagerId();
+  public boolean isConfigured();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.secretsmanagement.VaultModel getVault();
+  public void setVault(org.flywaydb.secretsmanagement.VaultModel);
+  static {};
+}
+Compiled from "TagsConfigurationExtension.java"
+public class org.flywaydb.tags.TagsConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.tags.TagsConfigurationExtension();
+  public java.lang.String getNamespace();
+  public boolean isLicensed(org.flywaydb.core.api.configuration.Configuration);
+  public java.util.Collection<org.flywaydb.core.api.MigrationVersion> getSelectedPatterns(org.flywaydb.core.api.configuration.Configuration);
+  public boolean hasSelectedTags();
+  void reset();
+  public org.flywaydb.tags.MigrationPatternDiscovery getPatternDiscovery();
+  public java.util.Map<java.lang.String, java.util.Set<java.lang.String>> getDefinitions();
+  public java.util.List<java.lang.String> getAllOf();
+  public java.util.List<java.lang.String> getAnyOf();
+  public java.util.List<java.lang.String> getNoneOf();
+  public java.util.List<java.lang.String> getDeploymentOrder();
+  public boolean isFailOnMissing();
+  public void setDefinitions(java.util.Map<java.lang.String, java.util.Set<java.lang.String>>);
+  public void setAllOf(java.util.List<java.lang.String>);
+  public void setAnyOf(java.util.List<java.lang.String>);
+  public void setNoneOf(java.util.List<java.lang.String>);
+  public void setDeploymentOrder(java.util.List<java.lang.String>);
+  public void setFailOnMissing(boolean);
+  org.flywaydb.tags.TagsConfigurationExtension(org.flywaydb.tags.MigrationPatternDiscovery);
+  static {};
+}
+Compiled from "TestConnectionConfigurationExtension.java"
+public class org.flywaydb.testconnection.TestConnectionConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public org.flywaydb.testconnection.TestConnectionConfigurationExtension();
+  public java.lang.String getNamespace();
+  static java.util.List<org.flywaydb.core.extensibility.ConfigurationParameter> getConfigurationParameters();
+  public java.lang.String getEnvironmentName();
+  public void setEnvironmentName(java.lang.String);
+}
