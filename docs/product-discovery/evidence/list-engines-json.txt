@@ -1,0 +1,84 @@
+{
+  "version" : "13.10.3",
+  "command" : "list-engines",
+  "edition" : "COMMUNITY",
+  "dbInfoResults" : [ {
+    "name" : "CockroachDB"
+  }, {
+    "name" : "DB2 for z/OS"
+  }, {
+    "name" : "OceanBase"
+  }, {
+    "name" : "QuestDB"
+  }, {
+    "name" : "Redshift"
+  }, {
+    "name" : "TiDB"
+  }, {
+    "name" : "YugabyteDB"
+  }, {
+    "name" : "MariaDB"
+  }, {
+    "name" : "Azure Synapse"
+  }, {
+    "name" : "Fabric Data Warehouse"
+  }, {
+    "name" : "Babelfish"
+  }, {
+    "name" : "H2"
+  }, {
+    "name" : "SQLite"
+  }, {
+    "name" : "Testcontainers"
+  }, {
+    "name" : "Cassandra"
+  }, {
+    "name" : "ClickHouse"
+  }, {
+    "name" : "CUBRID"
+  }, {
+    "name" : "Databricks"
+  }, {
+    "name" : "DB2"
+  }, {
+    "name" : "Derby"
+  }, {
+    "name" : "DuckDB"
+  }, {
+    "name" : "HSQLDB"
+  }, {
+    "name" : "Apache Ignite"
+  }, {
+    "name" : "Informix"
+  }, {
+    "name" : "InterSystems IRIS Data Platform"
+  }, {
+    "name" : "Oracle"
+  }, {
+    "name" : "PostgreSQL"
+  }, {
+    "name" : "SAP HANA"
+  }, {
+    "name" : "Snowflake"
+  }, {
+    "name" : "Sybase ASE"
+  }, {
+    "name" : "Timeplus"
+  }, {
+    "name" : "Firebird"
+  }, {
+    "name" : "Google Big Query"
+  }, {
+    "name" : "MySQL"
+  }, {
+    "name" : "SingleStoreDB"
+  }, {
+    "name" : "SQL Server"
+  }, {
+    "name" : "Google Cloud Spanner"
+  }, {
+    "name" : "Couchbase"
+  }, {
+    "name" : "MongoDB"
+  } ]
+}

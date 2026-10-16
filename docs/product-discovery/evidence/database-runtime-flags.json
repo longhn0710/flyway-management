@@ -1,0 +1,298 @@
+{
+  "method": "javap -c on verified pinned JDBC Database classes; constant-return declarations only, not SQL execution or a live behavior guarantee. Inherited flags require parent resolution. Native connectors are not covered by this JDBC inspection.",
+  "classes": [
+    {
+      "class": "org.flywaydb.community.database.clickhouse.ClickHouseDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.clickhouse.ClickHouseConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.cubrid.CubridDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.cubrid.CubridConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.db2z.DB2ZDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.db2z.DB2ZConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.duckdb.DuckDBDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.duckdb.DuckDBConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.ignite.thin.IgniteThinDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.ignite.thin.IgniteThinConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.iris.IRISDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.iris.IRISConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.mysql.tidb.TiDBDatabase",
+      "parent": "org.flywaydb.database.mysql.MySQLDatabase",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.community.database.oceanbase.OceanBaseDatabase",
+      "parent": "org.flywaydb.database.mysql.MySQLDatabase",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.community.database.postgresql.yugabytedb.YugabyteDBDatabase",
+      "parent": "org.flywaydb.database.postgresql.PostgreSQLDatabase",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.questdb.QuestDBDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.questdb.QuestDBConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.community.database.timeplus.TimeplusDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.community.database.timeplus.TimeplusConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.core.internal.database.base.Database",
+      "parent": "org.flywaydb.core.internal.database.base.Connection>",
+      "constant_overrides": {
+        "supportsEmptyMigrationDescription": true
+      }
+    },
+    {
+      "class": "org.flywaydb.core.internal.nc.AbstractNativeConnectorsDatabase",
+      "parent": null,
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.core.internal.nc.AbstractNativeConnectorsHybridDatabase",
+      "parent": null,
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.core.internal.nc.NativeConnectorsDatabase",
+      "parent": null,
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.bigquery.BigQueryDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.bigquery.BigQueryConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.cassandra.CassandraDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.cassandra.CassandraConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.cockroachdb.CockroachDBDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.cockroachdb.CockroachDBConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.databricks.DatabricksDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.databricks.DatabricksConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.db2.DB2Database",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.db2.DB2Connection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.derby.DerbyDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.derby.DerbyConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.firebird.FirebirdDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.firebird.FirebirdConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.hsqldb.HSQLDBDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.hsqldb.HSQLDBConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.informix.InformixDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.informix.InformixConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.mysql.MySQLDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.mysql.MySQLConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.mysql.mariadb.MariaDBDatabase",
+      "parent": "org.flywaydb.database.mysql.MySQLDatabase",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.nc.cassandra.CassandraDatabase",
+      "parent": "org.flywaydb.nc.NativeConnectorsNonJdbc",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.nc.couchbase.CouchbaseDatabase",
+      "parent": "org.flywaydb.nc.NativeConnectorsNonJdbc",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.nc.mongodb.MongoDBDatabase",
+      "parent": "org.flywaydb.nc.NativeConnectorsNonJdbc",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.oracle.OracleDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.oracle.OracleConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false,
+        "supportsEmptyMigrationDescription": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.postgresql.PostgreSQLDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.postgresql.PostgreSQLConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.redshift.RedshiftDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.redshift.RedshiftConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.saphana.SAPHANADatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.saphana.SAPHANAConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.singlestore.SingleStoreDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.singlestore.SingleStoreConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.snowflake.SnowflakeDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.snowflake.SnowflakeConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.spanner.SpannerDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.spanner.SpannerConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.sqlserver.SQLServerDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.sqlserver.SQLServerConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    },
+    {
+      "class": "org.flywaydb.database.sqlserver.babelfish.BabelfishDatabase",
+      "parent": "org.flywaydb.database.sqlserver.SQLServerDatabase",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.database.sqlserver.fabricDataWarehouse.FabricDataWarehouseDatabase",
+      "parent": "org.flywaydb.database.sqlserver.SQLServerDatabase",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.sqlserver.synapse.SynapseDatabase",
+      "parent": "org.flywaydb.database.sqlserver.SQLServerDatabase",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.database.sybasease.SybaseASEDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.database.sybasease.SybaseASEConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false,
+        "supportsEmptyMigrationDescription": false
+      }
+    },
+    {
+      "class": "org.flywaydb.develop.builddatabase.ResolvedBuildDatabase",
+      "parent": "java.lang.Record",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.provisioner.docker.probe.ProbedDatabase",
+      "parent": "java.lang.Record",
+      "constant_overrides": {}
+    },
+    {
+      "class": "org.flywaydb.core.internal.database.h2.H2Database",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.core.internal.database.h2.H2Connection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": false
+      }
+    },
+    {
+      "class": "org.flywaydb.core.internal.database.sqlite.SQLiteDatabase",
+      "parent": "org.flywaydb.core.internal.database.base.Database<org.flywaydb.core.internal.database.sqlite.SQLiteConnection>",
+      "constant_overrides": {
+        "supportsDdlTransactions": true
+      }
+    }
+  ]
+}

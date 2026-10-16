@@ -1,0 +1,53 @@
+{
+  "checked_at_utc": "2026-10-16T17:21:17.181951+00:00",
+  "result": "PASS",
+  "source_commit": "c93f15884fa06a326549badfdc828cb91e31d003",
+  "required_decision_documents": [
+    "flyway-cli-capability-catalog.md",
+    "flyway-database-support-matrix.md",
+    "flyway-edition-feature-matrix.md",
+    "current-product-gap-analysis.md",
+    "multi-database-reference-architecture.md",
+    "proposed-product-scope.md",
+    "prioritized-implementation-plan.md"
+  ],
+  "verified_local_markdown_links": 126,
+  "verified_cli_captures": 26,
+  "expected_help_failure": "help mcp exit 1, command-combination error retained",
+  "manifest_files_verified_during_capture": 1458,
+  "official_redgate_sources": 66,
+  "driver_index_pages_covered": 47,
+  "loaded_runtime_engine_labels": 39,
+  "application_code_changes": [],
+  "execution_scope": "offline help/version/list-engines, static source/JAR inspection, public documentation fetches and documentation writes only",
+  "not_performed": [
+    "application CI rerun",
+    "database connections or SQL",
+    "SQLite migrations",
+    "license/trial changes",
+    "runtime upgrade",
+    "deployment",
+    "Stitch changes",
+    "push",
+    "merge"
+  ],
+  "errors": [],
+  "publication_review": {
+    "checked_at_utc": "2026-10-16T18:21:56.599514+00:00",
+    "result": "PASS",
+    "scope": "docs/product-discovery/ only",
+    "decision_documents_reviewed": 7,
+    "local_references_verified_in_proposed_git_tree": 126,
+    "external_urls_checked": 71,
+    "external_url_failures": 0,
+    "cli_transcripts_verified": 26,
+    "original_and_published_capture_hashes_retained": true,
+    "capture_changes": "trailing whitespace and final blank lines only",
+    "unpublished_references_replaced_with_committed_sources": 3,
+    "secret_and_environment_review": "No real credentials, tokens, private keys, private endpoints or local environment paths found. Three vendor CLI examples contain synthetic passwords.",
+    "binary_temporary_or_executable_files": 0,
+    "unrelated_working_files_preserved": 329,
+    "publication_route": "documentation branch and pull request; master push would trigger image publication",
+    "errors": []
+  }
+}

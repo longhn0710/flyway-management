@@ -1,0 +1,19 @@
+WARNING: No locations configured and default location 'sql' not found.
+Flyway Community Edition 13.10.3 by Redgate
+
+See release notes here: https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=release-notes-and-older-versions/release-notes-for-flyway-engine
+Plugin Name                       | Version
+--------------------------------- | ---------------
+DB2 for z/OS                      | 10.25.14
+OceanBase                         | 10.25.14
+QuestDB                           | 10.25.14
+TiDB                              | 10.25.14
+YugabyteDB                        | 10.25.14
+ClickHouse                        | 10.25.14
+CUBRID                            | 10.25.14
+DuckDB                            | 10.25.14
+Apache Ignite                     | 10.25.14
+InterSystems IRIS Data Platform   | 10.25.14
+Timeplus                          | 10.25.14
+Redgate Compare                   | 1.67.0.6161
+SQLFluff                          | not installed

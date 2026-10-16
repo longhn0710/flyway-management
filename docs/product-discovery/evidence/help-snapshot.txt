@@ -1,0 +1,22 @@
+Description:
+    [enterprise] Produces a snapshot of the database specified in flyway.url
+    A snapshot can be generated from a database environment, build environment, schema model folder or empty source using the snapshot.source argument
+
+Configuration parameters: (Format: -key=value)
+    snapshot.filename [REQUIRED]  Destination location for the snapshot. Valid values:
+                                   - snapshotHistory:<<name>> - entry in the snapshot history table in the target environment
+                                   - <<path>> or filesystem:<<path>> - a location on disk
+    snapshot.source               The source from which a snapshot should be generated. Valid values:
+                                   - <<env>> - uses the environment named <<env>>
+                                   - schemaModel - the schema model folder referenced by schemaModelLocation
+                                   - migrations - uses a buildEnvironment to represent the state of database after specified migrations have been applied
+                                  In the case where an environment shares a name with one of the other values, it can be prefixed with env:
+    snapshot.buildEnvironment     If source is migrations, this specifies the environment to use as the build environment
+    snapshot.buildVersion         If source is migrations, this specifies migration version to migrate the build environment to
+    snapshot.buildCherryPick      If source is migrations, this specifies list of migrations to migrate the build environment with
+    snapshot.rebuild              If source is migrations, forces a reprovision (rebuild) of the build environment
+    snapshot.historyTable         The name of the Flyway snapshot history table in which to store snapshots. Defaults to flyway_snapshot_history.
+    snapshot.historyLimit         The maximum number of entries to store in the Flyway snapshot history table. Defaults to 1.
+
+Example:
+    flyway snapshot -url=jdbc:example:jdbcurl -user=username -password=password

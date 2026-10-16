@@ -1,0 +1,893 @@
+{
+  "accessed_date": "2026-10-17",
+  "database_driver_pages": 47,
+  "sources": [
+    {
+      "url": "https://documentation.red-gate.com/flyway/flyway-concepts/migrations/migration-transaction-handling",
+      "slug": "migration-transaction-handling",
+      "html_sha256": "01d63207d543238e40f66304d3c12371d579176920eaef60b1495929a786ef4b",
+      "page_last_updated": "02 September 2025",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/getting-started-with-flyway/system-requirements/supported-databases-and-versions",
+      "slug": "supported-databases-and-versions",
+      "html_sha256": "b0efba506d4d15da0411666ffcb2eb92b16d11d45231bcc788462e5983a5d2b7",
+      "page_last_updated": "25 September 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/learn-more-about-flyway/feature-summary",
+      "slug": "feature-summary",
+      "html_sha256": "24f39408ac2c89d24103b8c949b702cb915d67442441b4320c1c70c69aea231b",
+      "page_last_updated": "25 February 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/callback-events",
+      "slug": "callback-events",
+      "html_sha256": "d570a014bacc7c501c4005a94060cbe6f5f64e71f186a69c782c0c1f8a3bd6cd",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands",
+      "slug": "commands",
+      "html_sha256": "b5b627d40a4e775b2c650bc7f37d48162eeb6ba93647a8cc64a8234e8116bacd",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/check/check-changes",
+      "slug": "check-changes",
+      "html_sha256": "d74ccbcddfcf5f98542dadeb9da983295c6392dafd6cc102e5b96a5ed1d74b2b",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/check/check-code",
+      "slug": "check-code",
+      "html_sha256": "963e962db8358b6b86beba1346abed358cbaa4837e4baa383a5f98077e9e55b3",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/check/check-drift",
+      "slug": "check-drift",
+      "html_sha256": "0b04f181001efc2c195869b9ca6bdaa5c929c92e6656797127a7e03291ce6793",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/check/check-dryrun",
+      "slug": "check-dryrun",
+      "html_sha256": "01d01a10f0e20b27f3e356cf1a9a046a1c22f525ff0cfea93a6afd82daec020b",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/clean",
+      "slug": "clean",
+      "html_sha256": "e5c12573cbb28b92d54e52400a825977979f0e69392e6648a0556b20df187f10",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/repair",
+      "slug": "repair",
+      "html_sha256": "ceca65390e6c295c2012c6f840940c43a360a84ab6d9c438195cab5ec0084d85",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/undo",
+      "slug": "undo",
+      "html_sha256": "bfc606a6aedd01699a2dfd9a0811d8bd2435cbabddaee065bf30de1ea1e07a07",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/commands/validate",
+      "slug": "validate",
+      "html_sha256": "d2c4b21e87feaa600460fdecffa2c895b8d37fed725203ddd593b9d0b35bef74",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/configuration",
+      "slug": "configuration",
+      "html_sha256": "b20888d4f9948bd2e563da7dcfec7cd9d5f24469c04390b3bca1e9cfb2b71fdb",
+      "page_last_updated": "09 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/configuration/environments-namespace",
+      "slug": "environments-namespace",
+      "html_sha256": "e086a46aeb92c5322ddcd5f9505bc3d0ee0a37f56d055444f360f91aa5588404",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/configuration/flyway-namespace",
+      "slug": "flyway-namespace",
+      "html_sha256": "9481047dc971c73df98854836637e4fb3a50f179b7ac95550a300b201c0b322a",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference",
+      "slug": "database-driver-reference",
+      "html_sha256": "ddeae274a2f08e8d753cd2b0ff97f052c99392925f8b8b977e22e74a89d61999",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/aurora-dsql",
+      "slug": "aurora-dsql",
+      "html_sha256": "fcf7dbfbb76a47ae41c0d24ebdbb8c3c0020280cebea3a7963efc5e241868a4c",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "software.amazon.dsql:aurora-dsql-jdbc-connector",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "software.amazon.dsql.jdbc.DSQLConnector",
+        "SSL support": "Required (Aurora DSQL enforces TLS; no flag needed)",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:aws-dsql:postgresql://host:port/database",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/aurora-mysql",
+      "slug": "aurora-mysql",
+      "html_sha256": "68676a4e6e3f0cf7ce8b49629c2085fba7beecd0c6c0de993a38d59788851837",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "5.5, 8.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "mysql:mysql-connector-java",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.mysql.jdbc.Driver",
+        "SSL support": "Yes - add ?useSsl=true",
+        "URL format": "jdbc:mysql://instance.region.rds.amazonaws.com:port/database?usePipelineAuth=false&useBatchMultiSend=false",
+        "Driver-table supported versions": "8.0.12 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/aurora-postgresql",
+      "slug": "aurora-postgresql",
+      "html_sha256": "caee2f801e61331329b3c51e85f26ab52918f77fe4d12b876f647aa4a3ab5b9e",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "9.6, 14.x, 17.4",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.postgresql:postgresql",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.postgresql.Driver",
+        "SSL support": "Yes - add ?ssl=true",
+        "URL format": "jdbc:postgresql://instance.region.rds.amazonaws.com:port/database",
+        "Driver-table supported versions": "9.3-1104-jdbc4 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/azure-synapse",
+      "slug": "azure-synapse",
+      "html_sha256": "695c13dde58a0afed7d744c1be3cf5faf8f4e2103ba2c1dcd68a676b307c4bf6",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "Latest",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.microsoft.sqlserver:mssql-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "SSL support": "Yes - add ;encrypt=true",
+        "URL format": "jdbc:sqlserver://host:port;databaseName=database",
+        "Driver-table supported versions": "12.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/babelfish",
+      "slug": "babelfish",
+      "html_sha256": "c0a3a77fdaa25aac6d7998e9fa41e1fb52974814703fefb10c83547c15b0ce22",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "Aurora PostgreSQL 16.4",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.microsoft.sqlserver:mssql-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "SSL support": "Supported",
+        "URL format": "jdbc:sqlserver://cluster-endpoint:1433;databaseName=database",
+        "Driver-table supported versions": "10.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/cassandra-database",
+      "slug": "cassandra-database",
+      "html_sha256": "902e79f4911e2f22e2fc058bf8adcae3ccde5d87f500a62fdbe49432f94b6cae",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.ing.data:cassandra-jdbc-wrapper",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.ing.data.cassandra.jdbc.CassandraDriver",
+        "SSL support": "Yes, add ;enablessl=true to URL",
+        "URL format": "jdbc:cassandra://host:port?localdatacenter=datacenter1",
+        "Driver-table supported versions": "4.11.1 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/clickhouse-database",
+      "slug": "clickhouse-database",
+      "html_sha256": "f8415bf147f89fb356e0b835605acdc7b91c358c3fe27380ae883a066aeac242",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.clickhouse:clickhouse-jdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.clickhouse.jdbc.ClickHouseDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:clickhouse://host:port/database",
+        "Driver-table supported versions": "N/A",
+        "JDBC driver download for Command-line": "Clickhouse JDBC Drivers"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/cockroachdb",
+      "slug": "cockroachdb",
+      "html_sha256": "a15e0a4a2e12ece72cdd013a4f43ba52765c29037e84a6216fdea9d1d840aeb2",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "v21.2, v26.1",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.postgresql:postgresql",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.postgresql.Driver",
+        "SSL support": "Yes",
+        "URL format": "jdbc:postgresql://host:port/database",
+        "Driver-table supported versions": "9.3-1104-jdbc4 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/cosmosdb",
+      "slug": "cosmosdb",
+      "html_sha256": "545479bfcbea5a7f0da3754709991818c8eaafac77078125d2667e077856ee37",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "7.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "n/a",
+        "Ships with Flyway Command-line": "JSON migrations: Yes.",
+        "SSL support": "Yes",
+        "URL format": "mongodb://ip address:port number/database_name"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/couchbase",
+      "slug": "couchbase",
+      "html_sha256": "b4ab9ffe9809614e559a1f3123514b8c4ff0129d2677222f5a3abca05098b221",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "V7.6.6-N1QL",
+        "Maintainer": "Redgate",
+        "Status": "Preview",
+        "Maven Central coordinates": "n/a",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.couchbase.client",
+        "SSL support": "No",
+        "URL format": "couchbases://cb.<cluster-id>.cloud.couchbase.com",
+        "Driver-table supported versions": "7"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/cubrid",
+      "slug": "cubrid",
+      "html_sha256": "fce6340649923748f909b3781984a53824669d1d759c2e90a634caeb5edf0e16",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "cubrid:cubrid-jdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "cubrid.jdbc.driver.CUBRIDDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:cubrid://host:port",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/databricks",
+      "slug": "databricks",
+      "html_sha256": "bbe87428376f97599d78a4ef03ae184485b4fed106feaf26840aed8e20616fb3",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.databricks:databricks-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.databricks.client.jdbc.Driver",
+        "SSL support": "Not tested",
+        "URL format": "jdbc:databricks://host:port/default;transportMode=http;ssl=1;httpPath=path;EnableArrow=0;AuthMech=3;UID=token;PWD=personal-access-token",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/db2",
+      "slug": "db2",
+      "html_sha256": "ec47500396fd9e37684bda8f8cf9b962defdbb817ea024c33aa04e5dec7429cc",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "9.7, 11.5",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.ibm.db2.jcc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.ibm.db2.jcc.DB2Driver",
+        "URL format": "jdbc:db2://host:port/database",
+        "Driver-table supported versions": "4.16.53 and later. For versions prior to 11.5, follow instructions on ibm.com"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/db2-zos-database",
+      "slug": "db2-zos-database",
+      "html_sha256": "3a69779a80affb6fc9a203b95b51f0282800616c6cd36a3be477d37b5a89da3f",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.ibm.db2.jcc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.ibm.db2.jcc.DB2Driver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:db2://host:port/database",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/derby",
+      "slug": "derby",
+      "html_sha256": "5fa2186b132a5de9d7774f1839b45f1552c4522026ea428cd0ad73ab25a53f4c",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "10.11, 10.15 (Important: see 'Compatibility' section below)",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.apache.derby:derbyclient",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "org.apache.derby.jdbc.EmbeddedDriver",
+        "URL format": "jdbc:derby:sub-protocol:database name",
+        "Driver-table supported versions": "10.11 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/documentdb",
+      "slug": "documentdb",
+      "html_sha256": "67232d7d83599b75f993312d2ca84cd092dad9f1589f2d7b4aadd3b0dbe65256",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "docdb 5.0.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "n/a",
+        "Ships with Flyway Command-line": "JSON migrations: Yes.",
+        "SSL support": "Yes",
+        "URL format": "mongodb://ip address:port number/database_name"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/duckdb",
+      "slug": "duckdb",
+      "html_sha256": "e2f9c075aad745b69a00306b9c1d9012ce845950635e338695475a824054599d",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "org.duckdb:duckdb_jdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "org.duckdb.DuckDBDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:duckdb:database",
+        "Driver-table supported versions": "N/A",
+        "JDBC driver download for Command-line": "DuckDB JDBC Drivers"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/fabric-data-warehouse",
+      "slug": "fabric-data-warehouse",
+      "html_sha256": "9720a74b0a7ecdbfe38feb78551617c6713cb9244e8f283574a2ea09c7b2ddcc",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "Latest",
+        "Maintainer": "Redgate",
+        "Status": "Preview",
+        "Maven Central coordinates": "com.microsoft.sqlserver:mssql-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "SSL support": "Yes - add ;encrypt=true",
+        "URL format": "jdbc:sqlserver://host:port;databaseName=database",
+        "Driver-table supported versions": "12.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/fabric-database",
+      "slug": "fabric-database",
+      "html_sha256": "dfffc8d0d33045053ab0f9b9a9ad7366aae1fd8111f90f978373634bf24d1916",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "SQL Azure (RTM) - 12.0.2000.8",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.microsoft.sqlserver:mssql-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "SSL support": "Yes - add ;encrypt=true",
+        "URL format": "jdbc:sqlserver://host:port;databaseName=database",
+        "Driver-table supported versions": "12.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/firebird",
+      "slug": "firebird",
+      "html_sha256": "4b05fac9dca83a4b64a3bce46f8d3586b0000562a06c3bd9dc74b46df6cb5b6d",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "3.0, 4.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.firebirdsql.jdbc:jaybird-jdk18",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.firebirdsql.jdbc.FBDriver",
+        "URL format": "jdbc:firebirdsql://host:port/database",
+        "Driver-table supported versions": "3 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/google-bigquery",
+      "slug": "google-bigquery",
+      "html_sha256": "e8af7ce103e046335a8e2c99fa49e7b276c52c345b49d84aeaa65a21ce526f45",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "Latest",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "None. The Simba driver is available for download here",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.simba.googlebigquery.jdbc42.Driver",
+        "SSL support": "No",
+        "URL format": "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;ProjectId=project_id;OAuthType=0;OAuthServiceAcctEmail=service_account_name;OAuthPvtKeyPath=path_to_key;",
+        "Driver-table supported versions": "-"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/google-cloud-spanner",
+      "slug": "google-cloud-spanner",
+      "html_sha256": "cfe864098baaf2df42868c1ca131942e19aa418255f29b361f940123df61c694",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "Latest",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.google.cloud:google-cloud-spanner-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.google.cloud.spanner.jdbc.JdbcDriver",
+        "SSL support": "Yes",
+        "URL format": "jdbc:cloudspanner:/projects/project_name/instances/instance_name/databases/database_name?credentials=path/to/keyfile.json",
+        "Driver-table supported versions": "2.2.6 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/h2",
+      "slug": "h2",
+      "html_sha256": "7fdb961bca6d338036ce5e551cbf378a8feb11be84518cd5629df4d6ab4c2f7a",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "1.2, 2.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.h2database:h2",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.h2.Driver",
+        "URL format": "jdbc:h2:file",
+        "Driver-table supported versions": "1.2.137 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/hsqldb",
+      "slug": "hsqldb",
+      "html_sha256": "8d2e021f0d6a7ead13a34a3b74136eca3e11b5537f239a426cafcfe942d23164",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "2.7",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.hsqldb:hsqldb",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.hsqldb.jdbcDriver",
+        "URL format": "jdbc:hsqldb:file:file",
+        "Driver-table supported versions": "1.8 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/ignite",
+      "slug": "ignite",
+      "html_sha256": "531c69fc65bbf92cf227a2a691fe1dfca644b8e06fd8934f4cb7764c53c3b6c1",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "org.apache.ignite:ignite-core",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "org.apache.ignite.IgniteJdbcThinDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:ignite:thin://host:port/database",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/informix",
+      "slug": "informix",
+      "html_sha256": "6a69f5972f7f69ba8d36e3a2e6f0f5d782aa4c2701fee42407a90e20146864f2",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "12.10",
+        "Maintainer": "Redgate",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.informix.jdbc.IfxDriver",
+        "URL format": "jdbc:informix-sqli://host:port/database:informixserver=dev",
+        "Driver-table supported versions": "4.10.10.0 and later",
+        "Download": "Maven Central coordinates: com.ibm.informix:jdbc"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/iris",
+      "slug": "iris",
+      "html_sha256": "98c1c388514988a7ee1e948e9aa80902481131a04c9a9c68e6bdd08d1548c11a",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.intersystems:intersystems-jdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.intersystems.jdbc.IRISDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:IRIS://host:port/namespace",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/mariadb",
+      "slug": "mariadb",
+      "html_sha256": "5640300455c036c229b74e6bb1f2efeeeee2fbd4211f3e3b94f36ba7c12ceef8",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "5.1, 12.3.2",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.mariadb.jdbc:mariadb-java-client",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.mariadb.jdbc.Driver",
+        "SSL support": "Yes - add ?useSsl=true",
+        "URL format": "jdbc:mysql://host:port/database",
+        "Driver-table supported versions": "2.0.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/mongodb",
+      "slug": "mongodb",
+      "html_sha256": "499fd31a881bf34d83a55f77a999005e2befe50bc671211fe28f251a5285d3be",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "V5,V8",
+        "Maintainer": "Redgate"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/mysql",
+      "slug": "mysql",
+      "html_sha256": "fa04646dbc714a1b2996eccc99f7cb33a4c4c7ccb04e5599ca28c459da6fc3ab",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "5.7, 8.0, 9.4",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "mysql:mysql-connector-java; org.mariadb.jdbc:mariadb-java-client",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.mysql.jdbc.Driver; org.mariadb.jdbc.Driver",
+        "SSL support": "Yes - add ?useSsl=true; Yes - add ?useSsl=true",
+        "URL format": "jdbc:mysql://host:port/database; jdbc:mysql://host:port/database",
+        "Driver-table supported versions": "5.1.44 and later; 2.0.0 and later",
+        "Connector/J Download": "Yes"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/oceanbase-database",
+      "slug": "oceanbase-database",
+      "html_sha256": "d9cd2a81cd85a765148a009d470171ee4873d9647f6b14256d91cd52144e398e",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.oceanbase:oceanbase-client",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.oceanbase.jdbc.Driver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:oceanbase://host:port/database",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/oracle-database",
+      "slug": "oracle-database",
+      "html_sha256": "f1a08b16d711ed6922d147734d96377475ed331d1453d6ccf0b62c5eb497f492",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "18.4, 26ai",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.oracle.database.jdbc:ojdbc11",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "oracle.jdbc.OracleDriver",
+        "URL format": "jdbc:oracle:thin:@//host:port/service",
+        "Driver-table supported versions": "Oracle Database versions - 26ai, 23ai, 21c, 19c, 18c, and 12.2"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/percona-xtradb-cluster",
+      "slug": "percona-xtradb-cluster",
+      "html_sha256": "40101ac5d79814ba55bbb10a0afa89a5b46c1b8b1e1e490f149d0b8cd6072a51",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "5.7, 8.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "mysql:mysql-connector-java",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.mysql.jdbc.Driver",
+        "URL format": "jdbc:mysql://host:port/database",
+        "Driver-table supported versions": "8.0.12 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/postgresql-database",
+      "slug": "postgresql-database",
+      "html_sha256": "e4d9582b70f4b45e5d50a8629a44916a378b879a51c0939132dca5fa83e014ae",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "9.2, 18",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.postgresql:postgresql",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.postgresql.Driver",
+        "SSL support": "Yes - add ?ssl=true",
+        "URL format": "jdbc:postgresql://host:port/database",
+        "Driver-table supported versions": "9.3-1104-jdbc4 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/questdb",
+      "slug": "questdb",
+      "html_sha256": "48673058cf777f71e83291079e5ac6f2e8a1053e81224cee588d5e951b5334a3",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "org.postgresql:postgresql",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.postgresql.Driver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:postgresql://host:port/database",
+        "Driver-table supported versions": "N/A"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/redshift",
+      "slug": "redshift",
+      "html_sha256": "e41a52c414071ec80f996f24c49fc43e0d5dc068c3df842a1c7d19de884bd6bf",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Maintainer": "Redgate",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.amazon.redshift.jdbc42.Driver",
+        "URL format": "jdbc:redshift://host:port/database",
+        "Driver-table supported versions": "2.1.0.32 and later",
+        "Download": "Download the Amazon Redshift JDBC driver",
+        "Verified DB Versions": "N/A",
+        "Verified Client Version": "Flyway v12.6.1 and driver v2.2.5 (documentation claim, not this pin)"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/sap-hana-including-sap-hana-cloud",
+      "slug": "sap-hana-including-sap-hana-cloud",
+      "html_sha256": "df57b5da7599052bb0ba570c2f715bfd843916ca87ef4b472adef91123a33db2",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "On-Premise: 1.0, 2.0; SAP HANA Cloud: 4.0",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.sap.cloud.db.jdbc:ngdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.sap.db.jdbc.Driver",
+        "URL format": "jdbc:sap://host:port/?databaseName=database",
+        "Driver-table supported versions": "1.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/singlestoredb",
+      "slug": "singlestoredb",
+      "html_sha256": "126e8f90519de23ce2e1a9c0d47c7d905d3f5c64c16772dcb4650b9e97486d66",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "8.9",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.singlestore:singlestore-jdbc-client",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.singlestore.jdbc.Driver",
+        "SSL support": "Yes - add ?useSsl=true",
+        "URL format": "jdbc:singlestore://host:port/database",
+        "Driver-table supported versions": "1.2.8 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/snowflake",
+      "slug": "snowflake",
+      "html_sha256": "39530bb16277ff178ac9555920406e3bb31a85c2a251679f9aec6e995ef3358e",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "10.8",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "net.snowflake:snowflake-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "net.snowflake.client.api.driver.SnowflakeDriver",
+        "URL format": "jdbc:snowflake://account.snowflakecomputing.com/?db=database&warehouse=warehouse&role=role",
+        "Driver-table supported versions": "4.0.2 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/sql-server-database",
+      "slug": "sql-server-database",
+      "html_sha256": "669f9b98528c9f02e6ae925211d5a57824667b0388e105d2365f629d1b64a4d6",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "2008, 2025",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "com.microsoft.sqlserver:mssql-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "SSL support": "Yes - add ;encrypt=true",
+        "URL format": "jdbc:sqlserver://host:port;databaseName=database",
+        "Driver-table supported versions": "10.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/sqlite",
+      "slug": "sqlite",
+      "html_sha256": "17ad72651a3f3dcc09f2dccde6da9abcdcb5ff220d929f8b389e0e4eaf4d9aa3",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "3.0, 3.7",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "org.xerial:sqlite-jdbc",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.sqlite.JDBC",
+        "URL format": "jdbc:sqlite:database",
+        "Driver-table supported versions": "3.7 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/sybase-ase",
+      "slug": "sybase-ase",
+      "html_sha256": "97af46b19fe58d4b7ecf303c402aff1f97dd5d1cead9d6a5e0ed0957fde4dda2",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "15.7, 16.3",
+        "Maintainer": "Redgate",
+        "Ships with Flyway Command-line": "No; Yes",
+        "Default Java class": "com.sybase.jdbc4.jdbc.SybDriver; net.sourceforge.jtds.jdbc.Driver",
+        "URL format": "jdbc:sybase:Tds:host:port/database; jdbc:jtds:sybase://host:port/database",
+        "Driver-table supported versions": "7.0 and later; 1.3.1 and later",
+        "Download": "Download from sap.com; Maven Central coordinates: net.sourceforge.jtds:jtds"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/testcontainers",
+      "slug": "testcontainers",
+      "html_sha256": "c10369de1c5807c074b5ab8ff8981c1edabe9477b91cf39cc359a1bd4a57112a",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Redgate",
+        "Maven Central coordinates": "Database specific:",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "org.testcontainers.jdbc.ContainerDatabaseDriver",
+        "URL format": "jdbc:tc: instead of jdbc: for your database",
+        "Driver-table supported versions": "1.17.6"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/tidb-titanium-db",
+      "slug": "tidb-titanium-db",
+      "html_sha256": "2e0723ba7a664bbb436a97c34fa8f268e9ed3e1b4915bad22e86b35c34d3981f",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "5.0",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "mysql:mysql-connector-java",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "com.mysql.jdbc.Driver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:mysql://host:port/database",
+        "Driver-table supported versions": "5.0 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/timeplus",
+      "slug": "timeplus",
+      "html_sha256": "261693c9e121ed14b311dfcd0645b127f63f31f4a3454babacc257388b0c0ba3",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "N/A",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.timeplus:timeplus-native-jdbc",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.timeplus.jdbc.TimeplusDriver",
+        "SSL support": "Not tested",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:timeplus://host:port",
+        "Driver-table supported versions": "N/A",
+        "JDBC driver download for Command-line": "Timeplus JDBC Drivers"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/timescaledb",
+      "slug": "timescaledb",
+      "html_sha256": "8bde5fc742a6b77b00a8236318014b948be141a212235c8f5ace5968b97547d3",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "11, 12",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "org.postgresql:postgresql",
+        "Ships with Flyway Command-line": "Yes",
+        "Default Java class": "org.postgresql.Driver",
+        "SSL support": "Yes - add ?ssl=true",
+        "URL format": "jdbc:postgresql://host:port/database",
+        "Driver-table supported versions": "9.3-1104-jdbc4 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/database-driver-reference/yugabytedb",
+      "slug": "yugabytedb",
+      "html_sha256": "e42e06db660d578cb20574c88d86f864a97682e29d90392f932405b4021a3ecb",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "Verified Versions": "2.20, 2024.1, 2.21",
+        "Maintainer": "Flyway Open-Source Community",
+        "Maven Central coordinates": "com.yugabyte:jdbc-yugabytedb",
+        "Ships with Flyway Command-line": "No",
+        "Default Java class": "com.yugabyte.Driver",
+        "SSL support": "Yes - add ?ssl=true",
+        "Flyway Community implementation": "flyway-community-db-support",
+        "URL format": "jdbc:yugabytedb://host:port/database",
+        "Driver-table supported versions": "42.3.5-yb-1 and later"
+      }
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/reference/usage/command-line",
+      "slug": "command-line",
+      "html_sha256": "4403c1362430c45be02d0aaba3057555af2111698a9910edf9a708402c7c14d9",
+      "page_last_updated": "15 October 2026",
+      "facts": {}
+    },
+    {
+      "url": "https://documentation.red-gate.com/flyway/release-notes-and-older-versions/release-notes-for-flyway-engine",
+      "slug": "release-notes-for-flyway-engine",
+      "html_sha256": "c5592b27a7ce89c4e438c3c6259a3b6c898ea6e855bc999d627655b85d8e961b",
+      "page_last_updated": "15 October 2026",
+      "facts": {
+        "newest_visible_release_heading": [
+          "13.10.2",
+          "2026-10-15"
+        ],
+        "interpretation": "Page lags actual observed 13.10.3; no later release established."
+      }
+    }
+  ],
+  "errors": []
+}

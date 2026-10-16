@@ -1,0 +1,101 @@
+Usage:
+    flyway [options] [command]
+    flyway help [command]
+
+By default, the configuration will be read from conf/flyway.toml file.
+Options passed from the command-line override the configuration.
+
+Commands:
+    check                         Produces reports to increase confidence in your deployments
+    deploy                        Deploys an individual script to an environment
+    init                          Initialize a new Flyway project. Also allows for the upgrading of Flyway .conf files, and the porting of SQL Source Control and Source Control for Oracle projects to Flyway.
+    prepare                       Writes a deployment script from a schemaModel, an environment, a diff artifact, or migrations to disk
+    testConnection                Attempts to establish a connection to the database using the configured connection settings
+    version, -v, --version        Print the Flyway version and edition
+    list-engines                  Lists the database engines that Flyway has loaded support for.
+    diff                          Compares two comparison sources and returns a summary of the differences
+    objects                       Lists the objects present in a comparison source
+    diffText                      Shows the object differences for changes computed by flyway diff
+    snapshot                      [enterprise] Produces a snapshot of the database specified in flyway.url
+                                  A snapshot can be generated from a database environment, build environment, schema model folder or empty source using the snapshot.source argument
+    model                         Applies the changes from flyway diff to the schema model
+    generate                      Generates a migration script based on the changes from flyway diff
+    add                           Creates a new empty migration script
+    mcp (preview)                 Starts flyway as STDIO MCP server for use with external MCP clients.
+    auth                          Authenticates Flyway with Redgate licensing
+    baseline                      Baselines an existing database at the baselineVersion
+    clean                         Drops all objects in the configured schemas
+    info                          Prints the information about applied, current and pending migrations
+    migrate                       Migrates the database
+    repair                        Repairs the schema history table
+    validate                      Validates the applied migrations against the ones on the classpath
+    undo                          Undoes the most recently applied versioned migration
+    help                          Print this usage info and exit
+
+Configuration parameters: (Format: -key=value)
+    driver                        Fully qualified classname of the JDBC driver
+    url                           Jdbc url to use to connect to the database
+    user                          User to use to connect to the database
+    password                      Password to use to connect to the database
+    connectRetries                Maximum number of retries when attempting to connect to the database
+    initSql                       SQL statements to run to initialize a new database connection
+    schemas                       Comma-separated list of the schemas managed by Flyway
+    table                         Name of Flyway's schema history table
+    locations                     Classpath locations to scan recursively for migrations
+    failOnMissingLocations        Whether to fail if a location specified in the flyway.locations option doesn't exist
+    resolvers                     Comma-separated list of custom MigrationResolvers
+    skipDefaultResolvers          Skips default resolvers (jdbc, sql and Spring-jdbc)
+    sqlMigrationPrefix            File name prefix for versioned SQL migrations
+    undoSqlMigrationPrefix        [teams] File name prefix for undo SQL migrations
+    repeatableSqlMigrationPrefix  File name prefix for repeatable SQL migrations
+    sqlMigrationSeparator         File name separator for SQL migrations
+    sqlMigrationSuffixes          Comma-separated list of file name suffixes for SQL migrations
+    stream                        [teams] Stream SQL migrations when executing them
+    batch                         [teams] Batch SQL statements when executing them
+    group                         Whether to group all pending migrations together in the same transaction when applying them
+    mixed                         Allow mixing transactional and non-transactional statements
+    encoding                      Encoding of SQL migrations
+    detectEncoding                [teams] Whether Flyway should try to automatically detect SQL migration file encoding
+    executeInTransaction          Whether SQL should execute within a transaction
+    placeholderReplacement        Whether placeholders should be replaced
+    placeholders                  Placeholders to replace in sql migrations
+    placeholderPrefix             Prefix of every placeholder
+    placeholderSuffix             Suffix of every placeholder
+    scriptPlaceholderPrefix       Prefix of every script placeholder
+    scriptPlaceholderSuffix       Suffix of every script placeholder
+    lockRetryCount                The maximum number of retries when trying to obtain a lock
+    jdbcProperties                Properties to pass to the JDBC driver object
+    installedBy                   Username that will be recorded in the schema history table
+    target                        Target version up to which Flyway should process migrations
+    cherryPick                    [teams] Comma separated list of migrations that Flyway should consider
+    skipExecutingMigrations       Whether Flyway should skip actually executing the contents of the migrations
+    outOfOrder                    Allows migrations to be run "out of order"
+    callbacks                     Comma-separated list of FlywayCallback classes, or locations to scan for FlywayCallback classes
+    skipDefaultCallbacks          Skips default callbacks (sql)
+    validateOnMigrate             Validate when running migrate
+    validateMigrationNaming       Validate file names of SQL migrations (including callbacks)
+    ignoreMigrationPatterns       Patterns of migrations and states to ignore
+    cleanDisabled                 Whether to disable clean
+    baselineVersion               Version to tag schema with when executing baseline
+    baselineDescription           Description to tag schema with when executing baseline
+    baselineOnMigrate             Baseline on migrate against uninitialized non-empty schema
+    configFiles                   Comma-separated list of config files to use
+    configFileEncoding            Encoding to use when loading the config files
+    jarDirs                       Comma-separated list of dirs for Jdbc drivers & Java migrations
+    createSchemas                 Whether Flyway should attempt to create the schemas specified in the schemas property
+    dryRunOutput                  [teams] File where to output the SQL statements of a migration dry run
+    errorOverrides                [teams] Rules to override specific SQL states and errors codes
+    color                         Whether to colorize output. Values: always, never, or auto (default)
+    outputFile                    Send output to the specified file alongside the console
+    outputType                    Serialise the output in the given format, Values: json
+
+Flags:
+    -X                            Print debug output
+    -q                            Suppress all output, except for errors and warnings
+    --help, -h, -?                Print this usage info and exit
+
+Example:
+    flyway -user=myuser -password=s3cr3t -url=jdbc:h2:mem -placeholders.abc=def migrate
+    flyway help check
+
+More info at https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=reference/usage/command-line

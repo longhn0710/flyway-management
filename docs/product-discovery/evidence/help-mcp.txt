@@ -1,0 +1,3 @@
+
+STDERR:
+[ERROR] The 'mcp' command cannot be used with any other commands.

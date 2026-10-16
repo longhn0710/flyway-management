@@ -1,0 +1,17 @@
+Description:
+    Initialize a new Flyway project. Also allows for the upgrading of Flyway .conf files, and the porting of SQL Source Control and Source Control for Oracle projects to Flyway.
+
+Configuration parameters: (Format: -key=value)
+    init.projectName [REQUIRED]          The name of the project. This is only optional when upgrading or importing a project.
+    init.databaseType [REQUIRED]         The database type of the project. This is only optional when importing a project from SQL Source Control or Source Control for Oracle.
+    init.fileName                        The name of the main TOML settings file, relative to the working directory. Defaults to 'flyway.toml'
+    init.from                            The path of a project to import from, relative to the working directory. Defaults to the working directory if `fromType` is specified.
+    init.fromType                        The type of project to import. Valid values are `"Conf"`, `"SqlSourceControl"`, and `"SourceControlForOracle"`.
+
+Example:
+    flyway init -init.projectName=new_project -init.databaseType=postgresql
+
+
+
+Description:
+    Initializes a new Flyway project

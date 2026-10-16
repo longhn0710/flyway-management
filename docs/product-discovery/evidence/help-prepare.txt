@@ -1,0 +1,32 @@
+Description:
+    Writes a deployment script from a schemaModel, an environment, a diff artifact, or migrations to disk
+    Note that when running against migrations, there are some limitations. The resulting script will not take callbacks or Java migrations into account. This may be appropriate when it is not possible to use flyway to deploy to the target database, but otherwise `flyway migrate` is recommended instead.
+
+Configuration parameters: (Format: -key=value)
+    prepare.source                  The source to use for the prepare operation. Valid values:
+                                     - <<env>> - uses the environment named <<env>>
+                                     - schemaModel - the schema model folder referenced by <<schemaModelLocation>>
+                                     - migrations - the migrations stored in <<locations>>
+    prepare.target                  The target environment to use for the prepare operation.
+    prepare.changes                 A comma separated list of change ids. If unspecified, all changes will be used.
+                                    May specify `-` to read changes from stdin
+    prepare.artifactFilename        The location of the diff artifact to use for generating a deployment script.
+                                    Defaults: diff.artifactFilename, %temp%/flyway.artifact.diff
+    prepare.abortOnWarningSeverity  Will cause an error to be returned if any warnings of configured severity are raised when generating the deployment script.
+                                    The deployment script will still be generated.
+                                    Valid values are: None, High, Medium, Low
+                                    Defaults to `None`.
+    prepare.force                   If the deployment script already exists, overwrite it. Defaults to `false`.
+    prepare.types                   The types of deployment script to generate.
+                                    Valid values are: deploy, undo
+                                    Defaults to `deploy`.
+    scriptFilename                  A deployment script to generate for use with `deploy`. If not specified the location will default to deployments/D__deployment.sql
+    undoFilename                    A deployment undo script to generate for use with `deploy`. If not specified the location will default to deployments/DU__undo.sql
+
+Example:
+    flyway prepare -prepare.source=schemaModel -prepare.target=production -prepare.scriptFilename=D__deploymentScript.sql
+
+
+
+Description:
+    Generates deployment scripts

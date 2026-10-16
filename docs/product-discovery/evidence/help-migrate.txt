@@ -1,0 +1,17 @@
+Description:
+    Migrates the database
+
+Configuration parameters: (Format: -key=value)
+    target                   Target version up to which Flyway should process migrations
+    outOfOrder               Allows migrations to be run "out of order"
+    baselineOnMigrate        Baseline on migrate against uninitialized non-empty schema
+    validateOnMigrate        Validate when running migrate
+    cherryPick               [teams] Comma separated list of migrations that Flyway should consider
+    group                    Whether to group all pending migrations together in the same transaction when applying them
+    skipExecutingMigrations  Whether Flyway should skip actually executing the contents of the migrations
+    createSchemas            Whether Flyway should attempt to create the schemas specified in the schemas property
+    executeInTransaction     Whether SQL should execute within a transaction
+    mixed                    Allow mixing transactional and non-transactional statements
+
+Example:
+    flyway migrate -target=2.0 -outOfOrder=true
