@@ -81,7 +81,7 @@ make test-race       # Go race tests
 make security        # npm audit and Go vulnerability checks
 ```
 
-Install Chromium once with `cd web && npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Browser artifacts are ignored under `web/test-results/`. All tests use temporary directories; no existing installation or external infrastructure is modified. [Phase 3 verification](docs/phase3-verification.md) records implementation evidence and open acceptance gates; the [Phase 2 report](docs/phase2-verification.md) remains the historical baseline. No live AD, Entra ID, Keycloak or Oracle verification is claimed.
+Install Chromium once with `cd web && npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Browser artifacts are ignored under `web/test-results/`. The standard checks use temporary fixtures and do not modify an existing installation or external infrastructure. [Phase 3 verification](docs/phase3-verification.md) records implementation evidence and open acceptance gates; the [Phase 2 report](docs/phase2-verification.md) remains the historical baseline. Separately authorized [Oracle Free application acceptance](docs/oracle-free-lab-acceptance.md) verifies real preflight and a V2 manager job against the isolated disposable lab. Oracle 19c/21c and live AD, Entra ID and Keycloak acceptance remain open.
 
 The [canonical product specification](flyway-manager-product-spec.md) remains unchanged. Existing design tokens, shared components and navigation follow [the approved handoff](docs/design/design-system.md). Implemented business pages use real APIs with loading, empty, error and denied states. Fixture authentication and migration results have been removed. The Stitch project was not modified.
 

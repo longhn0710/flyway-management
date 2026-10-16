@@ -153,7 +153,8 @@ func TestExecuteUsesArgvPrivateConfigAndRestrictedEnvironment(t *testing.T) {
 case "$PATH" in "$JAVA_HOME/bin:"*) ;; *) exit 22;; esac
 [ -z "$SHOULD_NOT_INHERIT" ] || exit 23
 [ "$HOME" = "$TMPDIR" ] || exit 24
-grep -F 'flyway.password=p@ss word&secret' "$config" >/dev/null || exit 25
+case "$config" in *.toml) ;; *) exit 25;; esac
+grep -F 'password = "!{p@ss word\u0026secret}"' "$config" >/dev/null || exit 25
 printf '{"operation":"info","schemaVersion":null,"migrations":[],"flywayVersion":"10.0.0"}'`
 	r, _ := fakeRuntime(t, body, 3)
 	got := r.Execute(context.Background(), testRequest("info"))

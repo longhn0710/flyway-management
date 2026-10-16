@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 const maxOutput = 2 << 20
@@ -188,7 +189,7 @@ func (r *Runtime) Execute(ctx context.Context, req Request) Result {
 		result.Stderr = err.Error()
 		return result
 	}
-	configPath := filepath.Join(work, "flyway.conf")
+	configPath := filepath.Join(work, "flyway.toml")
 	if err := os.WriteFile(configPath, []byte(makeConfig(req)), 0600); err != nil {
 		result.Stderr = "unable to write private Flyway configuration"
 		return result
@@ -257,8 +258,15 @@ func validateRequest(r Request) error {
 	if !safeIdentifier.MatchString(r.Schema) || !safeIdentifier.MatchString(r.HistorySchema) || !safeIdentifier.MatchString(r.HistoryTable) || !safeIdentifier.MatchString(r.Username) {
 		return errors.New("invalid Oracle schema, history table, or username")
 	}
-	if r.Password == "" || strings.ContainsRune(r.Password, '\x00') {
+	if r.Password == "" || strings.ContainsRune(r.Password, '\x00') || !utf8.ValidString(r.Password) {
 		return errors.New("missing Oracle credential")
+	}
+	// Flyway 13's documented !{...} literal resolver uses a Java regex without
+	// DOTALL. These line terminators prevent it from recognizing the wrapper.
+	// Reject before launching a process rather than silently changing a secret
+	// or moving credentials into argv/the inherited environment.
+	if strings.ContainsAny(r.Password, "\r\n\u0085\u2028\u2029") {
+		return errors.New("Oracle credential contains a line break unsupported by Flyway's literal-value resolver")
 	}
 	if len(r.Files) == 0 && (r.Command == "migrate" || r.Command == "validate" || r.Command == "repair") {
 		return errors.New("SQL snapshot is empty")
@@ -335,36 +343,38 @@ func configProperties(r Request) map[string]string {
 func makeConfig(r Request) string {
 	props := configProperties(r)
 	var b strings.Builder
-	for _, k := range []string{"flyway.url", "flyway.user", "flyway.password", "flyway.schemas", "flyway.defaultSchema", "flyway.table", "flyway.createSchemas", "flyway.cleanDisabled", "flyway.validateOnMigrate", "flyway.callbacks", "flyway.placeholderReplacement", "flyway.oracle.sqlplus", "flyway.ignoreMigrationPatterns", "flyway.validateMigrationNaming", "flyway.baselineOnMigrate", "flyway.outOfOrder"} {
-		b.WriteString(k)
-		b.WriteByte('=')
-		b.WriteString(escapeProperty(props[k]))
-		b.WriteByte('\n')
+	// Flyway's legacy .conf loader trims lines, doubles backslashes and expands
+	// environment references before Properties.load. Java-properties escaping
+	// therefore changes URLs and cannot preserve arbitrary credentials. TOML
+	// basic strings use the JSON string escapes below without that preprocessing.
+	// Keep the semantic policy in configProperties/ConfigurationSnapshot unchanged.
+	b.WriteString("[environments.runtime]\n")
+	for _, key := range []string{"url", "user", "password"} {
+		// Flyway's environment resolver otherwise strips surrounding whitespace
+		// and evaluates ${resolver.key}. Its documented whole-value literal
+		// escape preserves the exact input, including whitespace and expressions.
+		b.WriteString(key + " = " + tomlString("!{"+props["flyway."+key]+"}") + "\n")
 	}
+	b.WriteString("schemas = [" + tomlString(props["flyway.schemas"]) + "]\n\n[flyway]\nenvironment = \"runtime\"\n")
+	for _, key := range []string{"defaultSchema", "table"} {
+		b.WriteString(key + " = " + tomlString(props["flyway."+key]) + "\n")
+	}
+	for _, key := range []string{"createSchemas", "cleanDisabled", "validateOnMigrate", "placeholderReplacement", "validateMigrationNaming", "baselineOnMigrate", "outOfOrder"} {
+		b.WriteString(key + " = " + props["flyway."+key] + "\n")
+	}
+	b.WriteString("callbacks = []\nignoreMigrationPatterns = [" + tomlString(props["flyway.ignoreMigrationPatterns"]) + "]\n\n[flyway.oracle]\nsqlplus = " + props["flyway.oracle.sqlplus"] + "\n")
 	return b.String()
 }
 
-func escapeProperty(s string) string {
+func tomlString(s string) string {
+	// JSON quoting preserves one TOML basic-string value. Also escape DEL and
+	// C1 controls explicitly: JSON permits literal DEL while TOML forbids it.
+	encoded, _ := json.Marshal(s)
 	var b strings.Builder
-	for i, r := range s {
-		switch r {
-		case '\\':
-			b.WriteString(`\\`)
-		case '\n':
-			b.WriteString(`\n`)
-		case '\r':
-			b.WriteString(`\r`)
-		case '\t':
-			b.WriteString(`\t`)
-		case '=', ':', '#', '!':
-			b.WriteByte('\\')
-			b.WriteRune(r)
-		case ' ':
-			if i == 0 {
-				b.WriteByte('\\')
-			}
-			b.WriteRune(r)
-		default:
+	for _, r := range string(encoded) {
+		if r >= 0x7f && r <= 0x9f {
+			b.WriteString(`\u00` + strconv.FormatInt(int64(r), 16))
+		} else {
 			b.WriteRune(r)
 		}
 	}
@@ -575,7 +585,9 @@ func parseVersion(s string) string {
 }
 
 func redactPlain(s string, req Request) string {
-	secrets := []string{req.Password, url.QueryEscape(req.Password), url.PathEscape(req.Password), escapeProperty(req.Password)}
+	secrets := []string{req.Password, url.QueryEscape(req.Password), url.PathEscape(req.Password), legacyPropertySecret(req.Password)}
+	tomlEncoded := tomlString(req.Password)
+	secrets = append(secrets, tomlEncoded[1:len(tomlEncoded)-1])
 	for _, html := range []bool{false, true} {
 		var buf bytes.Buffer
 		encoder := json.NewEncoder(&buf)
@@ -594,6 +606,35 @@ func redactPlain(s string, req Request) string {
 		}
 	}
 	return s
+}
+
+// Retain masking for legacy property-escaped diagnostics; this is deliberately
+// not used to generate configuration for Flyway's preprocessed .conf format.
+func legacyPropertySecret(s string) string {
+	var b strings.Builder
+	for i, r := range s {
+		switch r {
+		case '\\':
+			b.WriteString(`\\`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '=', ':', '#', '!':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case ' ':
+			if i == 0 {
+				b.WriteByte('\\')
+			}
+			b.WriteRune(r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 func validHostname(host string) bool {
 	if len(host) == 0 || len(host) > 253 || strings.HasSuffix(host, ".") {

@@ -1,0 +1,978 @@
+{
+  "classification": {
+    "oracle_free_cli": "PASS",
+    "manager_oracle_preflight": "FAIL",
+    "manager_job_execution": "NOT_RUN",
+    "oracle19c": "NOT_VERIFIED",
+    "oracle21c": "NOT_VERIFIED"
+  },
+  "date": "2026-10-16",
+  "authorization": "User explicitly authorized dedicated disposable Oracle Free namespace, PVC, resource bounds, ClusterIP, random credentials and controlled minimal migration after isolation confirmation. No product implementation changes or publication requested.",
+  "context": "k8s-admin-public",
+  "namespace": "flyway-manager-oracle-lab",
+  "namespace_uid": "ffbebb09-f90a-47f8-b9ec-8c98e6d3cf9f",
+  "image": {
+    "reference": "docker.io/gvenzl/oracle-free:23.26.3-slim@sha256:6d61d267a3b978c24c5ac1790e62e927416a0aec446bd86e4b3a1527562757bd",
+    "registry_index_sha256": "6d61d267a3b978c24c5ac1790e62e927416a0aec446bd86e4b3a1527562757bd",
+    "source": "https://github.com/gvenzl/oci-oracle-free",
+    "license_terms": "https://www.oracle.com/downloads/licenses/oracle-free-license.html",
+    "bundled_license_identifies_free_use_terms": true,
+    "database_version": "Oracle AI Database 26ai Free Release 23.26.3.0.0"
+  },
+  "flyway_provenance": {
+    "url": "https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/13.10.3/flyway-commandline-13.10.3-linux-x64.tar.gz",
+    "upstream_sha1": "6bd32305c1d4489a864590f6952124ec6cb4a866",
+    "archive_sha256": "f0451f0ef9d1c558d5e1fd5a35ad65f039bebecd4eb2007a87022da21fc2dccf",
+    "transport": "HTTPS certificate verification enabled",
+    "source": "Versioned archive linked by official Redgate CLI documentation",
+    "local_use_only": true
+  },
+  "flyway_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c",
+  "bundled_java": "Eclipse Temurin 25.0.4+7-LTS",
+  "jdbc": "ojdbc11-21.18.0.0.jar",
+  "oracle_modules": [
+    "flyway-database-oracle-13.10.3.jar",
+    "flyway-database-oracle-proprietary-13.10.3.jar"
+  ],
+  "resources": [
+    {
+      "kind": "Pod",
+      "metadata": {
+        "name": "oracle-free-0",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "e7f6c57a-4700-4d15-bb07-574a1b302ee0",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "ORACLE_PASSWORD_FILE",
+                "value": "/run/secrets/oracle/admin-password"
+              }
+            ],
+            "image": "docker.io/gvenzl/oracle-free:23.26.3-slim@sha256:6d61d267a3b978c24c5ac1790e62e927416a0aec446bd86e4b3a1527562757bd",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "oracle",
+            "ports": [
+              {
+                "containerPort": 1521,
+                "name": "oracle",
+                "protocol": "TCP"
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "healthcheck.sh"
+                ]
+              },
+              "failureThreshold": 3,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "resources": {
+              "limits": {
+                "cpu": "2",
+                "memory": "3Gi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "2Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              }
+            },
+            "startupProbe": {
+              "exec": {
+                "command": [
+                  "healthcheck.sh"
+                ]
+              },
+              "failureThreshold": 90,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "timeoutSeconds": 5
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/opt/oracle/oradata",
+                "name": "data"
+              },
+              {
+                "mountPath": "/run/secrets/oracle",
+                "name": "credentials",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/dev/shm",
+                "name": "shm"
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "hostname": "oracle-free-0",
+        "nodeName": "k8s-worker1",
+        "nodeSelector": {
+          "kubernetes.io/arch": "amd64",
+          "node.longhorn.io/enabled": "true"
+        },
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+          "fsGroup": 54321,
+          "runAsGroup": 54321,
+          "runAsNonRoot": true,
+          "runAsUser": 54321,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "subdomain": "oracle-free",
+        "terminationGracePeriodSeconds": 60,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ],
+        "volumes": [
+          {
+            "name": "data",
+            "persistentVolumeClaim": {
+              "claimName": "oracle-data"
+            }
+          },
+          {
+            "name": "credentials",
+            "secret": {
+              "defaultMode": 288,
+              "items": [
+                {
+                  "key": "admin-password",
+                  "path": "admin-password"
+                }
+              ],
+              "secretName": "oracle-lab-credentials"
+            }
+          },
+          {
+            "emptyDir": {
+              "medium": "Memory",
+              "sizeLimit": "1Gi"
+            },
+            "name": "shm"
+          }
+        ]
+      },
+      "status": {
+        "allocatedResources": {
+          "cpu": "250m",
+          "memory": "2Gi"
+        },
+        "conditions": [
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-10-16T02:38:32Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "PodReadyToStartContainers"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-10-16T02:38:20Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "Initialized"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-10-16T02:39:42Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "Ready"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-10-16T02:39:42Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "ContainersReady"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-10-16T02:38:20Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "PodScheduled"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "allocatedResources": {
+              "cpu": "250m",
+              "memory": "2Gi"
+            },
+            "containerID": "containerd://87e42d70c18a3ceceaca5e57af38223140a39ab65ea3433e55c07cace2077185",
+            "image": "sha256:41bcf6415d3a89ac19c00687da8714e5c996d8c652ed989e0d46f8ddafc47c27",
+            "imageID": "docker.io/gvenzl/oracle-free@sha256:6d61d267a3b978c24c5ac1790e62e927416a0aec446bd86e4b3a1527562757bd",
+            "lastState": {},
+            "name": "oracle",
+            "ready": true,
+            "resources": {
+              "limits": {
+                "cpu": "2",
+                "memory": "3Gi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "2Gi"
+              }
+            },
+            "restartCount": 0,
+            "started": true,
+            "state": {
+              "running": {
+                "startedAt": "2026-10-16T02:38:34Z"
+              }
+            },
+            "user": {
+              "linux": {
+                "gid": 54321,
+                "supplementalGroups": [
+                  54321,
+                  54322,
+                  54323,
+                  54324,
+                  54325,
+                  54326,
+                  54330
+                ],
+                "uid": 54321
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/opt/oracle/oradata",
+                "name": "data"
+              },
+              {
+                "mountPath": "/run/secrets/oracle",
+                "name": "credentials",
+                "readOnly": true,
+                "recursiveReadOnly": "Disabled"
+              },
+              {
+                "mountPath": "/dev/shm",
+                "name": "shm"
+              }
+            ]
+          }
+        ],
+        "hostIP": "100.116.31.29",
+        "hostIPs": [
+          {
+            "ip": "100.116.31.29"
+          }
+        ],
+        "observedGeneration": 1,
+        "phase": "Running",
+        "podIP": "10.244.0.131",
+        "podIPs": [
+          {
+            "ip": "10.244.0.131"
+          }
+        ],
+        "qosClass": "Burstable",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "3Gi"
+          },
+          "requests": {
+            "cpu": "232m",
+            "memory": "2Gi"
+          }
+        },
+        "startTime": "2026-10-16T02:38:20Z"
+      }
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "oracle-data",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "992cf679-0bfe-4f4f-880c-539764893545",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "4Gi"
+          }
+        },
+        "storageClassName": "longhorn-workers",
+        "volumeMode": "Filesystem",
+        "volumeName": "pvc-992cf679-0bfe-4f4f-880c-539764893545"
+      },
+      "status": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "capacity": {
+          "storage": "4Gi"
+        },
+        "phase": "Bound"
+      }
+    },
+    {
+      "kind": "Service",
+      "metadata": {
+        "name": "oracle-free",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "6b798d9a-8f99-472c-a420-85f467be48f5",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "spec": {
+        "clusterIP": "10.105.181.191",
+        "clusterIPs": [
+          "10.105.181.191"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "name": "oracle",
+            "port": 1521,
+            "protocol": "TCP",
+            "targetPort": 1521
+          }
+        ],
+        "selector": {
+          "app.kubernetes.io/name": "oracle-free"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "oracle-lab-isolation",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "43b04148-104f-44a7-ae53-c9af68d5f411",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "spec": {
+        "egress": [
+          {
+            "ports": [
+              {
+                "port": 53,
+                "protocol": "UDP"
+              },
+              {
+                "port": 53,
+                "protocol": "TCP"
+              }
+            ],
+            "to": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "kubernetes.io/metadata.name": "kube-system"
+                  }
+                },
+                "podSelector": {
+                  "matchLabels": {
+                    "k8s-app": "kube-dns"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "podSelector": {}
+              }
+            ],
+            "ports": [
+              {
+                "port": 1521,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ],
+        "podSelector": {},
+        "policyTypes": [
+          "Ingress",
+          "Egress"
+        ]
+      }
+    },
+    {
+      "kind": "ResourceQuota",
+      "metadata": {
+        "name": "oracle-lab-bounds",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "27ae72ca-ba6e-42a6-a131-7ca7ff3035cc",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "spec": {
+        "hard": {
+          "limits.cpu": "2",
+          "limits.memory": "3Gi",
+          "persistentvolumeclaims": "1",
+          "pods": "1",
+          "requests.cpu": "250m",
+          "requests.memory": "2Gi",
+          "requests.storage": "4Gi",
+          "services": "1",
+          "services.loadbalancers": "0",
+          "services.nodeports": "0"
+        }
+      },
+      "status": {
+        "hard": {
+          "limits.cpu": "2",
+          "limits.memory": "3Gi",
+          "persistentvolumeclaims": "1",
+          "pods": "1",
+          "requests.cpu": "250m",
+          "requests.memory": "2Gi",
+          "requests.storage": "4Gi",
+          "services": "1",
+          "services.loadbalancers": "0",
+          "services.nodeports": "0"
+        },
+        "used": {
+          "limits.cpu": "2",
+          "limits.memory": "3Gi",
+          "persistentvolumeclaims": "1",
+          "pods": "1",
+          "requests.cpu": "250m",
+          "requests.memory": "2Gi",
+          "requests.storage": "4Gi",
+          "services": "1",
+          "services.loadbalancers": "0",
+          "services.nodeports": "0"
+        }
+      }
+    },
+    {
+      "kind": "EndpointSlice",
+      "metadata": {
+        "name": "oracle-free-llbwb",
+        "namespace": "flyway-manager-oracle-lab",
+        "uid": "4612e0c3-ff08-4140-b6e3-626c46ae326e",
+        "creationTimestamp": "2026-10-16T02:38:16Z"
+      },
+      "endpoints": [
+        {
+          "addresses": [
+            "10.244.0.131"
+          ],
+          "conditions": {
+            "ready": true,
+            "serving": true,
+            "terminating": false
+          },
+          "hostname": "oracle-free-0",
+          "nodeName": "k8s-worker1",
+          "targetRef": {
+            "kind": "Pod",
+            "name": "oracle-free-0",
+            "namespace": "flyway-manager-oracle-lab",
+            "uid": "e7f6c57a-4700-4d15-bb07-574a1b302ee0"
+          }
+        }
+      ],
+      "ports": [
+        {
+          "name": "oracle",
+          "port": 1521,
+          "protocol": "TCP"
+        }
+      ]
+    }
+  ],
+  "storage_volume": "pvc-992cf679-0bfe-4f4f-880c-539764893545",
+  "isolation": {
+    "fresh_namespace_uid": "ffbebb09-f90a-47f8-b9ec-8c98e6d3cf9f",
+    "pvc_uid": "992cf679-0bfe-4f4f-880c-539764893545",
+    "pvc_volume": "pvc-992cf679-0bfe-4f4f-880c-539764893545",
+    "pod_uid": "e7f6c57a-4700-4d15-bb07-574a1b302ee0",
+    "policy": "Cilium realized ingress and egress; namespace TCP1521 ingress, DNS-only egress",
+    "account": "FWM_LAB",
+    "system_grants": [
+      "CREATE SESSION",
+      "CREATE TABLE"
+    ],
+    "roles": [],
+    "cross_schema_select": "ORA-00942 expected",
+    "disposable": true
+  },
+  "cilium_realized_policy": {
+    "allowed-egress-identities": null,
+    "allowed-ingress-identities": [
+      1
+    ],
+    "build": 51,
+    "denied-egress-identities": null,
+    "denied-ingress-identities": null,
+    "id": 2887,
+    "l4": {
+      "egress": [
+        {
+          "derived-from-rules": [
+            [
+              "k8s:io.cilium.k8s.policy.derived-from=NetworkPolicy",
+              "k8s:io.cilium.k8s.policy.name=oracle-lab-isolation",
+              "k8s:io.cilium.k8s.policy.namespace=flyway-manager-oracle-lab",
+              "k8s:io.cilium.k8s.policy.uid=43b04148-104f-44a7-ae53-c9af68d5f411"
+            ]
+          ],
+          "rule": "{\"port\":53,\"protocol\":\"UDP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{k8s.io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name: kube-system,k8s.io.cilium.k8s.policy.cluster: default,k8s.k8s-app: kube-dns,},MatchExpressions:[]LabelSelectorRequirement{},}\":null}]}"
+        },
+        {
+          "derived-from-rules": [
+            [
+              "k8s:io.cilium.k8s.policy.derived-from=NetworkPolicy",
+              "k8s:io.cilium.k8s.policy.name=oracle-lab-isolation",
+              "k8s:io.cilium.k8s.policy.namespace=flyway-manager-oracle-lab",
+              "k8s:io.cilium.k8s.policy.uid=43b04148-104f-44a7-ae53-c9af68d5f411"
+            ]
+          ],
+          "rule": "{\"port\":53,\"protocol\":\"TCP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{k8s.io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name: kube-system,k8s.io.cilium.k8s.policy.cluster: default,k8s.k8s-app: kube-dns,},MatchExpressions:[]LabelSelectorRequirement{},}\":null}]}"
+        }
+      ],
+      "ingress": [
+        {
+          "derived-from-rules": [
+            [
+              "k8s:io.cilium.k8s.policy.derived-from=NetworkPolicy",
+              "k8s:io.cilium.k8s.policy.name=oracle-lab-isolation",
+              "k8s:io.cilium.k8s.policy.namespace=flyway-manager-oracle-lab",
+              "k8s:io.cilium.k8s.policy.uid=43b04148-104f-44a7-ae53-c9af68d5f411"
+            ]
+          ],
+          "rule": "{\"port\":1521,\"protocol\":\"TCP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{k8s.io.cilium.k8s.policy.cluster: default,k8s.io.kubernetes.pod.namespace: flyway-manager-oracle-lab,},MatchExpressions:[]LabelSelectorRequirement{},}\":null}]}",
+          "rules-by-selector": {
+            "&LabelSelector{MatchLabels:map[string]string{k8s.io.cilium.k8s.policy.cluster: default,k8s.io.kubernetes.pod.namespace: flyway-manager-oracle-lab,},MatchExpressions:[]LabelSelectorRequirement{},}": [
+              [
+                "k8s:io.cilium.k8s.policy.derived-from=NetworkPolicy",
+                "k8s:io.cilium.k8s.policy.name=oracle-lab-isolation",
+                "k8s:io.cilium.k8s.policy.namespace=flyway-manager-oracle-lab",
+                "k8s:io.cilium.k8s.policy.uid=43b04148-104f-44a7-ae53-c9af68d5f411"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "policy-enabled": "both",
+    "policy-revision": 51
+  },
+  "database_before": "Oracle AI Database 26ai Free Release 23.26.3.0.0 - Develop, Learn, and Run for Free\nVersion 23.26.3.0.0\n\nIDENTITY=1514744704,FREE,FREE\nPREEXISTING_USERS=0\nUSER_SCHEMA=PDBADMIN\n\n",
+  "execution_permissions": "IDENTITY=FREEPDB1,FREEPDB1,freepdb1,FWM_LAB,FWM_LAB\nPRIV=CREATE SESSION\nPRIV=CREATE TABLE\nQUOTA=USERS,33554432\nTABLES_BEFORE=0\n\n",
+  "observer_before": "GRANT=CREATE SESSION\nGRANT=CREATE TABLE\nROLES=0\nGUARD_ACCESS_GRANTS=0\nLAB_DBLINKS=0\nGUARD=1,unchanged-lab-canary\n\n",
+  "cross_schema_read_before": "SELECT * FROM FWM_GUARD.ISOLATION_CANARY\n                        *\nERROR at line 1:\nORA-00942: table or view \"FWM_GUARD\".\"ISOLATION_CANARY\" does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/\n\n\n\ncommand terminated with exit code 174\n",
+  "database_after": "IDENTITY=FWM_LAB,FREEPDB1,FWM_LAB\nTABLE=FWM_ACCEPTANCE_PROBE\nTABLE=flyway_schema_history\nPROBE=1,isolated-oracle-free-acceptance\nHISTORY=1,1,V1__isolated_lab_probe.sql,1\n\n",
+  "observer_after": "GUARD=1,unchanged-lab-canary\nGRANT=CREATE SESSION\nGRANT=CREATE TABLE\nAPPLICATION_OBJECT=FWM_GUARD,SYS_C008717,INDEX\nAPPLICATION_OBJECT=FWM_GUARD,ISOLATION_CANARY,TABLE\nAPPLICATION_OBJECT=FWM_LAB,SYS_C008728,INDEX\nAPPLICATION_OBJECT=FWM_LAB,flyway_schema_history_pk,INDEX\nAPPLICATION_OBJECT=FWM_LAB,flyway_schema_history_s_idx,INDEX\nAPPLICATION_OBJECT=FWM_LAB,FWM_ACCEPTANCE_PROBE,TABLE\nAPPLICATION_OBJECT=FWM_LAB,flyway_schema_history,TABLE\n\n",
+  "cross_schema_read_after": "SELECT * FROM FWM_GUARD.ISOLATION_CANARY\n                        *\nERROR at line 1:\nORA-00942: table or view \"FWM_GUARD\".\"ISOLATION_CANARY\" does not exist\nHelp: https://docs.oracle.com/error-help/db/ora-00942/\n\n\n\ncommand terminated with exit code 174\n",
+  "manager_api": {
+    "readiness": {
+      "ready": true,
+      "version": "13.10.3",
+      "integrity": "verified",
+      "dependency": "bundled_java_and_oracle_jdbc_available",
+      "blockers": []
+    },
+    "target": {
+      "id": "oracle-free-disposable-lab",
+      "name": "Isolated Oracle Free lab (local Kubernetes tunnel)",
+      "environment": "DEV",
+      "host": "127.0.0.1",
+      "port": 11521,
+      "service": "FREEPDB1",
+      "transport": "TCP",
+      "active": true,
+      "created_at": "2026-10-16T02:42:57Z"
+    },
+    "schema": {
+      "id": "OJ_T29y1FtQ7kLcwshkVg5",
+      "target_id": "oracle-free-disposable-lab",
+      "name": "FWM_LAB",
+      "history_schema": "FWM_LAB",
+      "history_table": "flyway_schema_history",
+      "default_account_id": "",
+      "active": true,
+      "created_at": "2026-10-16T02:42:57Z"
+    },
+    "account": {
+      "id": "DyZpms4AuVCba0hIJFhkbz",
+      "target_id": "oracle-free-disposable-lab",
+      "name": "FWM_LAB limited execution account",
+      "username": "FWM_LAB",
+      "active": true,
+      "schema_ids": [
+        "OJ_T29y1FtQ7kLcwshkVg5"
+      ],
+      "credential": {
+        "configured": true,
+        "version": 1,
+        "updated_at": "2026-10-16T02:42:57Z",
+        "revoked": false
+      },
+      "created_at": "2026-10-16T02:42:57Z"
+    },
+    "grants": [
+      {
+        "target_id": "oracle-free-disposable-lab",
+        "schema_id": "OJ_T29y1FtQ7kLcwshkVg5",
+        "read": true,
+        "operate": true,
+        "prod": false
+      }
+    ],
+    "artifact": {
+      "id": "38-oqcJUAM8YKwcshemAkQ",
+      "target_id": "oracle-free-disposable-lab",
+      "schema_id": "OJ_T29y1FtQ7kLcwshkVg5",
+      "uploader_id": "T-07_V3SBssUXI4Ieecvej",
+      "uploader_kind": "user",
+      "uploader_name": "oracle-lab-admin",
+      "created_at": "2026-10-16T02:43:14Z",
+      "sha256": "7761a6dbb504f4b871523dd38d7cc2866389149a8f2d50bcbcc3e4ac3d45d40e",
+      "total_bytes": 518,
+      "files": [
+        {
+          "path": "V1__isolated_lab_probe.sql",
+          "sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+          "kind": "versioned",
+          "version": "1",
+          "size": 518
+        }
+      ],
+      "inputs": [
+        {
+          "name": "V1__isolated_lab_probe.sql",
+          "sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+          "size": 518
+        }
+      ]
+    },
+    "preflight_failure": {
+      "ready": false,
+      "local_ready": true,
+      "live_status": "NOT_VERIFIED",
+      "blockers": [
+        {
+          "code": "ORACLE_NOT_VERIFIED",
+          "message": "Flyway info did not verify Oracle connectivity/history. Inspect the authenticated diagnostics."
+        }
+      ],
+      "warnings": [
+        "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+        "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+      ],
+      "runtime_version": "13.10.3",
+      "files": [
+        {
+          "path": "V1__isolated_lab_probe.sql",
+          "sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+          "kind": "versioned",
+          "version": "1",
+          "size": 518
+        }
+      ],
+      "diagnostics": [
+        {
+          "name": "network",
+          "status": "NOT_VERIFIED",
+          "detail": "Flyway has not verified this condition."
+        },
+        {
+          "name": "authentication",
+          "status": "NOT_VERIFIED",
+          "detail": "Flyway has not verified this condition."
+        },
+        {
+          "name": "service",
+          "status": "NOT_VERIFIED",
+          "detail": "Flyway has not verified this condition."
+        },
+        {
+          "name": "schema_access",
+          "status": "NOT_VERIFIED",
+          "detail": "Flyway has not verified this condition."
+        },
+        {
+          "name": "history",
+          "status": "NOT_VERIFIED",
+          "detail": "Flyway has not verified this condition."
+        },
+        {
+          "name": "migration_privileges",
+          "status": "NOT_VERIFIED",
+          "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation."
+        }
+      ],
+      "info": {
+        "error": {
+          "cause": null,
+          "errorCode": "ERROR",
+          "message": "No Flyway database plugin found to handle ********. See https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=reference/usage/database-troubleshooting for troubleshooting"
+        }
+      }
+    },
+    "final_registration": {
+      "database-targets": {
+        "data": [
+          {
+            "id": "oracle-free-disposable-lab",
+            "name": "Isolated Oracle Free lab (local Kubernetes tunnel)",
+            "environment": "DEV",
+            "host": "127.0.0.1",
+            "port": 11521,
+            "service": "FREEPDB1",
+            "transport": "TCP",
+            "active": true,
+            "created_at": "2026-10-16T02:42:57Z"
+          }
+        ]
+      },
+      "database-targets/oracle-free-disposable-lab/schemas": {
+        "data": [
+          {
+            "id": "OJ_T29y1FtQ7kLcwshkVg5",
+            "target_id": "oracle-free-disposable-lab",
+            "name": "FWM_LAB",
+            "history_schema": "FWM_LAB",
+            "history_table": "flyway_schema_history",
+            "default_account_id": "",
+            "active": true,
+            "created_at": "2026-10-16T02:42:57Z"
+          }
+        ]
+      },
+      "migration-runs": {
+        "data": []
+      },
+      "runtime": {
+        "data": {
+          "ready": true,
+          "version": "13.10.3",
+          "integrity": "verified",
+          "dependency": "bundled_java_and_oracle_jdbc_available",
+          "blockers": []
+        }
+      }
+    }
+  },
+  "cli": {
+    "info-before": {
+      "command": "info",
+      "exit_code": 0,
+      "stdout": "{\n  \"allSchemasEmpty\" : true,\n  \"database\" : \"\",\n  \"exception\" : null,\n  \"flywayVersion\" : \"13.10.3\",\n  \"licenseFailed\" : false,\n  \"migrations\" : [ {\n    \"category\" : \"Versioned\",\n    \"description\" : \"isolated lab probe\",\n    \"executionTime\" : 0,\n    \"filepath\" : \"/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql\",\n    \"installedBy\" : \"\",\n    \"installedOnUTC\" : \"\",\n    \"rawVersion\" : \"1\",\n    \"shouldExecuteExpression\" : null,\n    \"state\" : \"Pending\",\n    \"type\" : \"SQL\",\n    \"undoFilepath\" : \"\",\n    \"undoable\" : \"No\",\n    \"version\" : \"1\"\n  } ],\n  \"operation\" : \"info\",\n  \"schemaName\" : \"FWM_LAB\",\n  \"schemaVersion\" : null,\n  \"timestamp\" : \"2026-10-16T09:46:49.283366315+07:00\"\n}\n",
+      "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+      "json": {
+        "allSchemasEmpty": true,
+        "database": "",
+        "exception": null,
+        "flywayVersion": "13.10.3",
+        "licenseFailed": false,
+        "migrations": [
+          {
+            "category": "Versioned",
+            "description": "isolated lab probe",
+            "executionTime": 0,
+            "filepath": "/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql",
+            "installedBy": "",
+            "installedOnUTC": "",
+            "rawVersion": "1",
+            "shouldExecuteExpression": null,
+            "state": "Pending",
+            "type": "SQL",
+            "undoFilepath": "",
+            "undoable": "No",
+            "version": "1"
+          }
+        ],
+        "operation": "info",
+        "schemaName": "FWM_LAB",
+        "schemaVersion": null,
+        "timestamp": "2026-10-16T09:46:49.283366315+07:00"
+      },
+      "runtime_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c"
+    },
+    "validate-before": {
+      "command": "validate",
+      "exit_code": 0,
+      "stdout": "{\n  \"allErrorMessages\" : \"\",\n  \"database\" : \"FREEPDB1\",\n  \"errorDetails\" : null,\n  \"flywayVersion\" : \"13.10.3\",\n  \"invalidMigrations\" : [ ],\n  \"operation\" : \"validate\",\n  \"validateCount\" : 1,\n  \"validationSuccessful\" : true,\n  \"warnings\" : [ ]\n}\n",
+      "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+      "json": {
+        "allErrorMessages": "",
+        "database": "FREEPDB1",
+        "errorDetails": null,
+        "flywayVersion": "13.10.3",
+        "invalidMigrations": [],
+        "operation": "validate",
+        "validateCount": 1,
+        "validationSuccessful": true,
+        "warnings": []
+      },
+      "runtime_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c"
+    },
+    "migrate": {
+      "command": "migrate",
+      "exit_code": 0,
+      "stdout": "{\n  \"database\" : \"FREEPDB1\",\n  \"databaseType\" : \"Oracle\",\n  \"exception\" : null,\n  \"flywayVersion\" : \"13.10.3\",\n  \"initialSchemaVersion\" : null,\n  \"licenseFailed\" : false,\n  \"migrations\" : [ {\n    \"category\" : \"Versioned\",\n    \"description\" : \"isolated lab probe\",\n    \"executionTime\" : 350,\n    \"filepath\" : \"/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql\",\n    \"type\" : \"SQL\",\n    \"version\" : \"1\"\n  } ],\n  \"migrationsExecuted\" : 1,\n  \"operation\" : \"migrate\",\n  \"schemaName\" : \"FWM_LAB\",\n  \"success\" : true,\n  \"targetSchemaVersion\" : \"1\",\n  \"timestamp\" : \"2026-10-16T09:47:38.521525302+07:00\",\n  \"totalMigrationTime\" : 350,\n  \"warnings\" : [ ]\n}\n",
+      "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+      "json": {
+        "database": "FREEPDB1",
+        "databaseType": "Oracle",
+        "exception": null,
+        "flywayVersion": "13.10.3",
+        "initialSchemaVersion": null,
+        "licenseFailed": false,
+        "migrations": [
+          {
+            "category": "Versioned",
+            "description": "isolated lab probe",
+            "executionTime": 350,
+            "filepath": "/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql",
+            "type": "SQL",
+            "version": "1"
+          }
+        ],
+        "migrationsExecuted": 1,
+        "operation": "migrate",
+        "schemaName": "FWM_LAB",
+        "success": true,
+        "targetSchemaVersion": "1",
+        "timestamp": "2026-10-16T09:47:38.521525302+07:00",
+        "totalMigrationTime": 350,
+        "warnings": []
+      },
+      "runtime_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c"
+    },
+    "info-after": {
+      "command": "info",
+      "exit_code": 0,
+      "stdout": "{\n  \"allSchemasEmpty\" : false,\n  \"database\" : \"\",\n  \"exception\" : null,\n  \"flywayVersion\" : \"13.10.3\",\n  \"licenseFailed\" : false,\n  \"migrations\" : [ {\n    \"category\" : \"Versioned\",\n    \"description\" : \"isolated lab probe\",\n    \"executionTime\" : 350,\n    \"filepath\" : \"/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql\",\n    \"installedBy\" : \"FWM_LAB\",\n    \"installedOnUTC\" : \"2026-10-16T02:47:39.371777Z\",\n    \"rawVersion\" : \"1\",\n    \"shouldExecuteExpression\" : null,\n    \"state\" : \"Success\",\n    \"type\" : \"SQL\",\n    \"undoFilepath\" : \"\",\n    \"undoable\" : \"No\",\n    \"version\" : \"1\"\n  } ],\n  \"operation\" : \"info\",\n  \"schemaName\" : \"FWM_LAB\",\n  \"schemaVersion\" : \"1\",\n  \"timestamp\" : \"2026-10-16T09:48:11.751277839+07:00\"\n}\n",
+      "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+      "json": {
+        "allSchemasEmpty": false,
+        "database": "",
+        "exception": null,
+        "flywayVersion": "13.10.3",
+        "licenseFailed": false,
+        "migrations": [
+          {
+            "category": "Versioned",
+            "description": "isolated lab probe",
+            "executionTime": 350,
+            "filepath": "/tmp/flyway-oracle-acceptance-20261016/direct-cli/sql/V1__isolated_lab_probe.sql",
+            "installedBy": "FWM_LAB",
+            "installedOnUTC": "2026-10-16T02:47:39.371777Z",
+            "rawVersion": "1",
+            "shouldExecuteExpression": null,
+            "state": "Success",
+            "type": "SQL",
+            "undoFilepath": "",
+            "undoable": "No",
+            "version": "1"
+          }
+        ],
+        "operation": "info",
+        "schemaName": "FWM_LAB",
+        "schemaVersion": "1",
+        "timestamp": "2026-10-16T09:48:11.751277839+07:00"
+      },
+      "runtime_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c"
+    },
+    "validate-after": {
+      "command": "validate",
+      "exit_code": 0,
+      "stdout": "{\n  \"allErrorMessages\" : \"\",\n  \"database\" : \"FREEPDB1\",\n  \"errorDetails\" : null,\n  \"flywayVersion\" : \"13.10.3\",\n  \"invalidMigrations\" : [ ],\n  \"operation\" : \"validate\",\n  \"validateCount\" : 1,\n  \"validationSuccessful\" : true,\n  \"warnings\" : [ ]\n}\n",
+      "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+      "json": {
+        "allErrorMessages": "",
+        "database": "FREEPDB1",
+        "errorDetails": null,
+        "flywayVersion": "13.10.3",
+        "invalidMigrations": [],
+        "operation": "validate",
+        "validateCount": 1,
+        "validationSuccessful": true,
+        "warnings": []
+      },
+      "runtime_manifest_sha256": "a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c"
+    }
+  },
+  "config_escaping_reproduction": "{\n  \"error\" : {\n    \"errorCode\" : \"ERROR\",\n    \"message\" : \"No Flyway database plugin found to handle ********. See https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=reference/usage/database-troubleshooting for troubleshooting\",\n    \"cause\" : null\n  }\n}\n\nPicked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+  "migration_sql": "-- Only this independently confirmed disposable lab schema is permitted.\nBEGIN\n  IF SYS_CONTEXT('USERENV','SESSION_USER') <> 'FWM_LAB' OR\n     SYS_CONTEXT('USERENV','CURRENT_SCHEMA') <> 'FWM_LAB' OR\n     SYS_CONTEXT('USERENV','CON_NAME') <> 'FREEPDB1' THEN\n    RAISE_APPLICATION_ERROR(-20001, 'Unexpected lab destination');\n  END IF;\nEND;\n/\nCREATE TABLE FWM_ACCEPTANCE_PROBE (ID NUMBER PRIMARY KEY, MARKER VARCHAR2(64) NOT NULL);\nINSERT INTO FWM_ACCEPTANCE_PROBE VALUES (1, 'isolated-oracle-free-acceptance');\nCOMMIT;\n",
+  "migration_sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+  "local_processes_stopped": [
+    {
+      "pid": 127379,
+      "process": "loopback tunnel"
+    },
+    {
+      "pid": 127796,
+      "process": "local manager"
+    }
+  ],
+  "private_state_directory": "/tmp/flyway-oracle-acceptance-20261016",
+  "retained_resources": "Dedicated namespace, one database StatefulSet, one 4Gi PVC and ClusterIP remain for review. Temporary manager and loopback port-forward stopped.",
+  "operations_not_run": [
+    "repair",
+    "clean",
+    "reset",
+    "public ingress",
+    "NodePort",
+    "LoadBalancer",
+    "manager job submission",
+    "Oracle19c tests",
+    "Oracle21c tests"
+  ]
+}

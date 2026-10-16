@@ -19,3 +19,20 @@ Findings below are based on Redgate's official documentation, accessed 2026-10-1
 No Flyway binary is bundled or downloaded by this package. No license is bypassed. Distribution pinning and actual 19c/21c compatibility require an approved, pinned Flyway distribution and separately authorized disposable Oracle labs.
 
 The info adapter accepts documented `filepath` and `installedOnUTC` fields and normalizes temporary location prefixes only for evidence comparison; it preserves raw JSON. Explicit pending-migration allowance is necessary before migrate; it does not excuse checksum/type/name changes or missing/future/failed history. The exact chosen CLI/Java/JDBC combination still requires live acceptance.
+
+## Configuration serialization and real-loader regression
+
+The private command configuration is now `flyway.toml`, with connection values in `[environments.runtime]` and the unchanged engine policy in `[flyway]` / `[flyway.oracle]`. Values use quoted TOML basic strings, with explicit DEL/control escapes. URL, username and password also use Flyway's documented `!{...}` whole-value literal escape, preventing resolver evaluation and surrounding-whitespace removal. Credentials remain in mode-0600 files inside mode-0700 ephemeral workspaces, never argv or inherited environment variables. The semantic configuration snapshot and complete distribution verification remain unchanged.
+
+This fixes a reproduced Flyway 13.10.3 integration failure: its legacy `.conf` loader trims lines and doubles backslashes before Java property parsing, so Java-properties escaping turns `jdbc:oracle:...` into a value containing literal backslashes. Merely removing URL escapes would still mishandle credential backslashes, whitespace and resolver-like text. The [resolver escaping contract](https://documentation.red-gate.com/flyway/flyway-concepts/environments/resolvers) and the pinned runtime's actual configuration loader are the basis for the TOML serializer.
+
+Flyway 13.10.3's literal-value resolver does not recognize the wrapper when a value contains CR, LF, NEL (U+0085), LS (U+2028) or PS (U+2029). Such credentials fail closed before any process is launched; NUL and invalid UTF-8 are also rejected. Other Unicode, leading/trailing spaces, tabs, punctuation, quotes, backslashes, resolver-like text, DEL and supported control characters are checked through the real loader. Unsupported unquoted Oracle usernames remain rejected by the existing identifier rules. Legacy escaped diagnostics remain masked alongside raw and TOML-escaped secrets.
+
+To run the optional **offline** compatibility regression with an approved local runtime and a JDK compiler available on PATH:
+
+```sh
+FLYWAY_TEST_RUNTIME_CONFIG=/private/runtime-config.json \
+  GOTOOLCHAIN=go1.26.9 go test ./internal/flyway -run TestActualFlywayConfigurationLoader -v
+```
+
+The JSON file contains a `flyway` object with the usual executable/version/manifest pin. The test first checks the complete distribution and exact version, compiles a small Java probe in a temporary directory, and invokes the actual Flyway `ModernConfigurationManager` with synthetic credentials. It compares password digests and parsed connection/policy fields, including disabled SQL*Plus. It performs no download, database connection or SQL. Without the opt-in variable it skips; ordinary serialization, fail-closed validation, private-invocation and redaction regressions still run. Live Oracle Free application acceptance is recorded in [the lab report](../../docs/oracle-free-lab-acceptance.md); Oracle 19c/21c acceptance remains independent.
