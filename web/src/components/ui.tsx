@@ -206,8 +206,8 @@ export function Field({
 export function SearchBox({
   value,
   onChange,
-  placeholder = "Tìm kiếm…",
-  label = "Tìm kiếm",
+  placeholder = "Search…",
+  label = "Search",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -265,7 +265,7 @@ export function Modal({
             <Button
               variant="ghost"
               className="dialog-close"
-              aria-label="Đóng hộp thoại"
+              aria-label="Close dialog"
             >
               <X size={18} />
             </Button>
@@ -316,7 +316,7 @@ export function DataTable<T>({
   columns,
   pageSize = 6,
   initialSort = [],
-  empty = "Không có kết quả phù hợp. Hãy thay đổi hoặc đặt lại bộ lọc.",
+  empty = "No matching results. Change or reset the filters.",
   getRowClass,
   pagination: controlledPagination,
   onPaginationChange,
@@ -352,9 +352,9 @@ export function DataTable<T>({
   return (
     <div className="data-table">
       <label className="mobile-sort">
-        Sắp xếp{" "}
+        Sort{" "}
         <select
-          aria-label="Sắp xếp bảng"
+          aria-label="Sort table"
           value={
             sorting[0]
               ? `${sorting[0].id}:${sorting[0].desc ? "desc" : "asc"}`
@@ -365,7 +365,7 @@ export function DataTable<T>({
             setSorting(id ? [{ id, desc: direction === "desc" }] : []);
           }}
         >
-          <option value="">Mặc định</option>
+          <option value="">Default</option>
           {table
             .getAllLeafColumns()
             .filter((c) => c.getCanSort())
@@ -385,7 +385,7 @@ export function DataTable<T>({
         className="table-scroll"
         tabIndex={0}
         role="region"
-        aria-label="Bảng dữ liệu"
+        aria-label="Data table"
       >
         <table>
           <thead>
@@ -397,7 +397,7 @@ export function DataTable<T>({
                       <button
                         className="sort-button"
                         onClick={header.column.getToggleSortingHandler()}
-                        aria-label={`Sắp xếp ${String(header.column.columnDef.header)}`}
+                        aria-label={`Sort ${String(header.column.columnDef.header)}`}
                       >
                         {flexRender(
                           header.column.columnDef.header,
@@ -444,40 +444,40 @@ export function DataTable<T>({
       {data.length === 0 && (
         <div className="empty" role="status">
           <Search size={24} />
-          <strong>Không tìm thấy dữ liệu</strong>
+          <strong>No records found</strong>
           <p>{empty}</p>
         </div>
       )}
       <div className="pagination">
         <label>
-          Hiển thị{" "}
+          Show{" "}
           <select
-            aria-label="Số dòng mỗi trang"
+            aria-label="Rows per page"
             value={table.getState().pagination.pageSize}
             onChange={(e) => table.setPageSize(Number(e.target.value))}
           >
             {[4, 6, 10, 20].map((n) => (
               <option value={n} key={n}>
-                {n} / trang
+                {n} / page
               </option>
             ))}
           </select>
         </label>
         <span>
-          {data.length} kết quả · Trang{" "}
+          {data.length} results · Page{" "}
           {table.getState().pagination.pageIndex + 1} /{" "}
           {Math.max(1, table.getPageCount())}
         </span>
         <div className="actions">
           <Button
-            aria-label="Trang trước"
+            aria-label="Previous page"
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
           >
             <ChevronLeft size={16} />
           </Button>
           <Button
-            aria-label="Trang sau"
+            aria-label="Next page"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
           >

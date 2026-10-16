@@ -1,0 +1,66 @@
+{
+  "captured_date": "2026-10-16",
+  "verification_type": "single read-only preflight against the existing Oracle Free acceptance lab",
+  "source": {
+    "database": "/tmp/flyway-wizard-acceptance/manager-data-v2/manager.db",
+    "snapshot_method": "SQLite online backup API opened from a read-only source connection",
+    "original_database_opened_writable": false,
+    "isolated_clone_data_dir": "/tmp/flyway-stitch-oracle-wizard-p43pryeu/data",
+    "isolated_manager_config": "/tmp/flyway-stitch-oracle-wizard-p43pryeu/config.json",
+    "manager_address": "127.0.0.1:18191",
+    "runtime_version": "13.10.3",
+    "runtime_ready": true
+  },
+  "oracle": {
+    "namespace": "flyway-manager-oracle-lab",
+    "service": "oracle-free",
+    "pod": "oracle-free-0",
+    "pod_ready_before_check": true,
+    "local_forward": "127.0.0.1:11521",
+    "target": "127.0.0.1:11521/FREEPDB1",
+    "execution_username": "FWM_WZ260_A"
+  },
+  "existing_run": {
+    "id": "mbnbuUylHj9OHY8kiWBe0k",
+    "status": "SUCCEEDED",
+    "target_id": "connection-Q63lhtn5hPNGuFzEh32uEk",
+    "schema_id": "wUzF8Ywdvv4DbgOVnXiegy",
+    "execution_account_id": "tO42tXYRvm9w5OBTstz5zn",
+    "artifact_id": "Dv8H3fCrwiyrw-3n1ihT3d"
+  },
+  "existing_artifact": {
+    "sha256": "51ebbdc60dd6f1768d7d37c3e9f338a4be44a8bdecbc17dec2a9efecdbae9903",
+    "total_bytes": 435,
+    "files": [
+      {
+        "path": "V1__wizard_acceptance.sql",
+        "sha256": "8f3f2e99750ed719f2b0e0fcef87a3dd27838603e54f90ed7c9291c04659b2c9",
+        "version": "1",
+        "bytes": 435
+      }
+    ]
+  },
+  "preflight": {
+    "request_count": 1,
+    "http_status": 200,
+    "ready": false,
+    "live_status": "FAILED",
+    "diagnostics": {
+      "network": "VERIFIED",
+      "authentication": "VERIFIED",
+      "service": "VERIFIED",
+      "schema_access": "NOT_VERIFIED",
+      "history": "INSPECTED",
+      "migration_privileges": "NOT_VERIFIED",
+      "database_identity": "NOT_VERIFIED"
+    },
+    "blockers": [
+      {
+        "code": "HISTORY_UNSAFE",
+        "message": "Flyway history has unsupported or unsafe state \"Future\" for "
+      }
+    ],
+    "warnings": []
+  },
+  "outcome": "The API connected to the intended Oracle service and authenticated the existing FWM_WZ260_A account. Preflight failed closed after Flyway reported a Future history state; the returned script name was empty, so the specific history row was not identified by this evidence. No migration submission, migrate, repair, SQL change, or Oracle history change was performed. The original manager database was not modified."
+}

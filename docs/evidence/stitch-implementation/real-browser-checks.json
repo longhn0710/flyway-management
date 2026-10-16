@@ -1,0 +1,249 @@
+{
+  "base": "http://127.0.0.1:18189",
+  "provenance": "Current working-tree frontend; isolated SQLite backup; real stored Oracle run/history/logs. No migration/preflight was submitted by this browser script.",
+  "checks": [
+    {
+      "name": "home",
+      "route": "/home",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Operations overview"
+    },
+    {
+      "name": "instances",
+      "route": "/instances",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Instances"
+    },
+    {
+      "name": "overview",
+      "route": "/instances/oracle-free-disposable-lab",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Isolated Oracle Free lab (local Kubernetes tunnel)"
+    },
+    {
+      "name": "schemas",
+      "route": "/instances/oracle-free-disposable-lab/schemas",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Isolated Oracle Free lab (local Kubernetes tunnel)"
+    },
+    {
+      "name": "connections",
+      "route": "/instances/oracle-free-disposable-lab/connections",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Isolated Oracle Free lab (local Kubernetes tunnel)"
+    },
+    {
+      "name": "history",
+      "route": "/instances/oracle-free-disposable-lab/history",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Isolated Oracle Free lab (local Kubernetes tunnel)"
+    },
+    {
+      "name": "run-details",
+      "route": "/runs/q0GHoTkZokkhjB2KF0_SJF",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Run details"
+    },
+    {
+      "name": "migration",
+      "route": "/runs/new?target_id=oracle-free-disposable-lab",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Run migration"
+    },
+    {
+      "name": "users",
+      "route": "/access/users",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Users & Permissions"
+    },
+    {
+      "name": "service-accounts",
+      "route": "/access/service-accounts",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Service Accounts & API Tokens"
+    },
+    {
+      "name": "settings",
+      "route": "/settings/authentication",
+      "width": 1440,
+      "viewport": 1440,
+      "heading": "Authentication providers"
+    },
+    {
+      "name": "home",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "instances",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "overview",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "schemas",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "connections",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "history",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "run-details",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "migration",
+      "width": 390,
+      "pageWidth": 390,
+      "fit": true
+    },
+    {
+      "name": "home",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "instances",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "overview",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "schemas",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "connections",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "history",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "run-details",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "migration",
+      "width": 768,
+      "pageWidth": 768,
+      "fit": true
+    },
+    {
+      "name": "home",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "instances",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "overview",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "schemas",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "connections",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "history",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "run-details",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "name": "migration",
+      "width": 1024,
+      "pageWidth": 1024,
+      "fit": true
+    },
+    {
+      "engine": "PostgreSQL",
+      "submitDisabled": true
+    },
+    {
+      "engine": "MySQL",
+      "submitDisabled": true
+    },
+    {
+      "engine": "SQL Server",
+      "submitDisabled": true
+    },
+    {
+      "keyboardFocusInsideDialog": true
+    },
+    {
+      "unsavedPreserved": true
+    },
+    {
+      "focusRestored": true
+    }
+  ],
+  "errors": []
+}

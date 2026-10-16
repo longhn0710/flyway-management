@@ -172,10 +172,12 @@ async function bootstrap(page: Page, baseURL: string) {
   ).trim();
   await page.goto(`${baseURL}/login`);
   await page.getByLabel("Setup token").fill(setupToken);
-  await page.getByLabel("Tên hiển thị").fill("Execution UI Administrator");
-  await page.getByLabel("Tên đăng nhập").fill(admin.username);
-  await page.getByLabel("Mật khẩu mới").fill(admin.password);
-  await page.getByRole("button", { name: "Tạo quản trị viên" }).click();
+  await page.getByLabel("Display name").fill("Execution UI Administrator");
+  await page.getByLabel("Username").fill(admin.username);
+  await page
+    .getByRole("textbox", { name: "New password" })
+    .fill(admin.password);
+  await page.getByRole("button", { name: "Create administrator" }).click();
   await expect(page).toHaveURL(/\/runs$/);
 }
 
@@ -304,7 +306,10 @@ async function submitReviewedRun(page: Page) {
     .getByRole("dialog")
     .getByRole("button", { name: "Submit migration" })
     .click();
-  await expect(page).toHaveURL(/\/runs\/[^/]+$/);
+  await expect(page).toHaveURL(
+    (url) =>
+      /^\/runs\/[^/]+$/.test(url.pathname) && url.pathname !== "/runs/new",
+  );
   return decodeURIComponent(
     new URL(page.url()).pathname.split("/").at(-1) ?? "",
   );
@@ -436,6 +441,13 @@ test("controlled fake Flyway completes the real UI workflow through download and
     await expect(
       page.getByRole("heading", { name: "Searchable logs" }),
     ).toBeVisible();
+    const pause = page.getByRole("button", { name: "Pause follow" });
+    await expect(pause).toHaveAttribute("aria-pressed", "true");
+    await pause.click();
+    const follow = page.getByRole("button", { name: "Follow logs" });
+    await expect(follow).toHaveAttribute("aria-pressed", "false");
+    await follow.click();
+    await expect(pause).toHaveAttribute("aria-pressed", "true");
     await page.getByPlaceholder("Search logs…").fill("migrationsExecuted");
     await expect(
       page.locator(".log-viewer").getByText(/1 migration executed/),
@@ -462,7 +474,18 @@ test("controlled fake Flyway completes the real UI workflow through download and
     await page.goto(`${server.baseURL}/runs`);
     await page.getByLabel("Run status").selectOption("SUCCEEDED");
     await page.getByLabel("Database target").selectOption(target.id);
-    await expect(page.getByRole("link", { name: runID })).toBeVisible();
+    const history = (
+      await (
+        await page.request.get(
+          `${server.baseURL}/api/v1/migration-runs?limit=20&offset=0&status=SUCCEEDED&target_id=${encodeURIComponent(target.id)}`,
+        )
+      ).json()
+    ).data as { id: string; run_id: string }[];
+    const recorded = history.find((run) => run.id === runID);
+    expect(recorded).toBeDefined();
+    await expect(
+      page.getByRole("link", { name: recorded!.run_id || recorded!.id }),
+    ).toBeVisible();
     await expect(page.getByText("Fake Flyway UAT").last()).toBeVisible();
   } finally {
     await context.close();

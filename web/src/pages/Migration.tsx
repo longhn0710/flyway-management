@@ -51,8 +51,12 @@ function MigrationPage() {
   const identity = useIdentity();
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [targetID, setTargetID] = useState("");
-  const [schemaID, setSchemaID] = useState("");
+  const [targetID, setTargetID] = useState(
+    () => new URLSearchParams(window.location.search).get("target_id") ?? "",
+  );
+  const [schemaID, setSchemaID] = useState(
+    () => new URLSearchParams(window.location.search).get("schema_id") ?? "",
+  );
   const [accountID, setAccountID] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
@@ -82,7 +86,9 @@ function MigrationPage() {
   const selectedTargetID =
     (targets.data?.some((t) => t.id === targetID && t.active)
       ? targetID
-      : targets.data?.find((t) => t.active)?.id) || "";
+      : targetID
+        ? ""
+        : targets.data?.find((t) => t.active)?.id) || "";
   const schemas = useQuery({
     queryKey: ["migration-schemas", selectedTargetID],
     queryFn: () =>
@@ -94,7 +100,9 @@ function MigrationPage() {
   const selectedSchemaID =
     (schemas.data?.some((s) => s.id === schemaID && s.active)
       ? schemaID
-      : schemas.data?.find((s) => s.active)?.id) || "";
+      : schemaID
+        ? ""
+        : schemas.data?.find((s) => s.active)?.id) || "";
   const accounts = useQuery({
     queryKey: ["stream-accounts", selectedTargetID, selectedSchemaID],
     queryFn: () =>
@@ -232,9 +240,46 @@ function MigrationPage() {
     <>
       <PageHeading
         title="Run migration"
-        description="Upload an immutable SQL bundle, validate it against Flyway, then submit one target-schema stream."
-        breadcrumb="Operations / Run migration"
+        description="Choose an Oracle instance and allowed schema, upload an immutable SQL bundle, review Flyway preflight, then queue the migration."
+        breadcrumb="Instances / Run migration"
       />
+      <ol className="wizard-steps migration-steps" aria-label="Migration steps">
+        <li aria-current={!preflight ? "step" : undefined}>
+          <span>1</span>Destination & upload
+        </li>
+        <li aria-current={preflight ? "step" : undefined}>
+          <span>2</span>Flyway info & review
+        </li>
+        <li>
+          <span>3</span>Execute & monitor
+        </li>
+      </ol>
+      <div className="destination-strip" aria-label="Migration destination">
+        <Badge>Oracle · Currently implemented</Badge>
+        {target && (
+          <>
+            <Badge tone={target.environment === "PROD" ? "error" : "accent"}>
+              {target.environment}
+            </Badge>
+            <strong>{target.name}</strong>
+            <code>
+              {target.host}:{target.port}/{target.service}
+            </code>
+          </>
+        )}
+        <span>
+          Schema:{" "}
+          <strong className="mono">
+            {schema?.name || "Choose allowed schema"}
+          </strong>
+        </span>
+        <span>
+          Account:{" "}
+          <strong className="mono">
+            {selectedAccount?.username || "Choose execution account"}
+          </strong>
+        </span>
+      </div>
       {runtime.isError ? (
         <Notice tone="error" title="Flyway runtime unavailable">
           Runtime readiness could not be read.{" "}
@@ -251,6 +296,18 @@ function MigrationPage() {
           dependencies {runtime.data.dependency}
         </p>
       ) : null}
+      {targets.isSuccess && targetID && !selectedTargetID && (
+        <Notice tone="warning">
+          The requested instance is inactive or unavailable to your execution
+          grants. Choose an authorized destination.
+        </Notice>
+      )}
+      {schemas.isSuccess && schemaID && !selectedSchemaID && (
+        <Notice tone="warning">
+          The requested schema is inactive or unavailable. Choose an allowed
+          schema.
+        </Notice>
+      )}
       {!canSubmit && (
         <Notice tone="warning">
           Your role can view migration information but cannot upload or submit
@@ -265,7 +322,11 @@ function MigrationPage() {
         </Notice>
       )}
       <div className="layout-editor">
-        <Panel title="1 · Select stream">
+        <Panel title="1 · Destination">
+          <p className="small muted">
+            Oracle is the only operational engine today. PostgreSQL, MySQL, and
+            SQL Server are future options and cannot be selected for migration.
+          </p>
           {targets.isPending ? (
             <div
               className="skeleton"
@@ -279,7 +340,7 @@ function MigrationPage() {
             </Notice>
           ) : null}
           <div className="form-grid">
-            <Field label="Database target" required>
+            <Field label="Oracle instance" required>
               <select
                 value={selectedTargetID}
                 onChange={(e) => {
@@ -296,12 +357,12 @@ function MigrationPage() {
                   .filter((t) => t.active)
                   .map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} · {t.environment} · {t.service}
+                      Oracle · {t.name} · {t.environment} · {t.service}
                     </option>
                   ))}
               </select>
             </Field>
-            <Field label="Target schema" required>
+            <Field label="Allowed schema" required>
               <select
                 value={selectedSchemaID}
                 onChange={(e) => {
@@ -382,7 +443,7 @@ function MigrationPage() {
           )}
         </Panel>
         <Panel
-          title="2 · Upload migration bundle"
+          title="2 · Migration files"
           aside={artifact && <Badge>{artifact.id}</Badge>}
         >
           <p className="muted">
@@ -543,7 +604,10 @@ function MigrationPage() {
                   <Status
                     value={preflight.ready ? preflight.live_status : "BLOCKED"}
                   />
-                  <span>Runtime {preflight.runtime_version || "unknown"}</span>
+                  <span>
+                    Flyway {preflight.runtime_version || "version unknown"} ·
+                    Oracle destination
+                  </span>
                 </div>
                 {preflight.blockers.map((b, i) => (
                   <Notice key={`${b.code}-${i}`} tone="error" title={b.code}>
@@ -690,13 +754,14 @@ function MigrationPage() {
           </Notice>
           <dl className="key-values">
             <div>
-              <dt>Environment / database</dt>
+              <dt>Engine / instance</dt>
               <dd>
-                {target?.environment} · {target?.name} · {target?.service}
+                Oracle · {target?.environment} · {target?.name} ·{" "}
+                {target?.service}
               </dd>
             </div>
             <div>
-              <dt>Target schema</dt>
+              <dt>Allowed schema</dt>
               <dd>{schema?.name}</dd>
             </div>
             <div>

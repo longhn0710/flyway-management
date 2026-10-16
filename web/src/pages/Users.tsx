@@ -64,13 +64,13 @@ export default function Users() {
         <Link to="/access/service-accounts">Service Accounts</Link>.
       </Notice>
       <PageHeading
-        title="Người dùng & Quyền truy cập"
+        title="Users & Permissions"
         description="Manage local and externally bound identities, base roles, and database/schema grants."
-        breadcrumb="Quản trị hệ thống / Người dùng & Quyền"
+        breadcrumb="Administration / Users & Permissions"
         actions={
           <>
             <Link className="button secondary" to="/settings/authentication">
-              Nhà cung cấp xác thực
+              Authentication settings
             </Link>
             <Button
               variant="primary"
@@ -78,7 +78,7 @@ export default function Users() {
               onClick={() => setCreate(true)}
             >
               <Plus size={16} />
-              Thêm người dùng
+              Add user
             </Button>
           </>
         }
@@ -93,12 +93,12 @@ export default function Users() {
         <SearchBox
           value={q}
           onChange={setQ}
-          placeholder="Tìm theo tên, username hoặc ID…"
+          placeholder="Search name, username or ID…"
         />
         <select
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
-          aria-label="Nguồn người dùng"
+          aria-label="Identity provider"
         >
           <option value="">All providers</option>
           <option value="local">Local</option>
@@ -108,7 +108,7 @@ export default function Users() {
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          aria-label="Vai trò"
+          aria-label="Role"
         >
           <option value="">All roles</option>
           {(["Admin", "Operator", "Viewer"] as Role[]).map((item) => (
@@ -118,7 +118,7 @@ export default function Users() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          aria-label="Trạng thái"
+          aria-label="Status"
         >
           <option value="">All statuses</option>
           <option value="true">Active</option>
@@ -130,7 +130,7 @@ export default function Users() {
           title={
             <>
               <UsersIcon size={17} />
-              Danh sách người dùng
+              Users
             </>
           }
           aside={

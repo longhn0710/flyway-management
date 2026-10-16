@@ -1,0 +1,122 @@
+Flyway Manager Stitch implementation checks
+Date: 2026-10-16
+Source checkout: 0f9bbe6 plus the working tree at verification time
+
+Backend checks
+--------------
+Passed with Go 1.26.9:
+
+- go test ./cmd/... ./internal/... ./web
+- go vet ./cmd/... ./internal/... ./web
+- go test -race ./cmd/... ./internal/... ./web
+- govulncheck ./cmd/... ./internal/... ./web
+
+govulncheck reported zero vulnerabilities in reachable code and zero in
+imported packages. It reported one advisory in a required module that the code
+does not appear to call. Frontend build, lint, browser, npm audit, and full CI
+checks were not part of this backend verification; the coordinating agent is
+running those after the interface changes.
+
+Oracle and persisted run evidence
+---------------------------------
+Read-only Kubernetes inspection found `flyway-manager-oracle-lab/oracle-free-0`
+Running/Ready and its `oracle-data` PVC Bound. No Kubernetes resource was
+changed. A temporary local `kubectl port-forward` exposed the correct
+`flyway-manager-oracle-lab/oracle-free` Service on loopback port 11521. The
+separate pre-existing port-forward on 15431 was left untouched.
+
+The source acceptance database at `/tmp/flyway-oracle-acceptance-20261016` was
+not opened writable. SQLite's online backup API produced a private snapshot in
+`/tmp/flyway-review-isolated-tzij3arb/data/manager.db`; only the matching master
+key was copied to that isolated data directory. The manager was built from the
+current Go source and started on loopback at `127.0.0.1:18189`, using
+`/tmp/flyway-review-isolated-tzij3arb/config.json`. All API checks below used
+the clone. The private config points Flyway at the existing approved local
+13.10.3 runtime.
+
+Clone login and runtime readiness succeeded; runtime reported Flyway 13.10.3
+ready. Read-only API requests returned HTTP 200 for the persisted run
+`q0GHoTkZokkhjB2KF0_SJF`, its details, logs, and artifact metadata. The run is
+`SUCCEEDED`, has 11 log rows, and refers to artifact
+`yH2EEwBpkqfF42WhmkLn1R` (SHA-256
+`193ab7ed30de66e637a7d17fa1d6bc501345218989671dc7856782aa4bc0d9cc`). Its
+stored preflight is `VERIFIED` and ready. The run snapshot names target
+`127.0.0.1:11521/FREEPDB1` and execution user `FWM_LAB`.
+
+Two initial POST `/api/v1/migration-preflight` requests on the clone used an
+incorrect tunnel to `oracle-db/oracle-free`, not the namespace recorded by the
+acceptance evidence. They returned `ORACLE_AUTHENTICATION_FAILED` and are not
+valid evidence about the saved credential against the intended lab. After
+checking the documented namespace, one read-only preflight used the exact
+stored target/schema/account/artifact tuple through
+`flyway-manager-oracle-lab/oracle-free`. It returned HTTP 200 with
+`ready=false` and `HISTORY_UNSAFE`. This code path is reached only after
+Flyway `info` succeeds, so the intended lab accepted a connection and returned
+history evidence; at least one history state was unsupported by the current
+safety check. The detailed offending state was not captured, and no further
+preflight was issued. The stored successful preflight and completed run remain
+available as historical evidence; current readiness on the correct lab remains
+blocked by `HISTORY_UNSAFE`. No migration submission, migrate, repair, or other
+SQL-changing command was issued. No Oracle migration or history row was
+changed by this verification.
+
+Backend/API mapping and safety boundaries
+-----------------------------------------
+The reviewed screen-to-API contract is in
+`docs/design/oracle-console/api-mapping.md`; the implementation routes are in
+`internal/httpapi/phase2.go`, `internal/httpapi/connections.go`, and
+`internal/httpapi/execution.go`. Oracle currently uses the established target,
+connection, registered-schema and execution-account APIs. PostgreSQL, MySQL,
+and SQL Server have no engine discriminator, driver/runtime, discovery, or
+execution API. They must remain disabled future options. Other unavailable
+capabilities relevant to the Stitch pages are:
+
+- No aggregate dashboard/metrics endpoint or collection total counts.
+- No `/migration-runs/{id}/events` SSE route; status and searchable logs use
+  polling APIs.
+- No persisted last-connection-test timestamp or general live database catalog
+  endpoint for regular schema users; the connection wizard returns transient
+  Oracle discovery, then re-discovers during atomic save.
+- No standalone endpoint for saving discovery results or for creating only a
+  target in the connection wizard flow.
+
+The existing server remains the authorization authority. Browser cookie
+mutations require a matching Origin and CSRF token; roles and target/schema
+grants scope operational access, including Admin execution and explicit PROD
+authorization. Oracle credentials have write-only APIs and remain encrypted in
+SQLite. The allowlist restricts application choices but grants no Oracle
+privileges. Migration input is immutable; preflight precedes explicit
+confirmation and idempotent asynchronous submission. Queued work rechecks
+authorization and frozen configuration. Cancellation applies only while
+queued; it does not roll back SQL. Run history/log/repair APIs expose recorded
+evidence, with no generic retry or arbitrary SQL endpoint. These controls and
+the existing SQLite migration history were left unchanged.
+
+Final coordinating verification
+------------------------------
+The coordinator subsequently captured the precise response through the actual
+browser workflow, downloading the original V1/V2 artifact bytes and staging
+an identical package in the isolated copy. This made one additional read-only
+preflight, with zero migration queue requests. Network, authentication and
+service were VERIFIED. Oracle already has applied versions 3 and 4, while the
+old package resolves versions 1 and 2 only. Flyway reported the newer applied
+versions as Future; HISTORY_UNSAFE and validation failure correctly prevented
+execution. No repair or SQL was attempted. See:
+  stitch-implementation/real-oracle-preflight.json
+  stitch-implementation/real-oracle-preflight-1440.png
+
+A separate private online backup of the existing wizard acceptance database
+was tested once with its exact completed FWM_WZ260_A run/artifact. Connectivity
+and authentication were VERIFIED, but that old artifact also encountered
+Future history and was refused. See:
+  stitch-implementation/real-oracle-wizard-preflight.json
+
+These are artifact/history compatibility refusals, not credential failures or
+a reason to change existing SQL/history. A fresh successful (ready=true)
+Oracle preflight has not been demonstrated in this implementation session.
+The original V4 bytes were not present in the checked local acceptance
+artifacts and were not reconstructed. Clean live readiness remains a review
+limitation requiring an approved complete artifact for current history.
+
+Final frontend, CI and security results are recorded in
+stitch-implementation/ci.log and docs/stitch-implementation-review.md.

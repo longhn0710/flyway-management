@@ -590,7 +590,7 @@ export function DatabaseDetails() {
   );
 }
 
-function SchemaConfiguration({
+export function SchemaConfiguration({
   targetID,
   schema,
   canManage,
@@ -612,6 +612,7 @@ function SchemaConfiguration({
       apiList<ExecutionAccount>(
         `/execution-accounts?target_id=${encodeURIComponent(targetID)}`,
       ),
+    enabled: canManage,
   });
   const save = useMutation({
     mutationFn: () =>
@@ -655,25 +656,31 @@ function SchemaConfiguration({
             onChange={(event) => setHistoryTable(event.target.value)}
           />
         </Field>
-        <Field label="Default execution account">
-          <select
-            value={defaultAccountID}
-            disabled={!canManage || accounts.isPending}
-            onChange={(event) => setDefaultAccountID(event.target.value)}
-          >
-            <option value="">No default account</option>
-            {(accounts.data ?? [])
-              .filter(
-                (account) =>
-                  account.active && account.schema_ids.includes(schema.id),
-              )
-              .map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({account.username})
-                </option>
-              ))}
-          </select>
-        </Field>
+        {canManage ? (
+          <Field label="Default execution account">
+            <select
+              value={defaultAccountID}
+              disabled={!canManage || accounts.isPending}
+              onChange={(event) => setDefaultAccountID(event.target.value)}
+            >
+              <option value="">No default account</option>
+              {(accounts.data ?? [])
+                .filter(
+                  (account) =>
+                    account.active && account.schema_ids.includes(schema.id),
+                )
+                .map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.username})
+                  </option>
+                ))}
+            </select>
+          </Field>
+        ) : (
+          <p className="small muted">
+            Default execution account metadata requires Admin.
+          </p>
+        )}
         <label className="check">
           <input
             type="checkbox"
@@ -697,7 +704,12 @@ function SchemaConfiguration({
           An execution account can be shared between schemas. Flyway schema
           configuration is not an Oracle privilege boundary.
         </p>
-        {accounts.isPending ? (
+        {!canManage ? (
+          <Notice>
+            Execution account metadata requires Admin. Use Run Migration to view
+            accounts available to you.
+          </Notice>
+        ) : accounts.isPending ? (
           <div className="skeleton" role="status" />
         ) : accounts.isError ? (
           <Notice tone="error">{accounts.error.message}</Notice>
@@ -726,7 +738,9 @@ function SchemaConfiguration({
               </div>
             ))
         )}
-        <Link to="/execution-accounts">Manage execution accounts →</Link>
+        <Link to={`/instances/${encodeURIComponent(targetID)}/connections`}>
+          Manage execution accounts →
+        </Link>
       </Panel>
     </div>
   );

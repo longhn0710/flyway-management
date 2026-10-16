@@ -220,16 +220,18 @@ export default function Credentials() {
     </>
   );
 }
-function CredentialEditor({
+export function CredentialEditor({
   account,
   targetID,
   canManage,
   onSaved,
+  lifecycleOnly = false,
 }: {
   account: ExecutionAccount;
   targetID: string;
   canManage: boolean;
   onSaved: () => void;
+  lifecycleOnly?: boolean;
 }) {
   const [name, setName] = useState(account.name);
   const [username, setUsername] = useState(account.username);
@@ -310,7 +312,7 @@ function CredentialEditor({
           required
           maxLength={120}
           value={username}
-          disabled={!canManage}
+          disabled={!canManage || lifecycleOnly}
           onChange={(event) => setUsername(event.target.value)}
         />
       </Field>
@@ -341,7 +343,7 @@ function CredentialEditor({
                 </>
               }
               checked={schemaIDs.includes(schema.id)}
-              disabled={!canManage}
+              disabled={!canManage || lifecycleOnly}
               onChange={(checked) => toggleSchema(schema.id, checked)}
             />
           ))
@@ -356,57 +358,76 @@ function CredentialEditor({
           update.isPending ||
           !name.trim() ||
           !username.trim() ||
-          schemaIDs.length === 0
+          (!lifecycleOnly && schemaIDs.length === 0)
         }
         onClick={() => update.mutate()}
       >
-        Save mappings
+        {lifecycleOnly ? "Save account" : "Save mappings"}
       </Button>
-      <div className="inset">
-        <h3>
-          {account.credential.configured
-            ? "Replace credential"
-            : "Set credential"}{" "}
-          <Badge>Write only</Badge>
-        </h3>
-        <Notice>
-          No saved password can be retrieved. Enter a new Oracle credential to
-          encrypt and replace it.
-        </Notice>
-        <Field label="New Oracle password" required>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            disabled={!canManage}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </Field>
-        <Field label="Confirm new password" required>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            disabled={!canManage}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-          />
-        </Field>
-        {replaceCredential.isError && (
-          <Notice tone="error">{replaceCredential.error.message}</Notice>
-        )}
-        <div className="actions">
-          <Button
-            variant="primary"
-            disabled={
-              !canManage ||
-              !password ||
-              password !== confirmPassword ||
-              replaceCredential.isPending
-            }
-            onClick={() => replaceCredential.mutate()}
-          >
-            {replaceCredential.isPending ? "Encrypting…" : "Save credential"}
-          </Button>
+      {!lifecycleOnly && (
+        <div className="inset">
+          <h3>
+            {account.credential.configured
+              ? "Replace credential"
+              : "Set credential"}{" "}
+            <Badge>Write only</Badge>
+          </h3>
+          <Notice>
+            No saved password can be retrieved. Enter a new Oracle credential to
+            encrypt and replace it.
+          </Notice>
+          <Field label="New Oracle password" required>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              disabled={!canManage}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+          <Field label="Confirm new password" required>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              disabled={!canManage}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+          </Field>
+          {replaceCredential.isError && (
+            <Notice tone="error">{replaceCredential.error.message}</Notice>
+          )}
+          <div className="actions">
+            <Button
+              variant="primary"
+              disabled={
+                !canManage ||
+                !password ||
+                password !== confirmPassword ||
+                replaceCredential.isPending
+              }
+              onClick={() => replaceCredential.mutate()}
+            >
+              {replaceCredential.isPending ? "Encrypting…" : "Save credential"}
+            </Button>
+            {account.credential.configured && !account.credential.revoked && (
+              <Button
+                variant="danger"
+                disabled={!canManage}
+                onClick={() => setConfirmRevoke(true)}
+              >
+                Revoke credential
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      {lifecycleOnly && (
+        <>
+          <Notice>
+            Rotate credentials and change allowed schemas through Edit account /
+            Allowed schemas. Discovery is rechecked before atomic save.
+          </Notice>
           {account.credential.configured && !account.credential.revoked && (
             <Button
               variant="danger"
@@ -416,8 +437,8 @@ function CredentialEditor({
               Revoke credential
             </Button>
           )}
-        </div>
-      </div>
+        </>
+      )}
       <Modal
         open={confirmRevoke}
         onOpenChange={setConfirmRevoke}

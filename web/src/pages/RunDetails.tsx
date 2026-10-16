@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/contracts";
@@ -43,6 +43,8 @@ export default function RunDetails() {
   const [q, setQ] = useState("");
   const [channel, setChannel] = useState("");
   const [offset, setOffset] = useState(0);
+  const [follow, setFollow] = useState(true);
+  const logViewer = useRef<HTMLDivElement>(null);
   const run = useQuery({
     queryKey: ["run", id],
     queryFn: () => api<Run>(`/migration-runs/${encodeURIComponent(id)}`),
@@ -65,6 +67,18 @@ export default function RunDetails() {
       ),
     refetchInterval: run.data && !settled(run.data) ? 2000 : false,
   });
+  useEffect(() => {
+    if (!follow || !logs.data || q || channel) return;
+    if (logs.data.length === 100 && run.data && !settled(run.data)) {
+      const timer = window.setInterval(
+        () => setOffset((current) => current + 100),
+        1000,
+      );
+      return () => window.clearInterval(timer);
+    }
+    if (logViewer.current)
+      logViewer.current.scrollTop = logViewer.current.scrollHeight;
+  }, [follow, logs.data, logs.dataUpdatedAt, q, channel, run.data]);
   const artifacts = useQuery({
     queryKey: ["run-artifacts", id],
     queryFn: () =>
@@ -113,13 +127,13 @@ export default function RunDetails() {
         title="Run details"
         breadcrumb={
           <>
-            <Link to="/runs">Run History</Link> / <code>{id}</code>
+            <Link to="/runs">Migration history</Link> / <code>{id}</code>
           </>
         }
         description="Execution evidence, migration outcome and repair are shown as separate results."
         actions={
           <Link className="button secondary" to="/runs">
-            Back to Run History
+            Back to history
           </Link>
         }
       />
@@ -136,7 +150,7 @@ export default function RunDetails() {
             <section className="run-overview" aria-label="Run status">
               <div className="run-overview-heading">
                 <div>
-                  <p className="eyebrow">Migration run</p>
+                  <p className="eyebrow">Oracle migration run</p>
                   <h2 className="mono">{row.run_id || row.id}</h2>
                 </div>
                 <Status value={row.status} />
@@ -231,14 +245,14 @@ export default function RunDetails() {
             >
               <dl className="key-values">
                 <div>
-                  <dt>Environment / target</dt>
+                  <dt>Engine / instance</dt>
                   <dd>
-                    {row.target?.environment} · {row.target?.name} ·{" "}
+                    Oracle · {row.target?.environment} · {row.target?.name} ·{" "}
                     {row.target?.service}
                   </dd>
                 </div>
                 <div>
-                  <dt>Target schema / history</dt>
+                  <dt>Allowed schema / Flyway history</dt>
                   <dd>
                     {row.schema?.name} · {row.schema?.history_schema}.
                     {row.schema?.history_table}
@@ -426,7 +440,13 @@ export default function RunDetails() {
               title="Searchable logs"
               className="run-details-logs"
               aside={
-                <div className="inline">
+                <div className="inline wrap">
+                  <Button
+                    aria-pressed={follow}
+                    onClick={() => setFollow(!follow)}
+                  >
+                    {follow ? "Pause follow" : "Follow logs"}
+                  </Button>
                   <select
                     aria-label="Log channel"
                     value={channel}
@@ -451,6 +471,13 @@ export default function RunDetails() {
                 </div>
               }
             >
+              <p className="small muted" role="status">
+                {logs.dataUpdatedAt
+                  ? `Last refreshed ${new Date(logs.dataUpdatedAt).toLocaleTimeString()}`
+                  : "Loading logs…"}{" "}
+                · {follow ? "Following latest entries" : "Follow paused"}.
+                Connection loss does not stop server execution.
+              </p>
               {logs.isPending ? (
                 <div className="skeleton" role="status" />
               ) : logs.isError ? (
@@ -462,7 +489,13 @@ export default function RunDetails() {
                 <p className="empty">No log entries match.</p>
               ) : (
                 <>
-                  <div className="log-viewer">
+                  <div
+                    className="log-viewer"
+                    ref={logViewer}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Migration log entries"
+                  >
                     {logs.data.map((line) => {
                       const execution = (executions.data ?? []).find(
                         (item) =>
@@ -483,6 +516,7 @@ export default function RunDetails() {
                           key={`${line.sequence}-${line.created_at}`}
                         >
                           <span className="muted">
+                            #{line.sequence} ·{" "}
                             {new Date(line.created_at).toLocaleTimeString()}
                           </span>
                           <Badge>{line.channel}</Badge>
@@ -508,13 +542,19 @@ export default function RunDetails() {
                   <div className="inline">
                     <Button
                       disabled={offset === 0}
-                      onClick={() => setOffset(Math.max(0, offset - 100))}
+                      onClick={() => {
+                        setFollow(false);
+                        setOffset(Math.max(0, offset - 100));
+                      }}
                     >
                       Previous
                     </Button>
                     <Button
                       disabled={logs.data.length < 100}
-                      onClick={() => setOffset(offset + 100)}
+                      onClick={() => {
+                        setFollow(false);
+                        setOffset(offset + 100);
+                      }}
                     >
                       Next
                     </Button>

@@ -98,9 +98,9 @@ export default function History() {
   return (
     <>
       <PageHeading
-        title="Run History"
-        breadcrumb="Operations / Run History"
-        description="Search and review migration runs across the target-schema streams you can access."
+        title="Migration history"
+        breadcrumb="Instances / Migration history"
+        description="Review migration and repair outcomes across the Oracle instances and allowed schemas you can access."
         actions={
           <Link className="button primary" to="/runs/new">
             Run migration
@@ -138,7 +138,7 @@ export default function History() {
             setParams(next);
           }}
         >
-          <option value="">All targets</option>
+          <option value="">All instances</option>
           {targetRows.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
@@ -151,7 +151,7 @@ export default function History() {
           disabled={!filters.target_id}
           onChange={(e) => set("schema_id", e.target.value)}
         >
-          <option value="">All schemas</option>
+          <option value="">All allowed schemas</option>
           {(schemas.data ?? []).map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -207,8 +207,8 @@ export default function History() {
                 <tr>
                   <th>Run ID</th>
                   <th>Status</th>
-                  <th>Environment / target</th>
-                  <th>Schema</th>
+                  <th>Engine / instance</th>
+                  <th>Allowed schema</th>
                   <th>Execution account</th>
                   <th>Artifact</th>
                   <th>Actor / source</th>
@@ -234,7 +234,7 @@ export default function History() {
                       {run.target?.environment}
                       <br />
                       <span className="muted">
-                        {run.target?.name || run.target_id}
+                        Oracle · {run.target?.name || run.target_id}
                       </span>
                     </td>
                     <td>{run.schema?.name || run.schema_id}</td>

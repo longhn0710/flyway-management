@@ -92,10 +92,10 @@ async function bootstrap(page: Page, baseURL: string) {
   const token = (await readFile(status.bootstrap_token_file, "utf8")).trim();
   await page.goto(`${baseURL}/login`);
   await page.getByLabel("Setup token").fill(token);
-  await page.getByLabel("Tên hiển thị").fill("Connection Wizard Admin");
-  await page.getByLabel("Tên đăng nhập").fill(admin.username);
-  await page.getByLabel("Mật khẩu mới").fill(admin.password);
-  await page.getByRole("button", { name: "Tạo quản trị viên" }).click();
+  await page.getByLabel("Display name").fill("Connection Wizard Admin");
+  await page.getByLabel("Username").fill(admin.username);
+  await page.getByLabel("New password").fill(admin.password);
+  await page.getByRole("button", { name: "Create administrator" }).click();
   await expect(page).toHaveURL(/\/runs$/);
 }
 
@@ -223,8 +223,8 @@ test("connection wizard discovers, filters, constrains, and atomically saves sch
       await fulfillJSON(route, savedConnection(), 201);
     });
 
-    await page.goto(`${server.baseURL}/databases`);
-    await page.getByRole("button", { name: "Add connection" }).click();
+    await page.goto(`${server.baseURL}/instances`);
+    await page.getByRole("button", { name: "Add instance" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Oracle username")).toBeVisible();
     await expect(dialog.getByLabel("Oracle password")).toBeVisible();
@@ -283,24 +283,34 @@ test("connection wizard discovers, filters, constrains, and atomically saves sch
     await dialog.getByRole("checkbox", { name: /OWN_SCHEMA/ }).uncheck();
     await dialog.getByRole("checkbox", { name: /APP_SCHEMA_01/ }).check();
     await dialog.getByRole("checkbox", { name: /UNCERTAIN_SCHEMA/ }).check();
-    const save = dialog.getByRole("button", { name: "Save connection" });
-    await expect(save).toBeDisabled();
-    await dialog
-      .getByRole("checkbox", { name: /I acknowledge that selected schemas/ })
-      .check();
+    const review = dialog.getByRole("button", { name: "Review selection" });
+    await expect(review).toBeDisabled();
+    const ackUnknown = dialog.getByRole("checkbox", {
+      name: /I acknowledge that selected schemas/,
+    });
+    await ackUnknown.check();
+    await expect(review).toBeEnabled();
     const grantCurrent = dialog.getByRole("checkbox", {
       name: /Authorize my Flyway Manager user to run migrations/,
     });
     await expect(grantCurrent).not.toBeChecked();
+    await grantCurrent.check();
     const grantProd = dialog.getByRole("checkbox", {
       name: /Explicitly authorize my user for PROD execution/,
     });
-    await expect(grantProd).toHaveCount(0);
-    await grantCurrent.check();
     await expect(grantProd).toBeVisible();
     await expect(grantProd).not.toBeChecked();
     await grantProd.check();
+    await review.click();
+    await expect(dialog).toContainText("Review & register instance");
+    const save = dialog.getByRole("button", { name: "Save instance" });
     await expect(save).toBeEnabled();
+    await expect(dialog).toContainText("Current-user operate grants: Requested.");
+    await expect(dialog).toContainText("Explicit PROD grant: Requested");
+    await dialog.getByRole("button", { name: "Back", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: "Review selection" })).toBeEnabled();
+    await dialog.getByRole("button", { name: "Review selection" }).click();
+    await expect(dialog.getByRole("button", { name: "Save instance" })).toBeEnabled();
     await save.click();
     await expect(dialog).toHaveCount(0);
 
@@ -339,8 +349,8 @@ test("empty discovery leaves schema selection disabled", async ({
     await page.route("**/api/v1/connections/test", (route) =>
       fulfillJSON(route, discoveryResult([])),
     );
-    await page.goto(`${server.baseURL}/databases`);
-    await page.getByRole("button", { name: "Add connection" }).click();
+    await page.goto(`${server.baseURL}/instances`);
+    await page.getByRole("button", { name: "Add instance" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Connection display name").fill("Empty Oracle");
     await dialog.getByLabel("Host").fill("oracle.invalid");
@@ -362,7 +372,7 @@ test("empty discovery leaves schema selection disabled", async ({
       }),
     ).not.toBeChecked();
     await expect(
-      dialog.getByRole("button", { name: "Save connection" }),
+      dialog.getByRole("button", { name: "Review selection" }),
     ).toBeDisabled();
   } finally {
     await context.close().catch(() => undefined);
@@ -386,8 +396,8 @@ test("authentication failure stays on connection step and shows discovery error"
         error_message: "Oracle rejected these credentials.",
       }),
     );
-    await page.goto(`${server.baseURL}/databases`);
-    await page.getByRole("button", { name: "Add connection" }).click();
+    await page.goto(`${server.baseURL}/instances`);
+    await page.getByRole("button", { name: "Add instance" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Connection display name").fill("Rejected Oracle");
     await dialog.getByLabel("Host").fill("oracle.invalid");
@@ -396,7 +406,7 @@ test("authentication failure stays on connection step and shows discovery error"
     await dialog.getByLabel("Oracle password").fill("wrong-secret");
     await dialog.getByRole("button", { name: "Test Connection" }).click();
     await expect(dialog).toContainText("Oracle rejected these credentials.");
-    await expect(dialog).toContainText("Step 1 of 3");
+    await expect(dialog).toContainText("Step 1 of 4");
     await expect(
       dialog.getByRole("button", { name: "Test Connection" }),
     ).toBeVisible();
@@ -463,14 +473,11 @@ test("saved connection account can be edited and its credential rotated", async 
       ),
     );
 
-    await page.goto(`${server.baseURL}/databases/e2e-db`);
+    await page.goto(`${server.baseURL}/instances/e2e-db/connections`);
     await page
-      .getByRole("button", { name: "Edit connection / Test" })
+      .getByRole("button", { name: "Edit account / Allowed schemas" })
       .click({ timeout: 5_000 });
     const dialog = page.getByRole("dialog");
-    await dialog
-      .getByRole("button", { name: "Use saved connection account" })
-      .click();
     await expect(dialog.getByLabel("Oracle username")).toHaveValue("APP_LOGIN");
     await expect(dialog.getByLabel("Oracle username")).toHaveAttribute(
       "readonly",
@@ -488,7 +495,8 @@ test("saved connection account can be edited and its credential rotated", async 
     await expect(
       dialog.getByRole("checkbox", { name: /OWN_SCHEMA/ }),
     ).toBeChecked();
-    await dialog.getByRole("button", { name: "Save connection" }).click();
+    await dialog.getByRole("button", { name: "Review selection" }).click();
+    await dialog.getByRole("button", { name: "Save instance" }).click();
     await expect(dialog).toHaveCount(0);
 
     expect(savePayload).toMatchObject({
@@ -532,24 +540,56 @@ test("non-admin users cannot start the connection wizard", async ({
     );
     expect(created.status()).toBe(201);
 
-    await page.getByRole("button", { name: "Đăng xuất" }).click();
+    await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/login$/);
     await page.goto(`${server.baseURL}/login`);
-    await page.getByLabel("Tên đăng nhập").fill(operator.username);
-    await page
-      .getByRole("textbox", { name: "Mật khẩu" })
-      .fill(operator.password);
-    await page.getByRole("button", { name: "Đăng nhập vào console" }).click();
+    await page.getByLabel("Username").fill(operator.username);
+    await page.getByRole("textbox", { name: "Password" }).fill(operator.password);
+    await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/runs$/);
     await page.goto(`${server.baseURL}/databases`);
     await expect(
-      page.getByRole("button", { name: "Add connection" }),
+      page.getByRole("button", { name: "Add instance" }),
     ).toBeDisabled();
     await expect(
       page.getByText(
         "Read-only view. Target and schema administration requires Admin.",
       ),
     ).toBeVisible();
+  } finally {
+    await context.close().catch(() => undefined);
+    await stopIsolatedServer(server);
+  }
+});
+
+test("future engine preview disables connection actions and sends no API request", async ({
+  browser,
+}) => {
+  const server = await startIsolatedServer();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const requests: string[] = [];
+  try {
+    await bootstrap(page, server.baseURL);
+    await page.route("**/api/v1/connections**", async (route) => {
+      requests.push(route.request().url());
+      await route.continue();
+    });
+    await page.goto(`${server.baseURL}/instances`);
+    await page.getByRole("button", { name: "Add instance" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Database engine").selectOption("PostgreSQL");
+    await expect(dialog).toContainText("Future engine");
+    await expect(
+      dialog.getByRole("textbox", { name: "Host", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      dialog.getByRole("button", { name: "Test Connection" }),
+    ).toBeDisabled();
+    await expect(
+      dialog.getByRole("button", { name: "Save instance" }),
+    ).toHaveCount(0);
+    expect(requests).toEqual([]);
   } finally {
     await context.close().catch(() => undefined);
     await stopIsolatedServer(server);

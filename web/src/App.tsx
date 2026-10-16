@@ -6,8 +6,13 @@ import Login from "./pages/Login";
 import History from "./pages/History";
 import Migration, { Review } from "./pages/Migration";
 import RunDetails from "./pages/RunDetails";
-import Databases, { DatabaseDetails } from "./pages/Databases";
-import Credentials from "./pages/Credentials";
+import Instances, {
+  InstanceDetails,
+  LegacyInstance,
+  SchemaCatalog,
+  Overview,
+} from "./pages/Instances";
+
 import Users from "./pages/Users";
 import ServiceAccounts from "./pages/ServiceAccounts";
 import Authentication from "./pages/Authentication";
@@ -40,9 +45,9 @@ class ErrorBoundary extends Component<
   render() {
     return this.state.error ? (
       <div className="fatal-error">
-        <h1>Không thể hiển thị màn hình</h1>
-        <Notice tone="error">Tải lại trang để thử khôi phục giao diện.</Notice>
-        <Button onClick={() => location.reload()}>Tải lại</Button>
+        <h1>Unable to display this page</h1>
+        <Notice tone="error">Reload the page to recover the console.</Notice>
+        <Button onClick={() => location.reload()}>Reload</Button>
       </div>
     ) : (
       this.props.children
@@ -58,14 +63,28 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route element={<SessionGate />}>
               <Route element={<Shell />}>
-                <Route index element={<Navigate to="/runs" replace />} />
+                <Route index element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={<Overview />} />
+                <Route path="/instances" element={<Instances />} />
+                <Route path="/instances/:id" element={<InstanceDetails />} />
+                <Route
+                  path="/instances/:id/:section"
+                  element={<InstanceDetails />}
+                />
+                <Route path="/schemas" element={<SchemaCatalog />} />
                 <Route path="/runs" element={<History />} />
                 <Route path="/runs/new" element={<Migration />} />
                 <Route path="/runs/new/review" element={<Review />} />
                 <Route path="/runs/:id" element={<RunDetails />} />
-                <Route path="/databases" element={<Databases />} />
-                <Route path="/databases/:id" element={<DatabaseDetails />} />
-                <Route path="/execution-accounts" element={<Credentials />} />
+                <Route
+                  path="/databases"
+                  element={<Navigate to="/instances" replace />}
+                />
+                <Route path="/databases/:id" element={<LegacyInstance />} />
+                <Route
+                  path="/execution-accounts"
+                  element={<Navigate to="/instances" replace />}
+                />
                 <Route path="/access/users" element={<Users />} />
                 <Route
                   path="/access/service-accounts"
@@ -79,10 +98,10 @@ export default function App() {
                   path="*"
                   element={
                     <>
-                      <PageHeading title="Không tìm thấy trang" />
-                      <p>Đường dẫn này không có trong console.</p>
+                      <PageHeading title="Page not found" />
+                      <p>This page does not exist.</p>
                       <Link to="/runs" className="button primary">
-                        Về Lịch sử chạy
+                        Open migration history
                       </Link>
                     </>
                   }

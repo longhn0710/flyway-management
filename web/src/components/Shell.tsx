@@ -2,10 +2,11 @@ import { useState } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Home,
+  FolderTree,
   Database,
   History,
   Play,
-  KeyRound,
   Users,
   Bot,
   Settings,
@@ -19,13 +20,14 @@ import { api, clearCsrfToken, getHealth } from "../lib/contracts";
 import { useIdentity } from "../lib/identity-context";
 import { Button, Modal, KeyValues, Notice, Field, Badge } from "./ui";
 const nav = [
-  { to: "/runs", text: "Lịch sử chạy", icon: History },
-  { to: "/runs/new", text: "Chạy migration", icon: Play },
-  { to: "/databases", text: "Database & Schema", icon: Database },
-  { to: "/execution-accounts", text: "Tài khoản thực thi", icon: KeyRound },
-  { to: "/access/users", text: "Người dùng & Quyền", icon: Users },
+  { to: "/home", text: "Home", icon: Home },
+  { to: "/instances", text: "Instances", icon: Database },
+  { to: "/schemas", text: "Databases / Schemas", icon: FolderTree },
+  { to: "/runs/new", text: "Run Migration", icon: Play },
+  { to: "/runs", text: "Migration History", icon: History },
+  { to: "/access/users", text: "Users & Permissions", icon: Users },
   { to: "/access/service-accounts", text: "Service Accounts", icon: Bot },
-  { to: "/settings/authentication", text: "Cài đặt", icon: Settings },
+  { to: "/settings/authentication", text: "Settings", icon: Settings },
 ];
 export function Brand() {
   return (
@@ -34,7 +36,6 @@ export function Brand() {
         <Database size={17} />
       </span>
       <strong>Flyway Manager</strong>
-      <span className="brand-subtitle">Oracle Migration Console</span>
     </Link>
   );
 }
@@ -93,13 +94,13 @@ export function Shell() {
   return (
     <>
       <a className="skip-link" href="#main">
-        Đến nội dung chính
+        Skip to main content
       </a>
       <header className="topbar">
         <Button
           variant="ghost"
           className="mobile-menu"
-          aria-label="Mở điều hướng"
+          aria-label="Open navigation"
           onClick={() => setMenu(true)}
         >
           <Menu size={20} />
@@ -108,12 +109,12 @@ export function Shell() {
         <div className="topbar-actions">
           <Button variant="ghost" onClick={() => setHelp(true)}>
             <BookOpen size={15} />
-            <span className="desktop-only">Tài liệu</span>
+            <span className="desktop-only">Docs</span>
           </Button>
           <Button
             variant="ghost"
             onClick={() => setSystem(true)}
-            aria-label="Trạng thái hệ thống"
+            aria-label="System status"
           >
             <HeartPulse size={17} />
             <span
@@ -122,7 +123,7 @@ export function Shell() {
           </Button>
           <button
             className="user-avatar"
-            aria-label="Tài khoản và phiên"
+            aria-label="Account and sessions"
             onClick={() => setAccountOpen(true)}
           >
             {identity.user.display_name
@@ -140,7 +141,7 @@ export function Shell() {
           </div>
           <button
             className="icon-link"
-            aria-label="Đăng xuất"
+            aria-label="Sign out"
             onClick={() => logout.mutate()}
             disabled={logout.isPending}
           >
@@ -149,7 +150,8 @@ export function Shell() {
         </div>
       </header>
       <aside className="sidebar">
-        <nav aria-label="Điều hướng chính">
+        <nav aria-label="Primary navigation">
+          <span className="nav-label">Navigation</span>
           {visibleNav.map(({ to, text, icon: Icon }) => (
             <NavLink
               end={false}
@@ -167,20 +169,12 @@ export function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">
-          <span className="phase-label">PHASE 3</span>
-          <p>
-            Native Go · SQLite
-            <br />
-            React console
-          </p>
-        </div>
       </aside>
       <Modal
         open={menu}
         onOpenChange={setMenu}
-        title="Điều hướng"
-        description="Chọn màn hình trong console."
+        title="Navigation"
+        description="Choose a page."
       >
         <nav className="mobile-nav">
           {visibleNav.map(({ to, text, icon: Icon }) => (
@@ -192,55 +186,39 @@ export function Shell() {
         </nav>
       </Modal>
       <main id="main" className="main">
-        <div className="preview-banner">
-          <span>
-            <strong>Console bảo mật</strong> — Tất cả dữ liệu quản trị được tải
-            từ API và phân quyền phía máy chủ.
-          </span>
-          <Button variant="ghost" onClick={() => setSystem(true)}>
-            {health.isPending
-              ? "Đang kết nối API…"
-              : health.isError
-                ? "API mất kết nối · Thử lại"
-                : "API trực tiếp"}
-            <HeartPulse size={14} />
-          </Button>
-        </div>
         <Outlet />
       </main>
       <Modal
         open={help}
         onOpenChange={setHelp}
         title="Flyway Manager"
-        description="Hướng dẫn cho phiên bản nền tảng ứng dụng."
+        description="Database migration operations."
       >
         <p>
-          Quản lý người dùng, quyền truy cập theo target/schema, service
-          account, cấu hình xác thực và registry Oracle.
+          Manage instances, connections, schema allowlists, migration runs and
+          application access.
         </p>
-        <Notice title="Tình trạng thực thi">
-          Migration, lịch sử và log dùng API thực. Kiểm tra Flyway runtime trước
-          khi chạy. Kết nối Oracle chỉ được xác minh khi preflight liên hệ
-          database thành công.
+        <Notice title="Migration execution">
+          Select an instance and allowed schema, upload an immutable package,
+          then review live Oracle preflight before confirming execution.
         </Notice>
         <p>
-          Hướng dẫn cài đặt, cấu hình và xây dựng ứng dụng nằm trong README.md
-          của repository.
+          See the repository README for installation and operating instructions.
         </p>
-        <Button onClick={() => setHelp(false)}>Đã hiểu</Button>
+        <Button onClick={() => setHelp(false)}>Close</Button>
       </Modal>
       <Modal
         open={system}
         onOpenChange={setSystem}
-        title="Trạng thái hệ thống"
-        description="Dữ liệu trực tiếp từ Go REST API; không phải fixture."
+        title="System status"
+        description="Current application status."
       >
         {health.isPending ? (
-          <div className="skeleton" aria-label="Đang tải trạng thái" />
+          <div className="skeleton" aria-label="Loading system status" />
         ) : health.isError ? (
           <Notice tone="error">
             {health.error.message}
-            <Button onClick={() => void health.refetch()}>Thử lại</Button>
+            <Button onClick={() => void health.refetch()}>Retry</Button>
           </Notice>
         ) : (
           <KeyValues
@@ -249,36 +227,41 @@ export function Shell() {
               ["SQLite", health.data.database],
               ["Schema version", health.data.schema_version],
               ["Installation ID", <code>{health.data.installation_id}</code>],
-              ["Thực thi migration", "Chưa triển khai"],
+              [
+                "Migration execution",
+                health.data.capabilities.migration_execution
+                  ? "Enabled"
+                  : "Unavailable",
+              ],
               [
                 "Authentication",
                 health.data.capabilities.authentication
-                  ? "Đang bật"
-                  : "Chưa bật",
+                  ? "Enabled"
+                  : "Disabled",
               ],
             ]}
           />
         )}
         <Button onClick={() => setSystem(false)}>
           <X size={15} />
-          Đóng
+          Close
         </Button>
       </Modal>
       <Modal
         open={accountOpen}
         onOpenChange={setAccountOpen}
-        title="Tài khoản và phiên đăng nhập"
-        description="Phiên do máy chủ quản lý; đăng xuất sẽ thu hồi phiên hiện tại."
+        title="Account and sessions"
+        description="Manage your password and active sessions."
       >
         <KeyValues
           rows={[
-            ["Tên", identity.user.display_name],
+            ["Name", identity.user.display_name],
             ["Username", identity.user.username],
-            ["Vai trò", identity.user.role],
-            ["Hết hạn", new Date(identity.expires_at).toLocaleString()],
+            ["Role", identity.user.role],
+            ["Expires", new Date(identity.expires_at).toLocaleString()],
           ]}
         />
-        <h3>Đổi mật khẩu</h3>
+        <h3>Change password</h3>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -286,7 +269,7 @@ export function Shell() {
             password.mutate();
           }}
         >
-          <Field label="Mật khẩu hiện tại" required>
+          <Field label="Current password" required>
             <input
               required
               type="password"
@@ -295,7 +278,7 @@ export function Shell() {
               onChange={(event) => setCurrentPassword(event.target.value)}
             />
           </Field>
-          <Field label="Mật khẩu mới" required>
+          <Field label="New password" required>
             <input
               required
               minLength={12}
@@ -305,7 +288,7 @@ export function Shell() {
               onChange={(event) => setNewPassword(event.target.value)}
             />
           </Field>
-          <Field label="Xác nhận mật khẩu mới" required>
+          <Field label="Confirm new password" required>
             <input
               required
               minLength={12}
@@ -319,7 +302,7 @@ export function Shell() {
             confirmNewPassword &&
             newPassword !== confirmNewPassword && (
               <p className="form-error" role="alert">
-                Mật khẩu xác nhận chưa khớp.
+                Passwords do not match.
               </p>
             )}
           {passwordNotice && (
@@ -335,7 +318,7 @@ export function Shell() {
               newPassword !== confirmNewPassword
             }
           >
-            Cập nhật mật khẩu
+            Update password
           </Button>
         </form>
         <SessionList />
@@ -365,27 +348,27 @@ function SessionList() {
   });
   return (
     <section>
-      <h3>Phiên hoạt động</h3>
+      <h3>Active sessions</h3>
       {sessions.isPending ? (
         <div className="skeleton" role="status" />
       ) : sessions.isError ? (
         <Notice tone="error">{sessions.error.message}</Notice>
       ) : sessions.data.length === 0 ? (
-        <p className="empty">Không còn phiên hoạt động.</p>
+        <p className="empty">No active sessions.</p>
       ) : (
         sessions.data.map((session) => (
           <div className="spread wrap inset" key={session.id}>
             <span>
-              {new Date(session.created_at).toLocaleString()} · Hết hạn{" "}
+              {new Date(session.created_at).toLocaleString()} · Expires{" "}
               {new Date(session.expires_at).toLocaleString()}{" "}
-              {session.current && <Badge tone="success">Phiên hiện tại</Badge>}
+              {session.current && <Badge tone="success">Current session</Badge>}
             </span>
             <Button
               variant="danger"
               disabled={session.current || revoke.isPending}
               onClick={() => revoke.mutate(session.id)}
             >
-              Thu hồi
+              Revoke
             </Button>
           </div>
         ))

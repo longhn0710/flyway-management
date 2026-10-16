@@ -93,27 +93,25 @@ export default function Login() {
       </header>
       <main className="login-main">
         <section className="login-card">
-          <h1>
-            {isBootstrap ? "Thiết lập quản trị viên" : "Đăng nhập hệ thống"}
-          </h1>
-          <p>Quản trị danh tính, quyền truy cập và cấu hình mục tiêu Oracle.</p>
+          <h1>{isBootstrap ? "Set up administrator" : "Sign in"}</h1>
+          <p>Manage database instances, migrations and access.</p>
           {status.isPending ? (
             <div
               className="skeleton"
               role="status"
-              aria-label="Đang kiểm tra thiết lập"
+              aria-label="Checking setup"
             />
           ) : status.isError ? (
             <Notice tone="error">
-              Không tải được trạng thái xác thực: {status.error.message}{" "}
-              <Button onClick={() => void status.refetch()}>Thử lại</Button>
+              Unable to load authentication status: {status.error.message}{" "}
+              <Button onClick={() => void status.refetch()}>Retry</Button>
             </Notice>
           ) : null}
           {!isBootstrap && loginProviders.length > 1 && (
             <div
               className="tabs login-tabs"
               role="tablist"
-              aria-label="Phương thức đăng nhập"
+              aria-label="Sign-in method"
             >
               {loginProviders.map((p) => (
                 <button
@@ -127,9 +125,7 @@ export default function Login() {
                   ) : (
                     <Building2 size={15} />
                   )}{" "}
-                  {p === "local"
-                    ? "Tài khoản cục bộ"
-                    : "LDAP / Active Directory"}
+                  {p === "local" ? "Local account" : "LDAP / Active Directory"}
                 </button>
               ))}
             </div>
@@ -152,12 +148,12 @@ export default function Login() {
             >
               {isBootstrap && (
                 <>
-                  <Notice title="Thiết lập một lần">
-                    Chỉ tạo quản trị viên đầu tiên. Lấy setup token từ tệp được
-                    chỉ ra khi máy chủ khởi động:{" "}
+                  <Notice title="One-time setup">
+                    Create the first administrator. Read the setup token from
+                    the file shown at server startup:{" "}
                     <code className="break-word">
                       {status.data.bootstrap_token_file ||
-                        "đường dẫn hiển thị trong log máy chủ"}
+                        "path shown in server logs"}
                     </code>
                   </Notice>
                   <Field label="Setup token" required>
@@ -169,7 +165,7 @@ export default function Login() {
                       onChange={(e) => setSetupToken(e.target.value)}
                     />
                   </Field>
-                  <Field label="Tên hiển thị" required>
+                  <Field label="Display name" required>
                     <input
                       required
                       maxLength={120}
@@ -179,7 +175,7 @@ export default function Login() {
                   </Field>
                 </>
               )}
-              <Field label="Tên đăng nhập" required>
+              <Field label="Username" required>
                 <input
                   required
                   autoComplete="username"
@@ -189,7 +185,7 @@ export default function Login() {
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </Field>
-              <Field label={isBootstrap ? "Mật khẩu mới" : "Mật khẩu"} required>
+              <Field label={isBootstrap ? "New password" : "Password"} required>
                 <div className="password-field">
                   <input
                     required
@@ -205,7 +201,7 @@ export default function Login() {
                     variant="ghost"
                     onClick={() => setShow(!show)}
                     type="button"
-                    aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    aria-label={show ? "Hide password" : "Show password"}
                   >
                     {show ? <EyeOff size={16} /> : <Eye size={16} />}
                   </Button>
@@ -220,24 +216,24 @@ export default function Login() {
                 disabled={submit.isPending}
               >
                 {submit.isPending
-                  ? "Đang xử lý…"
+                  ? "Processing…"
                   : isBootstrap
-                    ? "Tạo quản trị viên"
-                    : "Đăng nhập vào console"}{" "}
+                    ? "Create administrator"
+                    : "Sign in"}{" "}
                 <ArrowRight size={16} />
               </Button>
             </form>
           )}
           {status.data && !isBootstrap && providers.includes("oidc") && (
             <>
-              <div className="divider">HOẶC TIẾP TỤC VỚI</div>
+              <div className="divider">OR CONTINUE WITH</div>
               <Button
                 className="full"
                 onClick={() => {
                   window.location.assign("/api/v1/auth/oidc/start");
                 }}
               >
-                <ShieldCheck size={16} /> Đăng nhập bằng SSO (OIDC)
+                <ShieldCheck size={16} /> Sign in with SSO (OIDC)
               </Button>
             </>
           )}
@@ -249,14 +245,14 @@ export default function Login() {
                 No sign-in provider is currently available.
               </Notice>
             )}
-          <Notice title={isBootstrap ? "Bảo vệ phiên" : "Đăng nhập an toàn"}>
+          <Notice title={isBootstrap ? "Session security" : "Secure sign-in"}>
             {isBootstrap
               ? "Use HTTPS for remote access. The password is stored only as a hash. The setup token is used only for initialization."
-              : "Phiên đăng nhập được quản lý phía máy chủ. Trình duyệt không lưu thông tin xác thực trong web storage."}
+              : "Sessions are managed by the server. Credentials are never stored in browser web storage."}
           </Notice>
         </section>
       </main>
-      <footer>Flyway Manager · Ứng dụng độc lập · Oracle-first</footer>
+      <footer>Flyway Manager · Database migration management</footer>
     </div>
   );
 }

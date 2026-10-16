@@ -1,0 +1,183 @@
+{
+  "provenance": "Browser against current working-tree binary and isolated copy; original artifact files downloaded byte-for-byte and restaged in clone only. Correct lab namespace. Preflight only; no queue/repair/migration.",
+  "originalRun": "q0GHoTkZokkhjB2KF0_SJF",
+  "originalArtifact": "yH2EEwBpkqfF42WhmkLn1R",
+  "originalDigest": "193ab7ed30de66e637a7d17fa1d6bc501345218989671dc7856782aa4bc0d9cc",
+  "httpStatus": 200,
+  "queueRequests": 0,
+  "result": {
+    "ready": false,
+    "local_ready": true,
+    "live_status": "FAILED",
+    "blockers": [
+      {
+        "code": "HISTORY_UNSAFE",
+        "message": "Flyway history has unsupported or unsafe state \"Future\" for "
+      }
+    ],
+    "warnings": [
+      "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+      "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+    ],
+    "runtime_version": "13.10.3",
+    "files": [
+      {
+        "path": "V1__isolated_lab_probe.sql",
+        "sha256": "4720b37c48960caa7e46385edbd8809421f59fa09918cb12727b51b7f6965602",
+        "kind": "versioned",
+        "version": "1",
+        "size": 518
+      },
+      {
+        "path": "V2__manager_lab_probe.sql",
+        "sha256": "77dfe761086f9c1a6ec6d84013884254fa017d14bfad22832f78c593f5e8c935",
+        "kind": "versioned",
+        "version": "2",
+        "size": 431
+      }
+    ],
+    "diagnostics": [
+      {
+        "name": "network",
+        "status": "VERIFIED",
+        "detail": "Flyway info contacted the configured Oracle service using the selected account."
+      },
+      {
+        "name": "authentication",
+        "status": "VERIFIED",
+        "detail": "Flyway info contacted the configured Oracle service using the selected account."
+      },
+      {
+        "name": "service",
+        "status": "VERIFIED",
+        "detail": "Flyway info contacted the configured Oracle service using the selected account."
+      },
+      {
+        "name": "schema_access",
+        "status": "NOT_VERIFIED",
+        "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege."
+      },
+      {
+        "name": "history",
+        "status": "INSPECTED",
+        "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists."
+      },
+      {
+        "name": "migration_privileges",
+        "status": "NOT_VERIFIED",
+        "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation."
+      },
+      {
+        "name": "database_identity",
+        "status": "NOT_VERIFIED",
+        "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab."
+      }
+    ],
+    "info": {
+      "allSchemasEmpty": false,
+      "database": "",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "isolated lab probe",
+          "executionTime": 350,
+          "filepath": "/tmp/flyway-review-isolated-tzij3arb/data/flyway-run-2081751103/sql/V1__isolated_lab_probe.sql",
+          "installedBy": "FWM_LAB",
+          "installedOnUTC": "2026-10-16T02:47:39.371777Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "manager lab probe",
+          "executionTime": 288,
+          "filepath": "/tmp/flyway-review-isolated-tzij3arb/data/flyway-run-2081751103/sql/V2__manager_lab_probe.sql",
+          "installedBy": "FWM_LAB",
+          "installedOnUTC": "2026-10-16T04:02:36.761067Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        },
+        {
+          "category": "Versioned",
+          "description": "manager deployed acceptance",
+          "executionTime": 29,
+          "filepath": "",
+          "installedBy": "FWM_LAB",
+          "installedOnUTC": "2026-10-15T22:44:12.368940Z",
+          "rawVersion": "3",
+          "shouldExecuteExpression": null,
+          "state": "Future",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "3"
+        },
+        {
+          "category": "Versioned",
+          "description": "manager ui probe",
+          "executionTime": 38,
+          "filepath": "",
+          "installedBy": "FWM_LAB",
+          "installedOnUTC": "2026-10-15T23:39:02.317837Z",
+          "rawVersion": "4",
+          "shouldExecuteExpression": null,
+          "state": "Future",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "4"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "FWM_LAB",
+      "schemaVersion": "4",
+      "timestamp": "2026-10-16T17:43:57.927886638+07:00"
+    },
+    "validation": {
+      "allErrorMessages": "Detected applied migration not resolved locally: 3.\nIf you removed this migration intentionally, run repair to mark the migration as deleted.\nDetected applied migration not resolved locally: 4.\nIf you removed this migration intentionally, run repair to mark the migration as deleted.",
+      "database": "FREEPDB1",
+      "errorDetails": {
+        "errorCode": "VALIDATE_ERROR",
+        "errorMessage": "Migrations have failed validation"
+      },
+      "flywayVersion": "13.10.3",
+      "invalidMigrations": [
+        {
+          "description": "manager deployed acceptance",
+          "errorDetails": {
+            "errorCode": "APPLIED_VERSIONED_MIGRATION_NOT_RESOLVED",
+            "errorMessage": "Detected applied migration not resolved locally: 3.\nIf you removed this migration intentionally, run repair to mark the migration as deleted."
+          },
+          "filepath": "",
+          "version": "3"
+        },
+        {
+          "description": "manager ui probe",
+          "errorDetails": {
+            "errorCode": "APPLIED_VERSIONED_MIGRATION_NOT_RESOLVED",
+            "errorMessage": "Detected applied migration not resolved locally: 4.\nIf you removed this migration intentionally, run repair to mark the migration as deleted."
+          },
+          "filepath": "",
+          "version": "4"
+        }
+      ],
+      "operation": "validate",
+      "validateCount": 0,
+      "validationSuccessful": false,
+      "warnings": []
+    }
+  }
+}

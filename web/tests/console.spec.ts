@@ -1,9 +1,17 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 
 let initialized = false;
 const admin = { username: "e2e-admin", password: "E2E-admin-password-2026" };
 const targets = [
+  "/home",
+  "/instances",
+  "/instances/e2e-db",
+  "/instances/e2e-db/schemas",
+  "/instances/e2e-db/connections",
+  "/instances/e2e-db/history?status=FAILED",
+  "/schemas",
   "/runs",
   "/runs/new",
   "/runs/e2e-run",
@@ -18,12 +26,10 @@ const targets = [
 test.describe.configure({ mode: "serial" });
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("Tên đăng nhập").fill(admin.username);
-  await page.getByRole("textbox", { name: "Mật khẩu" }).fill(admin.password);
-  await page.getByRole("button", { name: "Đăng nhập vào console" }).click();
-  await expect(
-    page.getByText(`${admin.username}`, { exact: true }),
-  ).toBeVisible();
+  await page.getByLabel("Username").fill(admin.username);
+  await page.getByRole("textbox", { name: "Password" }).fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/runs$/);
 }
 
 test("first-run setup is one-time; sessions are server-authoritative", async ({
@@ -41,13 +47,13 @@ test("first-run setup is one-time; sessions are server-authoritative", async ({
     await readFile(status.bootstrap_token_file, "utf8")
   ).trim();
   await page.getByLabel("Setup token").fill(setupToken);
-  await page.getByLabel("Tên hiển thị").fill("E2E Administrator");
-  await page.getByLabel("Tên đăng nhập").fill(admin.username);
-  await page.getByLabel("Mật khẩu mới").fill(admin.password);
-  await page.getByRole("button", { name: "Tạo quản trị viên" }).click();
+  await page.getByLabel("Display name").fill("E2E Administrator");
+  await page.getByLabel("Username").fill(admin.username);
+  await page.getByLabel("New password").fill(admin.password);
+  await page.getByRole("button", { name: "Create administrator" }).click();
   await expect(page).toHaveURL(/\/runs$/);
   await expect(
-    page.getByRole("heading", { name: "Run History" }),
+    page.getByRole("heading", { name: "Migration history" }),
   ).toBeVisible();
   await expect(
     page.getByText("No migration runs match these filters."),
@@ -73,7 +79,7 @@ test("first-run setup is one-time; sessions are server-authoritative", async ({
   await page.reload();
   await expect(page).toHaveURL(/\/login\?next=/);
   await login(page);
-  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/access/users?view=private");
   await expect(page).toHaveURL(/\/login\?next=/);
@@ -121,8 +127,8 @@ test("connect a database, then create and scope a user", async ({ page }) => {
       body: JSON.stringify({ data: {} }),
     });
   });
-  await page.goto("/databases");
-  await page.getByRole("button", { name: "Add connection" }).click();
+  await page.goto("/instances");
+  await page.getByRole("button", { name: "Add instance" }).click();
   const connection = page.getByRole("dialog");
   await connection.getByLabel("Connection display name").fill("E2E Oracle UAT");
   await connection.getByLabel("Environment").selectOption("UAT");
@@ -138,7 +144,8 @@ test("connect a database, then create and scope a user", async ({ page }) => {
   await expect(
     connection.getByRole("checkbox", { name: /E2E_SCHEMA/ }),
   ).toBeChecked();
-  await connection.getByRole("button", { name: "Save connection" }).click();
+  await connection.getByRole("button", { name: "Review selection" }).click();
+  await connection.getByRole("button", { name: "Save instance" }).click();
   await expect(connection).toHaveCount(0);
 
   const identity = (await (await page.request.get("/api/v1/auth/me")).json())
@@ -165,22 +172,31 @@ test("connect a database, then create and scope a user", async ({ page }) => {
     { headers, data: { name: "E2E_SCHEMA" } },
   );
   expect(registeredSchema.status()).toBe(201);
+  const registeredSchemaData = (await registeredSchema.json()).data as {
+    id: string;
+  };
+  const executionAccount = await page.request.post(
+    "/api/v1/execution-accounts",
+    {
+      headers,
+      data: {
+        target_id: "e2e-db",
+        name: "E2E_DEPLOY",
+        username: "E2E_DEPLOY",
+        password: "temporary-fixture-password",
+        schema_ids: [registeredSchemaData.id],
+      },
+    },
+  );
+  expect(executionAccount.status()).toBe(201);
   await page.reload();
   await expect(page.getByText("E2E Oracle UAT", { exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Toggle schemas E2E Oracle UAT" })
-    .click();
-  await page.getByRole("button", { name: "Register schema" }).click();
-  await page.getByLabel("Target schema name").fill("E2E_SCHEMA");
-  await page
-    .getByRole("button", { name: "Register schema", exact: true })
-    .last()
-    .click();
+  await page.goto("/instances/e2e-db/schemas");
   await expect(page.getByText("E2E_SCHEMA", { exact: true })).toBeVisible();
 
   await page.goto("/access/users");
-  await page.getByRole("button", { name: "Thêm người dùng" }).click();
-  await page.getByLabel("Provider").selectOption("local");
+  await page.getByRole("button", { name: "Add user" }).click();
+  await page.getByLabel("Provider", { exact: true }).selectOption("local");
   await page.getByLabel("Username").fill("e2e-operator");
   await page.getByLabel("Display name").last().fill("E2E Operator");
   await page.getByLabel("Initial password").fill("E2E-operator-password-2026");
@@ -199,15 +215,15 @@ test("connect a database, then create and scope a user", async ({ page }) => {
   await expect(page.getByText("E2E Operator", { exact: true })).toBeVisible();
 
   await page.goto("/login?next=%2Faccess%2Fusers");
-  await page.getByLabel("Tên đăng nhập").fill("e2e-operator");
+  await page.getByLabel("Username").fill("e2e-operator");
   await page
-    .getByRole("textbox", { name: "Mật khẩu" })
+    .getByRole("textbox", { name: "Password" })
     .fill("E2E-operator-password-2026");
-  await page.getByRole("button", { name: "Đăng nhập vào console" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/access\/users$/);
   await expect(
     page
-      .getByRole("navigation", { name: "Điều hướng chính" })
+      .getByRole("navigation", { name: "Primary navigation" })
       .getByRole("link", { name: "Người dùng & Quyền" }),
   ).toHaveCount(0);
   await expect(
@@ -315,22 +331,16 @@ test("service account grants, one-time token display, rotation and revocation", 
 test("execution account credentials are write-only and encrypted metadata is live", async ({
   page,
 }) => {
-  await page.goto("/execution-accounts");
-  await page.getByLabel("Database target").selectOption("e2e-db");
-  await page.getByRole("button", { name: "Register Oracle account" }).click();
-  await page.getByLabel("Account label").fill("E2E_DEPLOY");
-  await page.getByLabel("Oracle username").fill("E2E_DEPLOY");
-  await page.getByLabel("Oracle password").fill("temporary-fixture-password");
-  await page.getByLabel("Confirm password").fill("temporary-fixture-password");
-  await page.getByRole("checkbox", { name: /E2E_SCHEMA/ }).check();
-  await page.getByRole("button", { name: "Register account" }).click();
+  await page.goto("/instances/e2e-db/connections");
+  const accountRow = page.getByRole("row").filter({ hasText: "E2E_DEPLOY" });
+  await expect(accountRow).toContainText("Saved · version 1 (encrypted at rest)");
+  await accountRow.getByRole("button", { name: "Credential settings" }).click();
+  await expect(page.getByLabel("Oracle username")).toHaveValue("E2E_DEPLOY");
+  await expect(page.getByLabel("Oracle username")).toBeDisabled();
   await expect(
-    page.getByText("E2E_DEPLOY", { exact: true }).first(),
+    page.getByText(/rotate credentials and change allowed schemas/i),
   ).toBeVisible();
-  await expect(
-    page.getByText("Encrypted credential", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByLabel("New Oracle password")).toHaveValue("");
+  await expect(page.getByLabel("New Oracle password")).toHaveCount(0);
 });
 
 test("authentication settings show server configuration and unavailable runtime is explicit", async ({
@@ -354,13 +364,18 @@ test("authentication settings show server configuration and unavailable runtime 
   await expect(page.getByText("Resource not found.")).toBeVisible();
 });
 
-for (const width of [1440, 390]) {
-  test(`authenticated routes render without overflow at ${width}px`, async ({
-    page,
-  }) => {
+test("authenticated routes render without overflow at reviewed viewport widths", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const evidenceDir = resolve(
+    process.cwd(),
+    "../docs/evidence/stitch-implementation",
+  );
+  await mkdir(evidenceDir, { recursive: true });
+  for (const width of [1440, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/runs");
     for (const route of targets) {
       await page.goto(route);
@@ -369,14 +384,42 @@ for (const width of [1440, 390]) {
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
     }
+    await page.goto("/instances");
+    await expect(page.getByRole("heading", { name: "Instances" })).toBeVisible();
+    await page.screenshot({
+      path: resolve(evidenceDir, `instances-${width}.png`),
+      fullPage: true,
+    });
+    await page.getByRole("link", { name: "E2E Oracle UAT" }).click();
+    await expect(page).toHaveURL(/\/instances\/e2e-db$/);
+    await page.screenshot({
+      path: resolve(evidenceDir, `instance-overview-${width}.png`),
+      fullPage: true,
+    });
+    await page
+      .getByRole("navigation", { name: "Instance sections" })
+      .getByRole("link", { name: "Migration History" })
+      .click();
+    await expect(page).toHaveURL(/\/instances\/e2e-db\/history$/);
+    await page.screenshot({
+      path: resolve(evidenceDir, `instance-history-${width}.png`),
+      fullPage: true,
+    });
+    await page.goBack();
+    await expect(page).toHaveURL(/\/instances\/e2e-db$/);
+    await page.goForward();
+    await expect(page).toHaveURL(/\/instances\/e2e-db\/history$/);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
     if (width === 390) {
-      await page.getByRole("button", { name: "Mở điều hướng" }).click();
+      await page.getByRole("button", { name: "Open navigation" }).click();
       await page
         .getByRole("dialog")
-        .getByRole("link", { name: "Database & Schema" })
+        .getByRole("link", { name: "Instances" })
         .click();
-      await expect(page).toHaveURL("/databases");
+      await expect(page).toHaveURL("/instances");
     }
-    expect(errors).toEqual([]);
-  });
-}
+  }
+  expect(errors).toEqual([]);
+});
