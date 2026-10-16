@@ -142,7 +142,8 @@
     "go_reachable_vulnerabilities": 0,
     "go_module_only_advisories": 1,
     "openapi": "passed_with_existing_public_route_warnings",
-    "jdbc_live": "passed_with_documented_inherited_credential_compatibility_limit"
+    "jdbc_live": "passed_with_documented_inherited_credential_compatibility_limit",
+    "gitleaks": "passed_no_leaks"
   },
   "runtime": {
     "flyway": "13.10.3",
@@ -155,5 +156,33 @@
     "Cross-schema DDL not proved by metadata",
     "Pinned JDBC21 rejects tested Oracle23/26 extended40 and whitespace/Unicode30 credentials; bytes preserved; no vendor runtime change"
   ],
-  "delivery": "CI immutable image and non-production GitOps promotion follow homelab-operations.md"
+  "delivery": "CI immutable image and non-production GitOps promotion follow homelab-operations.md",
+  "independent_after_local": {
+    "local_migration_run": "mbnbuUylHj9OHY8kiWBe0k",
+    "schema_a": {
+      "probe_rows": [
+        "1,connection-wizard-local-acceptance"
+      ],
+      "history": [
+        "1:success"
+      ],
+      "identity": "FWM_WZ260_A,FREEPDB1",
+      "visible_object_count": 5,
+      "table_count": 2,
+      "flyway_history_tables": 1
+    },
+    "fwm_lab": {
+      "history": [
+        "1:success",
+        "2:success",
+        "3:success",
+        "4:success"
+      ],
+      "probe_rows": 4,
+      "visible_object_count": 5
+    },
+    "fwm_guard_canary": [
+      "1,unchanged-lab-canary"
+    ]
+  }
 }

@@ -22,7 +22,7 @@ The real Chromium workflow authenticated, discovered all 46 candidates, defaulte
 
 Direct API acceptance additionally checks an unselected B even with broader Oracle DDL evidence, an application operate grant and an account mapping; adding/removing mappings, removing all mappings, preserving the prior run and another account, credential rotation, invalid credentials, unavailable network, a denied application Operator and an account with no potential target. Sanitized evidence is recorded in `docs/evidence/oracle-connection-wizard-20261016.json`.
 
-Before migration, independent SQL observed the existing FWM_LAB V1–V4 history, four probe rows, unchanged guard canary and zero objects in new schema A. Only dedicated schema A's approved acceptance migrations are submitted by this workflow.
+Before migration, independent SQL observed the existing FWM_LAB V1–V4 history, four probe rows, unchanged guard canary and zero objects in new schema A. After V1, independent SQL confirmed one successful V1 and one probe row in A, with FWM_LAB and the guard canary unchanged. Only dedicated schema A's approved acceptance migrations are submitted by this workflow.
 
 ## Checks and operating boundaries
 

@@ -268,6 +268,13 @@ test("service account grants, one-time token display, rotation and revocation", 
   const replacementToken = (
     await page.getByRole("dialog").locator("code.token-example").innerText()
   ).trim();
+  const replacementPrefix = await page
+    .getByRole("dialog")
+    .locator("p.small code")
+    .innerText();
+  const replacementRow = page
+    .getByRole("row")
+    .filter({ has: page.getByText(replacementPrefix, { exact: true }) });
   expect(
     (
       await request.get("/api/v1/database-targets", {
@@ -286,17 +293,16 @@ test("service account grants, one-time token display, rotation and revocation", 
   await expect(
     page.getByRole("button", { name: "Revoke", exact: true }),
   ).toHaveCount(2);
-  await page
-    .getByRole("row")
-    .filter({ hasText: "Active" })
-    .last()
+  await replacementRow
     .getByRole("button", { name: "Revoke", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Revoke token", exact: true })
     .last()
     .click();
-  await expect(page.getByText("Revoked", { exact: true })).toBeVisible();
+  await expect(
+    replacementRow.getByText("Revoked", { exact: true }),
+  ).toBeVisible();
   expect(
     (
       await request.get("/api/v1/database-targets", {
