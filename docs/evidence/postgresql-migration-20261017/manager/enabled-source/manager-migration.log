@@ -1,0 +1,10 @@
+=== RUN   TestPostgreSQLManagerMigrationLive
+=== RUN   TestPostgreSQLManagerMigrationLive/nontransactional-maintenance-admission
+=== RUN   TestPostgreSQLManagerMigrationLive/database-execution-policy
+=== RUN   TestPostgreSQLManagerMigrationLive/worker-shutdown-and-restart-held
+--- PASS: TestPostgreSQLManagerMigrationLive (230.14s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/nontransactional-maintenance-admission (53.90s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/database-execution-policy (86.44s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/worker-shutdown-and-restart-held (79.87s)
+PASS
+ok  	flyway-manager/internal/core	230.151s

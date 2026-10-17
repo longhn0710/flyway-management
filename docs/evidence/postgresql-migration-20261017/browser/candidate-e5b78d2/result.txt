@@ -1,0 +1,1 @@
+PASS — candidate browser/API run from source commit e5b78d2. A fixed-source rerun on 5c330c4 is in progress; this capture is retained as prior evidence.

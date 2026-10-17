@@ -231,6 +231,14 @@ assert_eq "$(query "SELECT count(*) FROM gate_concurrent.flyway_schema_history W
 # diagnostic only: it cannot prove Manager queue hold or restart semantics.
 timeout_dir="$FIXTURES/timeout"
 mkdir "$timeout_dir"
+cat > "$timeout_dir/V0__observed_defaults.sql" <<'SQL'
+CREATE TABLE gate_timeout.observed_defaults AS
+SELECT pg_backend_pid() AS backend_pid,
+       current_setting('statement_timeout') AS statement_timeout,
+       current_setting('transaction_timeout') AS transaction_timeout,
+       current_setting('lock_timeout') AS lock_timeout,
+       current_setting('client_connection_check_interval') AS client_connection_check_interval;
+SQL
 cat > "$timeout_dir/V1__long_transaction.sql" <<'SQL'
 CREATE TABLE gate_timeout.transient_probe(id integer PRIMARY KEY);
 SELECT pg_sleep(90);
@@ -254,13 +262,20 @@ if [[ "$observed_active" != 1 ]]; then
   echo 'Timed client did not reach the controlled long-running statement; no timeout acceptance claim.' >&2
   exit 1
 fi
+client_group=$(ps -o pgid= -p "$client_pid" | tr -d ' ')
+[[ "$client_group" == "$client_pid" ]] || { echo 'CLI private process group could not be verified.' >&2; exit 1; }
+snapshot_sql="SELECT json_build_object('observed_at',clock_timestamp(),'database',current_database(),'sessions',COALESCE((SELECT json_agg(json_build_object('pid',pid,'backend_start',backend_start,'state',state,'xact_start',xact_start,'query_start',query_start,'wait_event_type',wait_event_type,'wait_event',wait_event,'application_name',application_name)) FROM pg_stat_activity WHERE datname='$DATABASE' AND usename='fwm_exec' AND pid<>pg_backend_pid() AND query LIKE '%pg_sleep(90)%'),'[]'::json))"
+query "$snapshot_sql" > "$EVIDENCE/timeout-active-before.json"
+query 'SELECT row_to_json(p) FROM gate_timeout.observed_defaults p' > "$EVIDENCE/timeout-policy.json"
+killed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 kill -TERM -- "-$client_pid"
 set +e
 wait "$client_pid"
 timeout_status=$?
 set -e
-printf 'observed_active_statement=true\nterminated_exit=%s\n' "$timeout_status" > "$EVIDENCE/timeout-status.txt"
+printf 'observed_active_statement=true\ncli_pid=%s\ncli_process_group_id=%s\nkilled_at=%s\nterminated_exit=%s\n' "$client_pid" "$client_group" "$killed_at" "$timeout_status" > "$EVIDENCE/timeout-status.txt"
 for _ in $(seq 1 10); do
+  query "$snapshot_sql" >> "$EVIDENCE/timeout-observations.jsonl"
   active=$(query "SELECT count(*) FROM pg_stat_activity WHERE datname='$DATABASE' AND usename='fwm_exec' AND state='active' AND query LIKE '%pg_sleep(90)%' AND pid<>pg_backend_pid()")
   [[ "$active" == 0 ]] && break
   sleep 1

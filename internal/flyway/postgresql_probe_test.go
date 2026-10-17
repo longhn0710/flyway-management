@@ -71,6 +71,24 @@ func TestPostgreSQLRequestValidationFailsClosed(t *testing.T) {
 	}
 }
 
+func TestPostgreSQLRuntimeRejectsNontransactionalMaintenance(t *testing.T) {
+	ca := postgresTestCA(t)
+	req := postgresTestRequest("migrate")
+	req.CAPEM = ca
+	sum := sha256.Sum256([]byte(ca))
+	req.CAHash = hex.EncodeToString(sum[:])
+	for _, sql := range []string{"ALTER TABLE t DETACH PARTITION p CONCURRENTLY", "CLUSTER", "CLUSTER partitioned_table", "ALTER SUBSCRIPTION s REFRESH PUBLICATION"} {
+		req.Files = map[string][]byte{"V1__maintenance.sql": []byte(sql)}
+		if err := validateRequest(req); err == nil {
+			t.Fatalf("runtime admitted unsupported maintenance %q", sql)
+		}
+	}
+	req.Files = map[string][]byte{"V1__ordinary.sql": []byte("CREATE TABLE t(id int)")}
+	if err := validateRequest(req); err != nil {
+		t.Fatal("ordinary transactional SQL rejected", err)
+	}
+}
+
 func TestPostgreSQLConfigStagesOnlyTrustPathAndStableSnapshot(t *testing.T) {
 	req := postgresTestRequest("info")
 	caPath := filepath.Join(t.TempDir(), "private ca.pem")

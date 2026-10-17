@@ -15,6 +15,10 @@ import {
   SearchBox,
   Badge,
 } from "../components/ui";
+import {
+  engineCapabilityLabel,
+  useEngineCapabilities,
+} from "../lib/engine-capabilities";
 
 type Candidate = {
   name: string;
@@ -63,6 +67,7 @@ export default function ConnectionWizard({
   onClose: () => void;
 }) {
   const client = useQueryClient();
+  const engineCapabilities = useEngineCapabilities();
   const [name, setName] = useState(target?.name ?? "");
   const [environment, setEnvironment] = useState(target?.environment ?? "DEV");
   const [host, setHost] = useState(target?.host ?? "");
@@ -217,10 +222,18 @@ export default function ConnectionWizard({
             setPassword("");
           }}
         >
-          <option>Oracle</option>
-          <option>PostgreSQL</option>
-          <option>MySQL</option>
-          <option>SQL Server</option>
+          <option value="Oracle">
+            Oracle · {engineCapabilityLabel("Oracle", engineCapabilities.data)}
+          </option>
+          <option value="PostgreSQL">
+            PostgreSQL · {engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}
+          </option>
+          <option value="MySQL">
+            MySQL · {engineCapabilityLabel("MySQL", engineCapabilities.data)}
+          </option>
+          <option value="SQL Server">
+            SQL Server · {engineCapabilityLabel("SQL Server", engineCapabilities.data)}
+          </option>
         </select>
       </Field>
       {engine !== "Oracle" && engine !== "PostgreSQL" && (
@@ -372,9 +385,8 @@ export default function ConnectionWizard({
         {engine === "PostgreSQL" && (
           <>
             <Notice>
-              PostgreSQL 17 · Connection and native Info. Migration disabled
-              pending Gate E/F acceptance. Use existing lowercase database,
-              schema and role names.
+              PostgreSQL 17 · {engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}.
+              Use existing lowercase database, schema and role names.
             </Notice>
             <Field label="Approved TLS CA bundle (PEM)" required={!target}>
               <textarea
@@ -529,7 +541,7 @@ export default function ConnectionWizard({
               <div className="destination-strip">
                 <Badge>
                   {engine === "PostgreSQL"
-                    ? "PostgreSQL · Connection/Info; migration disabled"
+                    ? `PostgreSQL · ${engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}`
                     : "Oracle · Operational"}
                 </Badge>
                 <Badge tone={environment === "PROD" ? "error" : "accent"}>

@@ -141,7 +141,12 @@ test("PostgreSQL 17 live browser acceptance: verify-full registration and native
 
   const dir = await mkdtemp(join(tmpdir(), "fwm-postgresql-live-"));
   await mkdir(join(dir, "evidence"), { recursive: true, mode: 0o700 });
-  const output = resolve("../docs/evidence/postgresql-foundation-20261017");
+  const output = process.env.FWM_LAB_EVIDENCE
+    ? resolve(process.env.FWM_LAB_EVIDENCE)
+    : join(
+        tmpdir(),
+        `fwm-postgresql-info-evidence-${randomBytes(8).toString("hex")}`,
+      );
   await mkdir(output, { recursive: true });
   const port = await unusedPort();
   const base = `http://127.0.0.1:${port}`;
@@ -171,6 +176,15 @@ test("PostgreSQL 17 live browser acceptance: verify-full registration and native
     });
     expect(boot.status()).toBe(201);
     const admin = (await boot.json()).data;
+    const capabilities = (
+      await (
+        await page.request.get(`${base}/api/v1/engine-capabilities`)
+      ).json()
+    ).data;
+    const migrationEnabled =
+      capabilities.find(
+        (item: { engine: string }) => item.engine === "postgresql",
+      )?.migration === true;
     const headers = { Origin: base, "X-CSRF-Token": admin.csrf_token };
     const post = async (path: string, data: unknown, expected = 201) => {
       const response = await page.request.post(`${base}/api/v1${path}`, {
@@ -224,8 +238,9 @@ test("PostgreSQL 17 live browser acceptance: verify-full registration and native
       .getByRole("checkbox", { name: /Authorize my Flyway Manager user/ })
       .check();
     await dialog.getByRole("button", { name: "Review selection" }).click();
+    await expect(dialog).toContainText("PostgreSQL · Connection / Info");
     await expect(dialog).toContainText(
-      "PostgreSQL · Connection/Info; migration disabled",
+      migrationEnabled ? "Migration available" : "Migration disabled",
     );
     await dialog.getByRole("button", { name: "Save instance" }).click();
     await expect(
@@ -264,9 +279,19 @@ test("PostgreSQL 17 live browser acceptance: verify-full registration and native
     await expect(page.getByText("PostgreSQL", { exact: true })).toBeVisible();
     await expect(page.getByText(env.PGDATABASE, { exact: true })).toBeVisible();
     await expect(
-      page.getByText(/migration disabled pending Gate E\/F/),
+      page.getByText(
+        migrationEnabled
+          ? /migration capability enabled/
+          : /migration unavailable or disabled/,
+      ),
     ).toBeVisible();
-    await expect(page.getByText(/Run unavailable/)).toBeVisible();
+    if (migrationEnabled) {
+      await expect(
+        page.getByRole("link", { name: "Run migration", exact: true }),
+      ).toBeVisible();
+    } else {
+      await expect(page.getByText(/Run unavailable/)).toBeVisible();
+    }
 
     await page.goto(
       `${base}/flyway-info?${new URLSearchParams({ target: targetID, schema: schema.id })}`,

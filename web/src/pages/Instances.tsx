@@ -41,6 +41,12 @@ import History from "./History";
 import { SchemaConfiguration } from "./Databases";
 import { schemaHref } from "../lib/navigation";
 import { canRun } from "../lib/permissions";
+import {
+  capabilityFor,
+  engineCapabilityLabel,
+  migrationAvailable,
+  useEngineCapabilities,
+} from "../lib/engine-capabilities";
 import { CredentialEditor } from "./Credentials";
 
 export function InstanceTabs({ id }: { id: string }) {
@@ -71,8 +77,11 @@ export function RunLink({
   schema?: TargetSchema;
 }) {
   const identity = useIdentity();
+  const capabilities = useEngineCapabilities();
   const allowed =
-    target.engine !== "postgresql" && canRun(identity, target, schema);
+    migrationAvailable(target.engine, capabilities.data) &&
+    canRun(identity, target, schema);
+  const postgresCapability = capabilityFor(capabilities.data, "postgresql");
   return allowed ? (
     <Link
       className="button secondary compact"
@@ -85,7 +94,13 @@ export function RunLink({
     <span className="small muted">
       Run unavailable ·{" "}
       {target.engine === "postgresql"
-        ? "Gate E/F acceptance required"
+        ? !postgresCapability
+          ? "migration capability unavailable"
+          : !postgresCapability.migration
+            ? "migration disabled by server policy"
+            : target.active
+              ? "permission required"
+              : "inactive"
         : target.active
           ? "permission required"
           : "inactive"}
@@ -94,6 +109,7 @@ export function RunLink({
 }
 export default function Instances() {
   const admin = useIdentity().user.role === "Admin";
+  const engineCapabilities = useEngineCapabilities();
   const [search, setSearch] = useState("");
   const [env, setEnv] = useState("");
   const [engine, setEngine] = useState("");
@@ -174,7 +190,7 @@ export default function Instances() {
     <>
       <PageHeading
         title="Instances"
-        description="Oracle · Operational; PostgreSQL · Connection/Info; migration gated"
+        description={`Oracle · Operational; PostgreSQL · ${engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}`}
         actions={
           <Button
             variant="primary"
@@ -214,7 +230,9 @@ export default function Instances() {
         >
           <option value="">Engine: All engines</option>
           <option value="Oracle">Oracle</option>
-          <option value="PostgreSQL">PostgreSQL · Connection/Info</option>
+          <option value="PostgreSQL">
+            PostgreSQL · {engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}
+          </option>
           {["MySQL", "SQL Server"].map((v) => (
             <option key={v} disabled>
               {v} · Future
@@ -277,6 +295,7 @@ export function InstanceDetails() {
     queryFn: () =>
       api<DatabaseTarget>(`/database-targets/${encodeURIComponent(id)}`),
   });
+  const engineCapabilities = useEngineCapabilities();
   const schemas = useQuery({
     queryKey: ["schemas", id],
     queryFn: () =>
@@ -351,7 +370,9 @@ export function InstanceDetails() {
         }
         description={
           target.data?.engine === "postgresql"
-            ? "PostgreSQL · Connection/Info; migration disabled pending Gate E/F"
+            ? capabilityFor(engineCapabilities.data, "postgresql")?.migration
+              ? "PostgreSQL · migration capability enabled by server policy"
+              : "PostgreSQL · Connection/Info; migration unavailable or disabled by server policy"
             : "Oracle · Operational"
         }
         actions={
@@ -413,7 +434,13 @@ export function InstanceDetails() {
                   [
                     "Migration capability",
                     t.engine === "postgresql"
-                      ? "Disabled pending Gate E/F acceptance"
+                      ? capabilityFor(engineCapabilities.data, "postgresql")
+                          ?.migration === true
+                        ? "Enabled by server policy"
+                        : capabilityFor(engineCapabilities.data, "postgresql")
+                              ?.migration === false
+                          ? "Disabled by server policy"
+                          : "Unavailable · capability could not be read"
                       : "Operational",
                   ],
                   ["Transport", t.transport],

@@ -1,0 +1,4 @@
+=== RUN   TestPostgreSQLGuardHelperArtifact
+--- PASS: TestPostgreSQLGuardHelperArtifact (1.00s)
+PASS
+ok  	flyway-manager/internal/flyway	1.008s

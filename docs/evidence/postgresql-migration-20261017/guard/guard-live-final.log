@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLGuardLiveEmpty
+--- PASS: TestPostgreSQLGuardLiveEmpty (13.62s)
+=== RUN   TestPostgreSQLGuardLiveNeverSignalsCopiedTag
+--- PASS: TestPostgreSQLGuardLiveNeverSignalsCopiedTag (15.80s)
+PASS
+ok  	flyway-manager/internal/flyway	29.428s

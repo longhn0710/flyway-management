@@ -80,13 +80,16 @@ func saveProfile(ctx context.Context, tx *sql.Tx, tid string, p *ConnectionProfi
 }
 
 // Migration promotion is deliberately a server policy, never caller supplied.
-// Replace this gate only with evidence from the full product E/F acceptance.
+// Qualified by docs/postgresql-migration-acceptance.md; changing the profile
+// or lifecycle contract requires a new controlled product acceptance.
+const postgresqlMigrationAccepted = true
+
 func (s *Service) migrationEngineGate(ctx context.Context, a Actor, tid string) error {
 	target, e := s.Target(ctx, a, tid)
 	if e != nil {
 		return e
 	}
-	if target.Engine == "postgresql" {
+	if target.Engine == "postgresql" && !postgresqlMigrationAccepted {
 		return &Error{Status: 409, Code: "ENGINE_MIGRATION_DISABLED", Message: "PostgreSQL migration is disabled pending Gate E/F acceptance."}
 	}
 	return nil
@@ -102,9 +105,13 @@ type EngineCapability struct {
 }
 
 func EngineCapabilities() []EngineCapability {
+	postgresqlStatus := "Connection/Info implemented; acceptance required"
+	if postgresqlMigrationAccepted {
+		postgresqlStatus = "Operational"
+	}
 	return []EngineCapability{
 		{"oracle", "Operational", true, true, true, "Existing Oracle policy"},
-		{"postgresql", "Connection/Info implemented; acceptance required", true, true, false, "PostgreSQL 17; password/SCRAM; verify-full; lowercase identifiers; existing schemas"},
+		{"postgresql", postgresqlStatus, true, true, postgresqlMigrationAccepted, "PostgreSQL 17; password/SCRAM; verify-full; lowercase identifiers; existing schemas"},
 		{"sqlserver", "Not implemented", false, false, false, ""}, {"mysql", "Not implemented", false, false, false, ""}, {"mariadb", "Not implemented", false, false, false, ""},
 	}
 }

@@ -153,12 +153,17 @@ func validatePostgreSQLRequest(r Request) error {
 	if len(r.Files) == 0 && (r.Command == "migrate" || r.Command == "validate") {
 		return errors.New("SQL snapshot is empty")
 	}
-	for name := range r.Files {
+	for name, contents := range r.Files {
 		if err := validateRelativePath(name); err != nil {
 			return err
 		}
 		if !strings.HasSuffix(strings.ToLower(name), ".sql") {
 			return errors.New("snapshot contains a non-SQL file")
+		}
+		if r.Command == "migrate" {
+			if err := postgresql.ValidateMigrationSQL(contents); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -191,6 +196,20 @@ func postgresqlConfigProperties(r Request, caPath string) map[string]string {
 		host = "[" + host + "]"
 	}
 	urlValue := "jdbc:postgresql://" + host + ":" + strconv.Itoa(r.Port) + "/" + r.DatabaseName + "?sslmode=verify-full&sslrootcert=" + url.QueryEscape(caPath)
+	if r.statementBudgetSeconds > 0 {
+		// Startup options cover every Flyway JDBC connection, including the
+		// history/locking connection. They survive loss of the CLI or Manager.
+		budget := strconv.Itoa(r.statementBudgetSeconds * 1000)
+		lockBudget := r.statementBudgetSeconds * 1000
+		if lockBudget > 5000 {
+			lockBudget = 5000
+		}
+		options := "-c standard_conforming_strings=on -c statement_timeout=" + budget + " -c lock_timeout=" + strconv.Itoa(lockBudget) + " -c transaction_timeout=" + budget + " -c idle_in_transaction_session_timeout=" + budget + " -c idle_session_timeout=" + budget
+		urlValue += "&connectTimeout=5&socketTimeout=" + strconv.Itoa(r.statementBudgetSeconds+5) + "&options=" + url.QueryEscape(options)
+	}
+	if r.ExecutionTag != "" {
+		urlValue += "&ApplicationName=" + url.QueryEscape(r.ExecutionTag)
+	}
 	return map[string]string{
 		"flyway.url": urlValue, "flyway.user": r.Username, "flyway.password": r.Password,
 		"flyway.schemas": r.Schema, "flyway.defaultSchema": r.HistorySchema, "flyway.table": r.HistoryTable,
@@ -213,9 +232,30 @@ func postgresqlConfigurationSnapshot(r Request) map[string]string {
 	props["tlsMode"] = r.TLSMode
 	props["caSha256"] = strings.ToLower(r.CAHash)
 	props["configurationPolicyVersion"] = "2"
+	props["executionLifecyclePolicy"] = "postgresql17-bounded-session-v1"
 	props["outputType"] = "json"
 	props["locations"] = "immutable-run-snapshot"
 	return props
+}
+
+// PostgreSQLExecutionPolicy freezes runtime-owned bounds and observer identity
+// with a queued plan. Changing a process budget must not silently change an
+// existing PostgreSQL stream's execution contract.
+func (r *Runtime) PostgreSQLExecutionPolicy() map[string]string {
+	lock := r.config.TimeoutSeconds * 1000
+	if lock > 5000 {
+		lock = 5000
+	}
+	return map[string]string{
+		"manager.processTimeoutSeconds":        strconv.Itoa(r.config.TimeoutSeconds),
+		"postgresql.statementTimeoutMs":        strconv.Itoa(r.config.TimeoutSeconds * 1000),
+		"postgresql.transactionTimeoutMs":      strconv.Itoa(r.config.TimeoutSeconds * 1000),
+		"postgresql.idleTimeoutMs":             strconv.Itoa(r.config.TimeoutSeconds * 1000),
+		"postgresql.standardConformingStrings": "on",
+		"postgresql.lockTimeoutMs":             strconv.Itoa(lock),
+		"postgresql.observerSHA256":            postgresqlExecutionGuardClassSHA256,
+		"postgresql.observerSessionSHA256":     postgresqlExecutionGuardSessionClassSHA256,
+	}
 }
 
 func postgresqlConnectionFailure(state string) postgresql.Result {

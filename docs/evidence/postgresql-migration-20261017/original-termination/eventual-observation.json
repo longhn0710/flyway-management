@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-10-17T13:28:04.554115+00:00",
+  "active_backend_count": 0,
+  "transient_table_exists": false,
+  "history": [
+    {
+      "installed_rank": 1,
+      "version": "0",
+      "description": "observed defaults",
+      "type": "SQL",
+      "script": "V0__observed_defaults.sql",
+      "installed_by": "fwm_exec",
+      "execution_time": 9,
+      "success": true
+    }
+  ],
+  "interpretation": "later rollback/disappearance does not establish bounded cancellation"
+}

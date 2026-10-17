@@ -1,0 +1,37 @@
+{
+  "before_schema_objects": {
+    "success": 0,
+    "independent": 0,
+    "rollback": 0,
+    "partial": 0,
+    "timeout": 0,
+    "shutdown": 0,
+    "process_kill": 0,
+    "unsupported": 0,
+    "changed": 0,
+    "trust": 0,
+    "parallel_a": 0,
+    "parallel_b": 0,
+    "policy": 0,
+    "predecessor": 0,
+    "unsafe": 0,
+    "isolation": 0,
+    "revoked": 0
+  },
+  "database": "fwm_manager_1792246248631472281",
+  "disposable_lab_only": true,
+  "maintenance-admission": {
+    "commands": 0,
+    "jobs": 0,
+    "rejected_forms": [
+      "ALTER TABLE t DETACH PARTITION p CONCURRENTLY",
+      "CLUSTER",
+      "CLUSTER partitioned_table",
+      "ALTER SUBSCRIPTION s REFRESH PUBLICATION",
+      "ALTER SUBSCRIPTION s SET PUBLICATION p"
+    ],
+    "schema_objects": "0"
+  },
+  "server_version": "17.11 (Debian 17.11-1.pgdg13+2)",
+  "test_failed": false
+}

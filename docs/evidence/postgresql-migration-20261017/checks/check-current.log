@@ -1,0 +1,64 @@
+npm --prefix web run build
+
+> flyway-manager-web@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 1724 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                               0.40 kB │ gzip:   0.28 kB
+dist/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2   21.17 kB
+dist/assets/jetbrains-mono-latin-500-normal-BWZEU5yA.woff2   21.83 kB
+dist/assets/inter-latin-400-normal-C38fXH4l.woff2            23.66 kB
+dist/assets/inter-latin-500-normal-Cerq10X2.woff2            24.27 kB
+dist/assets/inter-latin-600-normal-LgqL8muc.woff2            24.45 kB
+dist/assets/jetbrains-mono-latin-400-normal-6-qcROiO.woff    27.50 kB
+dist/assets/jetbrains-mono-latin-500-normal-CJOVTJB7.woff    28.21 kB
+dist/assets/inter-latin-400-normal-CyCys3Eg.woff             30.70 kB
+dist/assets/inter-latin-600-normal-CiBQ2DWP.woff             31.26 kB
+dist/assets/inter-latin-500-normal-BL9OpVg8.woff             31.28 kB
+dist/assets/index-rT9WLEYD.css                               48.23 kB │ gzip:  10.57 kB
+dist/assets/index-CxwRf6vd.js                               576.06 kB │ gzip: 168.86 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.47s
+mkdir -p bin
+CGO_ENABLED=0 go build -trimpath -o bin/flyway-manager ./cmd/flyway-manager
+go vet ./cmd/... ./internal/... ./web
+go test ./cmd/... ./internal/... ./web
+ok  	flyway-manager/cmd/flyway-manager	2.853s
+ok  	flyway-manager/internal/artifact	0.005s
+ok  	flyway-manager/internal/config	0.010s
+ok  	flyway-manager/internal/core	28.930s
+ok  	flyway-manager/internal/database	1.426s
+ok  	flyway-manager/internal/flyway	5.500s
+ok  	flyway-manager/internal/httpapi	7.887s
+ok  	flyway-manager/internal/identityprovider	2.230s
+ok  	flyway-manager/internal/oracle	0.005s
+ok  	flyway-manager/internal/postgresql	0.277s
+ok  	flyway-manager/internal/secrets	0.009s
+?   	flyway-manager/web	[no test files]
+npm --prefix web run lint
+
+> flyway-manager-web@0.1.0 lint
+> eslint .
+
+npm --prefix web test
+
+> flyway-manager-web@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/longhn0710/workspace/flyway-management-acceptance/web
+
+
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Start at  21:02:32
+   Duration  364ms (tests 46%, import 28%, transform 20%, worker 6%)
+

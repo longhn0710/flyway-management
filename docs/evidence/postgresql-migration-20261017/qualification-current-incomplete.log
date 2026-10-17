@@ -1,0 +1,7 @@
+=== RUN   TestPostgreSQLManagerMigrationLive
+=== RUN   TestPostgreSQLManagerMigrationLive/database-execution-policy
+=== RUN   TestPostgreSQLManagerMigrationLive/predecessor-failure-blocks-queued
+=== RUN   TestPostgreSQLManagerMigrationLive/native-unsafe-history-blocks-worker
+=== RUN   TestPostgreSQLManagerMigrationLive/versioned-repeatable-idempotency
+=== RUN   TestPostgreSQLManagerMigrationLive/independent-schema
+=== RUN   TestPostgreSQLManagerMigrationLive/rollback-and-partial-success-held

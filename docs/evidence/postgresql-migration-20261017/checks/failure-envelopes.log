@@ -1,0 +1,24 @@
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes/semantic-failure-exit-zero
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes/permission-error
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes/timeout
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes/terminated
+=== RUN   TestPostgreSQLCandidateFailureEnvelopes/truncated
+--- PASS: TestPostgreSQLCandidateFailureEnvelopes (2.84s)
+    --- PASS: TestPostgreSQLCandidateFailureEnvelopes/semantic-failure-exit-zero (0.55s)
+    --- PASS: TestPostgreSQLCandidateFailureEnvelopes/permission-error (0.74s)
+    --- PASS: TestPostgreSQLCandidateFailureEnvelopes/timeout (0.60s)
+    --- PASS: TestPostgreSQLCandidateFailureEnvelopes/terminated (0.48s)
+    --- PASS: TestPostgreSQLCandidateFailureEnvelopes/truncated (0.47s)
+=== RUN   TestPostgreSQLCandidateUnsafeHistoryCannotMigrate
+=== RUN   TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Failed
+=== RUN   TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Missing
+=== RUN   TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Future
+=== RUN   TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/UnknownNativeState
+--- PASS: TestPostgreSQLCandidateUnsafeHistoryCannotMigrate (1.89s)
+    --- PASS: TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Failed (0.46s)
+    --- PASS: TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Missing (0.49s)
+    --- PASS: TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/Future (0.47s)
+    --- PASS: TestPostgreSQLCandidateUnsafeHistoryCannotMigrate/UnknownNativeState (0.48s)
+PASS
+ok  	flyway-manager/internal/core	4.753s

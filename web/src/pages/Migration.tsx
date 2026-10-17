@@ -15,6 +15,11 @@ import type {
   RunInput,
   RuntimeStatus,
 } from "../lib/execution";
+import {
+  engineCapabilityLabel,
+  migrationAvailable,
+  useEngineCapabilities,
+} from "../lib/engine-capabilities";
 import { useIdentity } from "../lib/identity-context";
 import {
   Badge,
@@ -78,17 +83,26 @@ function MigrationPage() {
     queryKey: ["runtime"],
     queryFn: () => api<RuntimeStatus>("/runtime"),
   });
+  const engineCapabilities = useEngineCapabilities();
   const targets = useQuery({
     // Keep operationally authorized rows isolated from the Admin registry cache.
     queryKey: ["migration-connections"],
     queryFn: () => apiList<DatabaseTarget>("/migration-connections"),
   });
   const selectedTargetID =
-    (targets.data?.some((t) => t.id === targetID && t.active)
+    (targets.data?.some(
+      (t) =>
+        t.id === targetID &&
+        t.active &&
+        migrationAvailable(t.engine, engineCapabilities.data),
+    )
       ? targetID
       : targetID
         ? ""
-        : targets.data?.find((t) => t.active)?.id) || "";
+        : targets.data?.find(
+            (t) =>
+              t.active && migrationAvailable(t.engine, engineCapabilities.data),
+          )?.id) || "";
   const schemas = useQuery({
     queryKey: ["migration-schemas", selectedTargetID],
     queryFn: () =>
@@ -112,6 +126,7 @@ function MigrationPage() {
     enabled: !!selectedTargetID && !!selectedSchemaID,
   });
   const target = targets.data?.find((t) => t.id === selectedTargetID);
+  const requestedTarget = targets.data?.find((t) => t.id === targetID);
   const schema = schemas.data?.find((s) => s.id === selectedSchemaID);
   const mappedAccounts = (accounts.data ?? []).filter(
     (a) =>
@@ -126,7 +141,7 @@ function MigrationPage() {
     mappedAccounts[0];
   const authorized =
     canSubmit &&
-    target?.engine !== "postgresql" &&
+    migrationAvailable(target?.engine, engineCapabilities.data) &&
     identity.grants.some(
       (g) =>
         g.target_id === selectedTargetID &&
@@ -211,7 +226,9 @@ function MigrationPage() {
     onError: (error, body) => {
       setFailedSubmissionSignature(JSON.stringify(body));
       setSubmissionError(
-        `${error instanceof Error ? error.message : "Submission failed"}. Retry uses the same request key safely.`,
+        target?.engine === "postgresql"
+          ? `${error instanceof Error ? error.message : "Submission failed"}. The PostgreSQL outcome may be ambiguous; do not resubmit. Check migration history and wait for operator review.`
+          : `${error instanceof Error ? error.message : "Submission failed"}. Retry uses the same request key safely.`,
       );
     },
   });
@@ -241,7 +258,7 @@ function MigrationPage() {
     <>
       <PageHeading
         title="Run migration"
-        description="Choose an Oracle instance and allowed schema, upload an immutable SQL bundle, review Flyway preflight, then queue the migration."
+        description="Choose an available instance and allowed schema, upload an immutable SQL bundle, review Flyway preflight, then queue the migration."
         breadcrumb="Instances / Run migration"
       />
       <ol className="wizard-steps migration-steps" aria-label="Migration steps">
@@ -256,7 +273,11 @@ function MigrationPage() {
         </li>
       </ol>
       <div className="destination-strip" aria-label="Migration destination">
-        <Badge>Oracle · Currently implemented</Badge>
+        <Badge>
+          {target?.engine === "postgresql"
+            ? `PostgreSQL · ${engineCapabilityLabel("PostgreSQL", engineCapabilities.data)}`
+            : "Oracle · Currently implemented"}
+        </Badge>
         {target && (
           <>
             <Badge tone={target.environment === "PROD" ? "error" : "accent"}>
@@ -264,7 +285,8 @@ function MigrationPage() {
             </Badge>
             <strong>{target.name}</strong>
             <code>
-              {target.host}:{target.port}/{target.service}
+              {target.host}:{target.port}/
+              {target.database_name || target.service}
             </code>
           </>
         )}
@@ -297,10 +319,22 @@ function MigrationPage() {
           dependencies {runtime.data.dependency}
         </p>
       ) : null}
+      {engineCapabilities.isError &&
+        targets.data?.some((candidate) => candidate.engine === "postgresql") && (
+          <Notice tone="error" title="Engine capability unavailable">
+            PostgreSQL migration remains disabled because server capabilities
+            could not be verified. {engineCapabilities.error.message}{" "}
+            <Button onClick={() => void engineCapabilities.refetch()}>
+              Retry
+            </Button>
+          </Notice>
+        )}
       {targets.isSuccess && targetID && !selectedTargetID && (
         <Notice tone="warning">
-          The requested instance is inactive or unavailable to your execution
-          grants. Choose an authorized destination.
+          {requestedTarget?.engine === "postgresql" &&
+          !migrationAvailable(requestedTarget.engine, engineCapabilities.data)
+            ? "PostgreSQL migration is unavailable under the current server capability policy. Choose an available destination."
+            : "The requested instance is inactive or unavailable to your execution grants. Choose an authorized destination."}
         </Notice>
       )}
       {schemas.isSuccess && schemaID && !selectedSchemaID && (
@@ -325,9 +359,8 @@ function MigrationPage() {
       <div className="layout-editor">
         <Panel title="1 · Destination">
           <p className="small muted">
-            Oracle is operational. PostgreSQL connection and Info are available;
-            migration remains disabled pending Gate E/F acceptance. Other
-            engines are not implemented.
+            Oracle retains its operational workflow. PostgreSQL migration
+            follows server capability policy; other engines remain unavailable.
           </p>
           {targets.isPending ? (
             <div
@@ -342,7 +375,7 @@ function MigrationPage() {
             </Notice>
           ) : null}
           <div className="form-grid">
-            <Field label="Oracle instance" required>
+            <Field label="Migration destination" required>
               <select
                 value={selectedTargetID}
                 onChange={(e) => {
@@ -361,7 +394,7 @@ function MigrationPage() {
                     <option
                       key={t.id}
                       value={t.id}
-                      disabled={t.engine === "postgresql"}
+                      disabled={!migrationAvailable(t.engine, engineCapabilities.data)}
                     >
                       {t.engine === "postgresql" ? "PostgreSQL" : "Oracle"} ·{" "}
                       {t.name} · {t.environment} ·{" "}
@@ -614,7 +647,9 @@ function MigrationPage() {
                   />
                   <span>
                     Flyway {preflight.runtime_version || "version unknown"} ·
-                    Oracle destination
+                    {target?.engine === "postgresql"
+                      ? "PostgreSQL destination"
+                      : "Oracle destination"}
                   </span>
                 </div>
                 {preflight.blockers.map((b, i) => (
@@ -704,19 +739,24 @@ function MigrationPage() {
                 )}
                 {preflight.ready && preflight.live_status !== "VERIFIED" && (
                   <Notice tone="warning">
-                    Offline checks are not enough to submit. Oracle and Flyway
-                    validation must be VERIFIED.
+                    Offline checks are not enough to submit. {" "}
+                    {target?.engine === "postgresql" ? "PostgreSQL" : "Oracle"}
+                    {" "}and Flyway validation must be VERIFIED.
                   </Notice>
                 )}
                 {preflightCurrent && (
                   <>
                     <Notice
                       tone="warning"
-                      title="Oracle DDL can partially commit"
+                      title={
+                        target?.engine === "postgresql"
+                          ? "PostgreSQL failures require operator review"
+                          : "Oracle DDL can partially commit"
+                      }
                     >
-                      A failed migration may leave database changes in place.
-                      Automatic repair never reruns migration SQL or turns a
-                      failed run into success.
+                      {target?.engine === "postgresql"
+                        ? "A failed or ambiguous run remains held for operator review. Earlier scripts may already be committed. PostgreSQL migrations are never retried or repaired automatically."
+                        : "A failed migration may leave database changes in place. Automatic repair never reruns migration SQL or turns a failed run into success."}
                     </Notice>
                     <Button
                       variant="primary"
@@ -735,7 +775,8 @@ function MigrationPage() {
       {submissionError && (
         <Notice tone="error">
           {submissionError}
-          {input &&
+          {target?.engine !== "postgresql" &&
+            input &&
             authorized &&
             preflightCurrent &&
             selectedInputSignature === failedSubmissionSignature && (
@@ -756,16 +797,17 @@ function MigrationPage() {
       >
         <div className="">
           <Notice tone="warning">
-            Oracle DDL may partially commit. A failed migration remains failed
-            even if conditional repair succeeds; SQL is never rerun
-            automatically.
+            {target?.engine === "postgresql"
+              ? "A failed or ambiguous PostgreSQL run remains held for operator review. Earlier scripts may already be committed. No automatic retry or Repair is performed."
+              : "Oracle DDL may partially commit. A failed migration remains failed even if conditional repair succeeds; SQL is never rerun automatically."}
           </Notice>
           <dl className="key-values">
             <div>
               <dt>Engine / instance</dt>
               <dd>
-                Oracle · {target?.environment} · {target?.name} ·{" "}
-                {target?.service}
+                {target?.engine === "postgresql" ? "PostgreSQL" : "Oracle"} ·{" "}
+                {target?.environment} · {target?.name} ·{" "}
+                {target?.database_name || target?.service}
               </dd>
             </div>
             <div>
@@ -799,7 +841,12 @@ function MigrationPage() {
             <Button onClick={() => setConfirm(false)}>Back to review</Button>
             <Button
               variant="primary"
-              disabled={submit.isPending || !preflightCurrent}
+              disabled={
+                submit.isPending ||
+                !preflightCurrent ||
+                (target?.engine === "postgresql" &&
+                  (!authorized || failedSubmissionSignature === selectedInputSignature))
+              }
               onClick={() => input && submit.mutate(input)}
             >
               {submit.isPending ? "Submitting…" : "Submit migration"}
@@ -808,8 +855,9 @@ function MigrationPage() {
         </div>
       </Modal>
       <p className="small muted">
-        Flyway schema settings do not limit Oracle privileges; the Oracle
-        account’s grants govern database access.{" "}
+        {target?.engine === "postgresql"
+          ? "PostgreSQL runs remain subject to the saved database role and server-side migration policy."
+          : "Flyway schema settings do not limit Oracle privileges; the Oracle account’s grants govern database access."}{" "}
         <Link to="/runs">View Run History</Link>
       </p>
     </>

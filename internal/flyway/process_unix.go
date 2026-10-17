@@ -21,3 +21,7 @@ func configureProcessGroup(cmd *exec.Cmd) {
 		return err
 	}
 }
+
+func processGroupID(pid int) (int, error) {
+	return syscall.Getpgid(pid)
+}

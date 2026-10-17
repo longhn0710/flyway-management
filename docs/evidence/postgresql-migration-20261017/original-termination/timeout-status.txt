@@ -1,0 +1,5 @@
+observed_active_statement=true
+cli_pid=214704
+cli_process_group_id=214704
+killed_at=2026-10-17T13:26:23Z
+terminated_exit=143

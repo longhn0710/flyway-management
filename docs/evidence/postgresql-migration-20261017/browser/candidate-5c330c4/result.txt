@@ -1,0 +1,1 @@
+PASS — fixed-source browser/API harness completed successfully on the 5c330c4 qualification candidate using the isolated compile-time policy overlay. The later maintenance-admission source change at 538994c has separate focused evidence and is not represented by this run.

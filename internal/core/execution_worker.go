@@ -69,7 +69,7 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 			return
 		}
 	}
-	applyLivePreflight(&p, info, validation)
+	applyLivePreflight(&p, info, validation, plan.snapshot.Target.Engine)
 	if p.Ready {
 		if e = resolvedSnapshot(plan, info.JSON); e != nil {
 			p.block("INCOMPLETE_FLYWAY_LOCATIONS", safeExecutionError(e))
@@ -147,6 +147,26 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
+	if plan.snapshot.Target.Engine == "postgresql" {
+		// PostgreSQL never enters Oracle's failed-history repair branch. Even a
+		// proven rollback of the last script cannot undo earlier committed scripts.
+		if parent.Err() == nil {
+			if _, _, e = s.runCommand(parent, durable, rid, "info", plan); e != nil {
+				return
+			}
+			if _, _, e = s.runCommand(parent, durable, rid, "validate", plan); e != nil {
+				return
+			}
+		}
+		reason := "Flyway reported a PostgreSQL migration failure. Manager does not establish whole-run rollback; earlier scripts may have committed. Stream held; no Repair or automatic retry."
+		if migrated.Ambiguous || migrated.TimedOut || len(migrated.JSON) == 0 {
+			reason = "PostgreSQL CLI did not produce a confirmed migration result. Database outcome is indeterminate; backend disappearance alone does not establish rollback. Earlier scripts may have committed. Stream held; no Repair or automatic retry."
+		}
+		if e = s.changeRun(durable, rid, "NEEDS_REVIEW", reason, "FAILED", "SKIPPED", &migrated.ExitCode, true, true); e == nil {
+			completed = true
+		}
+		return
+	}
 	// The original failure and diagnostics commit before any automatic repair.
 	if e = s.changeRun(durable, rid, "FAILED", "Flyway migrate failed. Oracle DDL may have partially committed.", "FAILED", "PENDING", &migrated.ExitCode, false, false); e != nil {
 		return
@@ -215,7 +235,7 @@ func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allo
 	if e := q.QueryRowContext(ctx, "SELECT engine FROM database_targets WHERE id=?", run.TargetID).Scan(&engine); e != nil {
 		return plan, e
 	}
-	if engine == "postgresql" {
+	if engine == "postgresql" && !postgresqlMigrationAccepted {
 		return plan, conflict("PostgreSQL migration is disabled pending Gate E/F acceptance.")
 	}
 	var unfinished int
@@ -234,6 +254,14 @@ func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allo
 	}
 	plan.password = password
 	plan.snapshot = snap
+	if snap.Target.Engine == "postgresql" {
+		profile, err := loadProfile(ctx, q, run.TargetID)
+		if err != nil {
+			clear(password)
+			return executionPlan{}, err
+		}
+		plan.caPEM = profile.CAPEM
+	}
 	current, _ := json.Marshal(snap)
 	frozen, _ := json.Marshal(run.RunSnapshot)
 	if string(current) != string(frozen) {
@@ -259,6 +287,10 @@ func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allo
 		clear(password)
 		return executionPlan{}, conflict("Run has no frozen migration files.")
 	}
+	if e = validateMigrationPlan(plan); e != nil {
+		clear(password)
+		return executionPlan{}, e
+	}
 	return plan, nil
 }
 func safeExecutionError(e error) string {
@@ -269,9 +301,20 @@ func safeExecutionError(e error) string {
 }
 func (s *Service) runCommand(processCtx, persistCtx context.Context, rid, command string, plan executionPlan) (flyway.Result, string, error) {
 	started := utcNow()
-	result := s.execution.runner.Execute(processCtx, requestFor(plan, command))
-	finished := utcNow()
 	eid := id()
+	req := requestFor(plan, command)
+	if req.Engine == "postgresql" {
+		req.ExecutionTag = "fwm_" + eid
+		// Commit correlation before launch so abrupt restart retains the lookup.
+		if _, e := s.db.ExecContext(persistCtx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) VALUES(?,?,?,?,?)`, rid, command, "stderr", "PostgreSQL execution correlation: "+req.ExecutionTag, started); e != nil {
+			return flyway.Result{}, "", e
+		}
+	}
+	result := s.execution.runner.Execute(processCtx, req)
+	finished := utcNow()
+	if len(result.Lifecycle) > 0 && json.Valid(result.Lifecycle) {
+		result.Stderr += "\nPostgreSQL execution lifecycle: " + string(result.Lifecycle)
+	}
 	payload := "null"
 	if json.Valid(result.JSON) {
 		payload = string(result.JSON)

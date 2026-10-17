@@ -1,0 +1,38 @@
+=== RUN   TestPostgreSQLManagerMigrationLive
+=== RUN   TestPostgreSQLManagerMigrationLive/database-execution-policy
+=== RUN   TestPostgreSQLManagerMigrationLive/predecessor-failure-blocks-queued
+=== RUN   TestPostgreSQLManagerMigrationLive/native-unsafe-history-blocks-worker
+=== RUN   TestPostgreSQLManagerMigrationLive/versioned-repeatable-idempotency
+=== RUN   TestPostgreSQLManagerMigrationLive/independent-schema
+=== RUN   TestPostgreSQLManagerMigrationLive/rollback-and-partial-success-held
+=== RUN   TestPostgreSQLManagerMigrationLive/timeout-and-backend-observation
+=== RUN   TestPostgreSQLManagerMigrationLive/manager-cli-process-group-kill
+=== RUN   TestPostgreSQLManagerMigrationLive/unsupported-sql-and-immutable-checksum
+=== RUN   TestPostgreSQLManagerMigrationLive/concurrent-independent-streams
+=== RUN   TestPostgreSQLManagerMigrationLive/queued-trust-profile-change-rejected
+=== RUN   TestPostgreSQLManagerMigrationLive/queued-credential-change
+=== RUN   TestPostgreSQLManagerMigrationLive/queued-manager-grant-revoked
+=== RUN   TestPostgreSQLManagerMigrationLive/cross-schema-privilege-isolation
+=== RUN   TestPostgreSQLManagerMigrationLive/database-permission-revoked
+=== RUN   TestPostgreSQLManagerMigrationLive/independent-database
+=== RUN   TestPostgreSQLManagerMigrationLive/worker-shutdown-and-restart-held
+--- PASS: TestPostgreSQLManagerMigrationLive (1654.82s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/database-execution-policy (101.49s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/predecessor-failure-blocks-queued (106.86s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/native-unsafe-history-blocks-worker (104.83s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/versioned-repeatable-idempotency (238.82s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/independent-schema (98.10s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/rollback-and-partial-success-held (197.06s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/timeout-and-backend-observation (100.64s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/manager-cli-process-group-kill (97.95s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/unsupported-sql-and-immutable-checksum (19.45s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/concurrent-independent-streams (94.02s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/queued-trust-profile-change-rejected (116.51s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/queued-credential-change (10.01s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/queued-manager-grant-revoked (10.42s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/cross-schema-privilege-isolation (81.37s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/database-permission-revoked (95.76s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/independent-database (91.16s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/worker-shutdown-and-restart-held (76.79s)
+PASS
+ok  	flyway-manager/internal/core	1654.831s

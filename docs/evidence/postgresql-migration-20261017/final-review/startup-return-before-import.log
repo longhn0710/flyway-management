@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection
+    postgresql_journal_recovery_test.go:146: StartExecution returned before journal import completed: <nil>
+--- FAIL: TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection (1.04s)
+FAIL
+FAIL	flyway-manager/internal/core	1.052s
+FAIL
