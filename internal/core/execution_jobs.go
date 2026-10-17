@@ -293,32 +293,42 @@ func (s *Service) workerFailure(rid string) {
 // durable exit evidence, even matching history cannot prove absence of partial
 // DDL, so the original run and stream remain NEEDS_REVIEW/held.
 func (s *Service) reconcileRecovered(ctx context.Context) {
-	rows, e := s.db.QueryContext(ctx, `SELECT r.id FROM migration_runs r JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id WHERE r.status='NEEDS_REVIEW' AND s.held=1 ORDER BY r.sequence`)
+	rows, e := s.db.QueryContext(ctx, `SELECT r.id,t.engine FROM migration_runs r JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id JOIN database_targets t ON t.id=r.target_id WHERE r.status='NEEDS_REVIEW' AND s.held=1 ORDER BY r.sequence`)
 	if e != nil {
 		return
 	}
-	ids := []string{}
+	type recoveredRun struct{ id, engine string }
+	ids := []recoveredRun{}
 	for rows.Next() {
-		var rid string
-		if e = rows.Scan(&rid); e != nil {
+		var run recoveredRun
+		if e = rows.Scan(&run.id, &run.engine); e != nil {
 			break
 		}
-		ids = append(ids, rid)
+		ids = append(ids, run)
 	}
 	rows.Close()
 	if e != nil {
 		return
 	}
-	for _, rid := range ids {
+	// Retain local evidence for every held PostgreSQL run before any network
+	// inspection. An older unavailable or slow database must not hide another
+	// run's already durable process/backend correlation after restart.
+	for _, run := range ids {
 		if ctx.Err() != nil {
 			return
 		}
+		if run.engine == "postgresql" {
+			s.retainPostgreSQLJournals(ctx, run.id)
+		}
+	}
+	for _, recovered := range ids {
+		if ctx.Err() != nil {
+			return
+		}
+		rid := recovered.id
 		run, e := runScan(s.db.QueryRowContext(ctx, "SELECT "+runColumns+" FROM migration_runs WHERE id=?", rid))
 		if e != nil {
 			continue
-		}
-		if run.Target.Engine == "postgresql" {
-			s.retainPostgreSQLJournals(ctx, rid)
 		}
 		lock := s.execution.stream(run.TargetID, run.SchemaID)
 		lock.Lock()
