@@ -1,0 +1,51 @@
+{
+  "configuration": "[\"oracle.example\",1521,\"APP\",\"TCP\",\"DEV\",\"APP\",\"APP\",\"flyway_schema_history\",{\"flyway.baselineOnMigrate\":\"false\",\"flyway.callbacks\":\"\",\"flyway.cleanDisabled\":\"true\",\"flyway.createSchemas\":\"false\",\"flyway.defaultSchema\":\"APP\",\"flyway.ignoreMigrationPatterns\":\"*:pending\",\"flyway.oracle.sqlplus\":\"false\",\"flyway.outOfOrder\":\"false\",\"flyway.placeholderReplacement\":\"false\",\"flyway.schemas\":\"APP\",\"flyway.table\":\"flyway_schema_history\",\"flyway.url\":\"jdbc:oracle:thin:@//oracle.example:1521/APP\",\"flyway.user\":\"APP\",\"flyway.validateMigrationNaming\":\"true\",\"flyway.validateOnMigrate\":\"true\",\"locations\":\"immutable-run-snapshot\",\"outputType\":\"json\"}]",
+  "snapshot": {
+    "flyway_configuration": {
+      "flyway.baselineOnMigrate": "false",
+      "flyway.callbacks": "",
+      "flyway.cleanDisabled": "true",
+      "flyway.createSchemas": "false",
+      "flyway.defaultSchema": "APP",
+      "flyway.ignoreMigrationPatterns": "*:pending",
+      "flyway.oracle.sqlplus": "false",
+      "flyway.outOfOrder": "false",
+      "flyway.placeholderReplacement": "false",
+      "flyway.schemas": "APP",
+      "flyway.table": "flyway_schema_history",
+      "flyway.url": "jdbc:oracle:thin:@//oracle.example:1521/APP",
+      "flyway.user": "APP",
+      "flyway.validateMigrationNaming": "true",
+      "flyway.validateOnMigrate": "true",
+      "locations": "immutable-run-snapshot",
+      "outputType": "json"
+    },
+    "target": {
+      "id": "legacy",
+      "name": "Legacy",
+      "environment": "DEV",
+      "host": "oracle.example",
+      "port": 1521,
+      "service": "APP",
+      "transport": "TCP",
+      "active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    "schema": {
+      "id": "schema",
+      "target_id": "legacy",
+      "name": "APP",
+      "history_schema": "APP",
+      "history_table": "flyway_schema_history",
+      "default_account_id": "",
+      "active": true,
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    "account": {
+      "id": "account",
+      "name": "App",
+      "username": "APP",
+      "credential_version": 1
+    }
+  }
+}

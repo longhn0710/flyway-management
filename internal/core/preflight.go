@@ -22,9 +22,14 @@ type executionPlan struct {
 	files         []storedFile
 	password      []byte
 	configuration string
+	caPEM         string
 }
 
 func streamConfiguration(snap RunSnapshot) string {
+	if snap.Target.Engine == "postgresql" {
+		payload, _ := json.Marshal([]any{2, snap.Target.Engine, snap.Target.DatabaseName, snap.Target.Host, snap.Target.Port, snap.Target.Environment, snap.Schema.Name, snap.Schema.HistorySchema, snap.Schema.HistoryTable, snap.Profile, snap.FlywayConfiguration})
+		return string(payload)
+	}
 	payload, _ := json.Marshal([]any{snap.Target.Host, snap.Target.Port, snap.Target.Service, snap.Target.Transport, snap.Target.Environment, snap.Schema.Name, snap.Schema.HistorySchema, snap.Schema.HistoryTable, snap.FlywayConfiguration})
 	return string(payload)
 }
@@ -61,6 +66,15 @@ func (s *Service) executionSnapshot(ctx context.Context, q queryer, in RunInput)
 	if len(plain) == 0 {
 		clear(plain)
 		return snap, nil, conflict("Oracle credential is empty.")
+	}
+	if snap.Target.Engine == "postgresql" {
+		profile, err := loadProfile(ctx, q, in.TargetID)
+		if err != nil {
+			clear(plain)
+			return snap, nil, err
+		}
+		snap.SnapshotVersion = 2
+		snap.Profile = &ProfileSnapshot{profile.AuthKind, profile.TLSMode, profile.CASHA256, profile.Revision}
 	}
 	snap.FlywayConfiguration = flyway.ConfigurationSnapshot(requestFor(executionPlan{snapshot: snap}, "info"))
 	return snap, plain, nil
@@ -148,6 +162,14 @@ func (s *Service) localPlan(ctx context.Context, q queryer, a Actor, in RunInput
 	}
 	plan.snapshot = snap
 	plan.password = password
+	if snap.Target.Engine == "postgresql" {
+		p, err := loadProfile(ctx, q, in.TargetID)
+		if err != nil {
+			clear(password)
+			return executionPlan{}, err
+		}
+		plan.caPEM = p.CAPEM
+	}
 	plan.configuration = streamConfiguration(snap)
 	fail := func(e error) (executionPlan, error) { clear(password); return executionPlan{}, e }
 	// Until Oracle CURRENT_SCHEMA behavior is accepted, separate history schemas are intentionally blocked.
@@ -189,7 +211,17 @@ func requestFor(plan executionPlan, command string) flyway.Request {
 	for _, f := range plan.files {
 		files[f.Path] = f.Bytes
 	}
-	return flyway.Request{Command: command, Host: snap.Target.Host, Port: snap.Target.Port, Service: snap.Target.Service, Transport: snap.Target.Transport, Schema: snap.Schema.Name, HistorySchema: snap.Schema.HistorySchema, HistoryTable: snap.Schema.HistoryTable, Username: snap.Account.Username, Password: string(plan.password), Files: files}
+	req := flyway.Request{Command: command, Host: snap.Target.Host, Port: snap.Target.Port, Service: snap.Target.Service, Transport: snap.Target.Transport, Schema: snap.Schema.Name, HistorySchema: snap.Schema.HistorySchema, HistoryTable: snap.Schema.HistoryTable, Username: snap.Account.Username, Password: string(plan.password), Files: files}
+	if snap.Target.Engine == "postgresql" {
+		req.Engine = "postgresql"
+		req.DatabaseName = snap.Target.DatabaseName
+		req.CAPEM = plan.caPEM
+		if snap.Profile != nil {
+			req.CAHash = snap.Profile.CASHA256
+			req.TLSMode = snap.Profile.TLSMode
+		}
+	}
+	return req
 }
 func fillPlan(p *Preflight, plan executionPlan) {
 	for _, f := range plan.files {
@@ -207,6 +239,10 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 	}
 	if e := connectionAccountAllowed(ctx, s.db, in.TargetID, in.SchemaID, in.ExecutionAccountID); e != nil {
 		return p, e
+	}
+	if e := s.migrationEngineGate(ctx, t.Actor, in.TargetID); e != nil {
+		p.block("ENGINE_MIGRATION_DISABLED", safeExecutionError(e))
+		return p, nil
 	}
 	if s.execution == nil {
 		p.block("RUNTIME_UNAVAILABLE", "Flyway runtime is not configured.")

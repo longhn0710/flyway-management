@@ -1,0 +1,912 @@
+{
+  "database_before_after_sha256": "f7ba7cb8091b6ae42412e395b10a3fbc78be5d87da80adb2f7dd1030eecf1cf5",
+  "fixture_migrate": {
+    "success": true,
+    "exit_code": 0,
+    "stdout": "{\"database\":\"fwm_test\",\"databaseType\":\"PostgreSQL\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"initialSchemaVersion\":\"2\",\"licenseFailed\":false,\"migrations\":[],\"migrationsExecuted\":0,\"operation\":\"migrate\",\"schemaName\":\"app\",\"success\":true,\"targetSchemaVersion\":null,\"timestamp\":\"2026-10-17T02:10:40.966632084+07:00\",\"totalMigrationTime\":0,\"warnings\":[]}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "json": {
+      "database": "fwm_test",
+      "databaseType": "PostgreSQL",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "initialSchemaVersion": "2",
+      "licenseFailed": false,
+      "migrations": [],
+      "migrationsExecuted": 0,
+      "operation": "migrate",
+      "schemaName": "app",
+      "success": true,
+      "targetSchemaVersion": null,
+      "timestamp": "2026-10-17T02:10:40.966632084+07:00",
+      "totalMigrationTime": 0,
+      "warnings": []
+    },
+    "version": "13.10.3",
+    "timed_out": false,
+    "ambiguous": false
+  },
+  "future": {
+    "id": "PH0LjyB0Qtjo7KiM_WLOSC",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:11:42.944668586Z",
+    "started_at": "2026-10-16T19:11:28.186672758Z",
+    "artifact_id": "5ExSJ5zrIH9uylaeq4U52b",
+    "artifact_sha256": "b6b88826c4a2eecc65f9dcb5963d673b22666d7f4bd70609177e8da15f9ce789",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 2
+      }
+    },
+    "files": [
+      {
+        "path": "V1__foundation.sql",
+        "sha256": "35fb7347809562c28779aed390caea6d546b6c540d4ddf5f32eb2179069df67a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 96
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 11,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2916461205/sql/V1__foundation.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.263445Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second",
+          "executionTime": 6,
+          "filepath": "",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.298997Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Future",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T02:11:42.827148404+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":11,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2916461205/sql/V1__foundation.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.263445Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second\",\"executionTime\":6,\"filepath\":\"\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.298997Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Future\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T02:11:42.827148404+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified.",
+      "HISTORY_UNSAFE: Flyway history has unsupported or unsafe state \"Future\" for . Existing migration safeguards remain enforced."
+    ]
+  },
+  "identity": {
+    "network_state": "verified",
+    "authentication_state": "verified",
+    "actual_user": "fwm_exec",
+    "current_schema": "",
+    "database_service": "",
+    "pdb_name": "",
+    "own_schema": "",
+    "schema_total": 2,
+    "schemas": [
+      {
+        "name": "app",
+        "own": true,
+        "object_count": 0,
+        "known_privileges": [
+          "USAGE",
+          "CREATE"
+        ],
+        "migration_capability": "potential",
+        "capability_reason": "The session role has CREATE privilege; migration behavior has not been acceptance tested."
+      },
+      {
+        "name": "public",
+        "own": false,
+        "object_count": 0,
+        "known_privileges": [
+          "USAGE"
+        ],
+        "migration_capability": "unknown",
+        "capability_reason": "CREATE privilege was not established by the read-only probe."
+      }
+    ],
+    "system_privileges": [],
+    "enabled_roles": [],
+    "capabilities": [
+      {
+        "view": "PG_IDENTITY",
+        "status": "complete",
+        "detail": "Database, login role, current role and server version verified."
+      },
+      {
+        "view": "PG_SCHEMAS",
+        "status": "complete",
+        "detail": "Only existing non-system schemas with USAGE are listed."
+      }
+    ],
+    "warnings": [],
+    "engine": "postgresql",
+    "database_name": "fwm_test",
+    "server_version": "170011",
+    "session_user": "fwm_exec",
+    "tls_mode": "verify-full",
+    "jdbc_driver": "PostgreSQL JDBC 42.7.14"
+  },
+  "initial_info": {
+    "id": "37LgTP8uGWSPbnmfWPcIVq",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:10:26.85162008Z",
+    "started_at": "2026-10-16T19:10:11.796034304Z",
+    "artifact_id": "PlJ0sKDLe3H5SXkKMeVVDy",
+    "artifact_sha256": "b6b88826c4a2eecc65f9dcb5963d673b22666d7f4bd70609177e8da15f9ce789",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "absent_info_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "absent_info_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 2
+      }
+    },
+    "files": [
+      {
+        "path": "V1__foundation.sql",
+        "sha256": "35fb7347809562c28779aed390caea6d546b6c540d4ddf5f32eb2179069df67a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 96
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 0,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1707917085/sql/V1__foundation.sql",
+          "installedBy": "",
+          "installedOnUTC": "",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Pending",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": null,
+      "timestamp": "2026-10-17T02:10:26.745202157+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1707917085/sql/V1__foundation.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T02:10:26.745202157+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified."
+    ]
+  },
+  "migration_enabled": false,
+  "missing": {
+    "id": "ZR21c0Y0vL724HTjvps7uv",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:12:06.703188977Z",
+    "started_at": "2026-10-16T19:11:48.655309164Z",
+    "artifact_id": "XTILrNMs-NpNw_bLjOpfhM",
+    "artifact_sha256": "8e4823294d3f1f99563a2ea0c71499370e71546a1eceaf6127d9e0b47cb20103",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 2
+      }
+    },
+    "files": [
+      {
+        "path": "V2__second.sql",
+        "sha256": "f56c4b22059eaba19585e1dab10ee96d303b1c91cb4edfef61492b38192d0e84",
+        "kind": "versioned",
+        "version": "2",
+        "size": 41
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 11,
+          "filepath": "",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.263445Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Missing",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second",
+          "executionTime": 6,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2934864565/sql/V2__second.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.298997Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T02:12:06.553354482+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":11,\"filepath\":\"\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.263445Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Missing\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second\",\"executionTime\":6,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2934864565/sql/V2__second.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.298997Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T02:12:06.553354482+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified.",
+      "HISTORY_UNSAFE: Flyway history has unsupported or unsafe state \"Missing\" for . Existing migration safeguards remain enforced."
+    ]
+  },
+  "pending": {
+    "id": "ex8mUvk9xY5sptC54WsstE",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:11:23.034996785Z",
+    "started_at": "2026-10-16T19:11:06.295000989Z",
+    "artifact_id": "rvvQhRCgXmemjs1I5wMwpX",
+    "artifact_sha256": "490d82335b7645ba86d082b666c90fa0e5326d0b4a523624fca8f3581a648ffa",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 2
+      }
+    },
+    "files": [
+      {
+        "path": "V1__foundation.sql",
+        "sha256": "35fb7347809562c28779aed390caea6d546b6c540d4ddf5f32eb2179069df67a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 96
+      },
+      {
+        "path": "V2__second.sql",
+        "sha256": "f56c4b22059eaba19585e1dab10ee96d303b1c91cb4edfef61492b38192d0e84",
+        "kind": "versioned",
+        "version": "2",
+        "size": 41
+      },
+      {
+        "path": "V3__pending.sql",
+        "sha256": "fa4a71571fc2071c8ba7b9fa042ad3267b4f134515497aecc339df06ffd3725d",
+        "kind": "versioned",
+        "version": "3",
+        "size": 10
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 11,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V1__foundation.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.263445Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second",
+          "executionTime": 6,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V2__second.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.298997Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        },
+        {
+          "category": "Versioned",
+          "description": "pending",
+          "executionTime": 0,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V3__pending.sql",
+          "installedBy": "",
+          "installedOnUTC": "",
+          "rawVersion": "3",
+          "shouldExecuteExpression": null,
+          "state": "Pending",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "3"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T02:11:22.9113045+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":11,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V1__foundation.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.263445Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second\",\"executionTime\":6,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V2__second.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.298997Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Versioned\",\"description\":\"pending\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2357447278/sql/V3__pending.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"3\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"3\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T02:11:22.9113045+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified."
+    ]
+  },
+  "readonly_info": {
+    "id": "5_L7rGO4W6FDb-L8C9DM0k",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:12:44.277518248Z",
+    "started_at": "2026-10-16T19:12:29.414249063Z",
+    "artifact_id": "qpRBg9qnPjdqDU7e8oeh6k",
+    "artifact_sha256": "69bf40aaf37ff0de6d18c94ad22679296ac1000d29e655212157c2cce7bb22bb",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_readonly",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "rVsLjWYtwhhrZpObUXa_Aq",
+        "name": "fwm_readonly",
+        "username": "fwm_readonly",
+        "credential_version": 1
+      }
+    },
+    "files": [
+      {
+        "path": "V1__foundation.sql",
+        "sha256": "35fb7347809562c28779aed390caea6d546b6c540d4ddf5f32eb2179069df67a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 96
+      },
+      {
+        "path": "V2__second.sql",
+        "sha256": "f56c4b22059eaba19585e1dab10ee96d303b1c91cb4edfef61492b38192d0e84",
+        "kind": "versioned",
+        "version": "2",
+        "size": 41
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 11,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1678175013/sql/V1__foundation.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.263445Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second",
+          "executionTime": 6,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1678175013/sql/V2__second.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.298997Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T02:12:44.147149559+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":11,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1678175013/sql/V1__foundation.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.263445Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second\",\"executionTime\":6,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-1678175013/sql/V2__second.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.298997Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T02:12:44.147149559+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified."
+    ]
+  },
+  "success": {
+    "id": "mvZA6D2J2LtRGxTJQ61IHS",
+    "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+    "schema_id": "JFbDs21vP7Iw9BYWJ-PAq3",
+    "source": "read-only-refresh",
+    "captured_at": "2026-10-16T19:11:00.461194583Z",
+    "started_at": "2026-10-16T19:10:46.037047938Z",
+    "artifact_id": "MabFrZzL3h-vfcmiTeivvz",
+    "artifact_sha256": "69bf40aaf37ff0de6d18c94ad22679296ac1000d29e655212157c2cce7bb22bb",
+    "snapshot": {
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_test",
+        "engine": "postgresql",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_test?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_test",
+        "profile_revision": 1,
+        "id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "PostgreSQL17 lab",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "schema": {
+        "id": "JFbDs21vP7Iw9BYWJ-PAq3",
+        "target_id": "connection-yIasLlJPFLg2NNBGelLNhh",
+        "name": "app",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "active": true,
+        "created_at": "2026-10-16T19:09:54Z"
+      },
+      "account": {
+        "id": "vZAvvCJlpaK2LwiTGPrZuj",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 2
+      }
+    },
+    "files": [
+      {
+        "path": "V1__foundation.sql",
+        "sha256": "35fb7347809562c28779aed390caea6d546b6c540d4ddf5f32eb2179069df67a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 96
+      },
+      {
+        "path": "V2__second.sql",
+        "sha256": "f56c4b22059eaba19585e1dab10ee96d303b1c91cb4edfef61492b38192d0e84",
+        "kind": "versioned",
+        "version": "2",
+        "size": 41
+      }
+    ],
+    "runtime_version": "13.10.3",
+    "actor_name": "admin",
+    "success": true,
+    "exit_code": 0,
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_test",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "foundation",
+          "executionTime": 11,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2044368794/sql/V1__foundation.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.263445Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second",
+          "executionTime": 6,
+          "filepath": "/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2044368794/sql/V2__second.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-16T19:05:16.298997Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T02:11:00.32410705+07:00"
+    },
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_test\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"foundation\",\"executionTime\":11,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2044368794/sql/V1__foundation.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.263445Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second\",\"executionTime\":6,\"filepath\":\"/tmp/TestPostgreSQLRealConnectionAndInfo1429898152/001/runtime/flyway-run-2044368794/sql/V2__second.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-16T19:05:16.298997Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T02:11:00.32410705+07:00\"}",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified."
+    ]
+  }
+}

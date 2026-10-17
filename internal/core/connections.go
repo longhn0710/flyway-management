@@ -6,13 +6,14 @@ import (
 	"errors"
 	"flyway-manager/internal/flyway"
 	"flyway-manager/internal/oracle"
-	"strings"
+	"flyway-manager/internal/postgresql"
 	"time"
 )
 
 // Test credentials remain only in request memory. Save independently probes
 // current metadata before starting the single SQLite registration transaction.
 type ConnectionInput struct {
+	profileRevision    int
 	credentialVersion  int
 	Target             TargetInput `json:"target"`
 	AccountID          string      `json:"account_id"`
@@ -25,10 +26,11 @@ type ConnectionInput struct {
 	AcknowledgeUnknown bool        `json:"acknowledge_unknown"`
 }
 type Connection struct {
-	Target         Target           `json:"target"`
-	Account        ExecutionAccount `json:"account"`
-	Schemas        []Schema         `json:"schemas"`
-	TimeoutSeconds int              `json:"timeout_seconds"`
+	Profile        *ConnectionProfile `json:"profile,omitempty"`
+	Target         Target             `json:"target"`
+	Account        ExecutionAccount   `json:"account"`
+	Schemas        []Schema           `json:"schemas"`
+	TimeoutSeconds int                `json:"timeout_seconds"`
 }
 
 var connectionSlots = make(chan struct{}, 4)
@@ -45,9 +47,21 @@ func (s *Service) connectionInput(ctx context.Context, a Actor, tid string, in C
 	if e != nil {
 		return in, e
 	}
-	in.Username = strings.ToUpper(strings.TrimSpace(in.Username))
-	if !oracleName.MatchString(in.Username) {
-		return in, invalid("username", "An unquoted Oracle username is required.")
+	in.Username = normalizeDBName(in.Target.Engine, in.Username)
+	if in.Target.Engine == "postgresql" {
+		if in.Target.Profile == nil && tid != "connection-test" {
+			in.Target.Profile, e = loadProfile(ctx, s.db, tid)
+			if e != nil {
+				return in, e
+			}
+			in.profileRevision = in.Target.Profile.Revision
+		}
+		if e := validateProfile(in.Target.Profile); e != nil {
+			return in, e
+		}
+	}
+	if !validDBName(in.Target.Engine, in.Username) {
+		return in, invalid("username", "Use an unquoted username supported by the selected engine.")
 	}
 	if in.TimeoutSeconds == 0 {
 		in.TimeoutSeconds = 20
@@ -61,7 +75,7 @@ func (s *Service) connectionInput(ctx context.Context, a Actor, tid string, in C
 			return in, e
 		}
 		if account.TargetID != tid || account.Username != in.Username {
-			return in, invalid("password", "Enter a password when changing the Oracle account.")
+			return in, invalid("password", "Enter a password when changing the execution account.")
 		}
 		var payload []byte
 		var revoked bool
@@ -78,12 +92,28 @@ func (s *Service) connectionInput(ctx context.Context, a Actor, tid string, in C
 		in.Password = string(plain)
 		clear(plain)
 	}
+	if in.Target.Engine == "postgresql" {
+		if err := flyway.ValidateCredential(in.Password); err != nil {
+			return in, invalid("password", err.Error())
+		}
+	}
 	if in.Password == "" || len(in.Password) > 4096 {
-		return in, invalid("password", "An Oracle password up to 4096 bytes is required.")
+		return in, invalid("password", "A password up to 4096 bytes is required.")
 	}
 	return in, nil
 }
-func (s *Service) probeConnection(ctx context.Context, in ConnectionInput) (oracle.Result, error) {
+
+type ConnectionResult struct {
+	oracle.Result
+	Engine        string `json:"engine,omitempty"`
+	DatabaseName  string `json:"database_name,omitempty"`
+	ServerVersion string `json:"server_version,omitempty"`
+	SessionUser   string `json:"session_user,omitempty"`
+	TLSMode       string `json:"tls_mode,omitempty"`
+	JDBCDriver    string `json:"jdbc_driver,omitempty"`
+}
+
+func (s *Service) probeOracleConnection(ctx context.Context, in ConnectionInput) (oracle.Result, error) {
 	select {
 	case connectionSlots <- struct{}{}:
 		defer func() { <-connectionSlots }()
@@ -112,21 +142,21 @@ func (s *Service) probeConnection(ctx context.Context, in ConnectionInput) (orac
 	}
 	return result, e
 }
-func (s *Service) TestConnection(ctx context.Context, t Trace, tid string, in ConnectionInput) (oracle.Result, error) {
+func (s *Service) TestConnection(ctx context.Context, t Trace, tid string, in ConnectionInput) (ConnectionResult, error) {
 	in, e := s.connectionInput(ctx, t.Actor, tid, in)
 	if e != nil {
-		return oracle.Result{}, e
+		return ConnectionResult{}, e
 	}
 	result, e := s.probeConnection(ctx, in)
 	if e != nil {
 		return result, e
 	}
 	outcome := "failure"
-	if result.AuthenticationState == "verified" {
+	if result.AuthenticationState == "verified" && result.ErrorCode == "" {
 		outcome = "success"
 	}
 	if e = s.Event(ctx, t, "connection.test", tid, outcome); e != nil {
-		return oracle.Result{}, e
+		return ConnectionResult{}, e
 	}
 	return result, nil
 }
@@ -140,6 +170,12 @@ func (s *Service) Connection(ctx context.Context, a Actor, tid string, accountID
 	out.Target, e = s.Target(ctx, a, tid)
 	if e != nil {
 		return out, e
+	}
+	if out.Target.Engine == "postgresql" {
+		out.Profile, e = loadProfile(ctx, s.db, tid)
+		if e != nil {
+			return out, e
+		}
 	}
 	var aid string
 	e = s.db.QueryRowContext(ctx, "SELECT account_id,timeout_seconds FROM connection_settings WHERE target_id=?", tid).Scan(&aid, &out.TimeoutSeconds)
@@ -193,8 +229,8 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 		return Connection{}, e
 	}
 	// Metadata is validated here, never trusted from a browser test response.
-	if result.AuthenticationState != "verified" {
-		return Connection{}, conflict("Oracle authentication must succeed before saving.")
+	if result.AuthenticationState != "verified" || (in.Target.Engine == "postgresql" && result.ErrorCode != "") {
+		return Connection{}, conflict("Supported database identity and authentication must succeed before saving.")
 	}
 	candidates := map[string]oracle.SchemaCandidate{}
 	for _, x := range result.Schemas {
@@ -209,14 +245,14 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 	selected := map[string]oracle.SchemaCandidate{}
 	for _, name := range in.Schemas {
 		x, ok := candidates[name]
-		if !ok || x.MigrationCapability == "unsupported" || !oracleName.MatchString(name) {
+		if !ok || x.MigrationCapability == "unsupported" || !validDBName(in.Target.Engine, name) {
 			return Connection{}, invalid("schemas", "A selected schema is unavailable or unsupported.")
 		}
 		if _, ok := selected[name]; ok {
 			return Connection{}, invalid("schemas", "Duplicate schema selection.")
 		}
 		if x.MigrationCapability == "unknown" && !in.AcknowledgeUnknown {
-			return Connection{}, invalid("acknowledge_unknown", "Explicitly acknowledge uncertain Oracle privileges.")
+			return Connection{}, invalid("acknowledge_unknown", "Explicitly acknowledge uncertain database privileges.")
 		}
 		selected[name] = x
 	}
@@ -235,7 +271,7 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 			if in.AccountID != "" {
 				return invalid("account_id", "New connections require a new account.")
 			}
-			_, e = tx.ExecContext(ctx, "INSERT INTO database_targets(id,name,environment,host,port,service,transport,active,created_at) VALUES(?,?,?,?,?,?,?,1,?)", tid, in.Target.Name, in.Target.Environment, in.Target.Host, in.Target.Port, in.Target.Service, in.Target.Transport, now())
+			_, e = tx.ExecContext(ctx, "INSERT INTO database_targets(id,name,environment,host,port,service,transport,active,created_at,engine,database_name) VALUES(?,?,?,?,?,?,?,1,?,?,?)", tid, in.Target.Name, in.Target.Environment, in.Target.Host, in.Target.Port, in.Target.Service, in.Target.Transport, now(), in.Target.Engine, in.Target.DatabaseName)
 			if e != nil {
 				return e
 			}
@@ -243,6 +279,9 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 			old, e := targetScan(tx.QueryRowContext(ctx, "SELECT "+targetColumns+" FROM database_targets WHERE id=?", tid))
 			if e != nil {
 				return e
+			}
+			if engineOf(old.Engine) != in.Target.Engine {
+				return invalid("engine", "Engine is immutable.")
 			}
 			if !old.Active {
 				return conflict("Reactivate this target before saving its connection.")
@@ -255,7 +294,21 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 			if e = tx.QueryRowContext(ctx, "SELECT count(*) FROM execution_accounts WHERE target_id=? AND id<>?", tid, aid).Scan(&otherAccounts); e != nil {
 				return e
 			}
-			if (streams > 0 || otherAccounts > 0) && (old.Host != in.Target.Host || old.Port != in.Target.Port || old.Service != in.Target.Service || old.Transport != in.Target.Transport || old.Environment != in.Target.Environment) {
+			profileChanged := false
+			if old.Engine == "postgresql" {
+				previous, err := loadProfile(ctx, tx, tid)
+				if err != nil {
+					return err
+				}
+				if in.profileRevision != 0 && (previous.Revision != in.profileRevision || previous.CASHA256 != in.Target.Profile.CASHA256) {
+					return conflict("The saved TLS profile changed during discovery. Test and save again.")
+				}
+				profileChanged = previous.CASHA256 != in.Target.Profile.CASHA256
+			}
+			if (streams > 0 || otherAccounts > 0) && profileChanged {
+				return conflict("Trust changes on a connection with streams or other accounts require a new connection.")
+			}
+			if (streams > 0 || otherAccounts > 0) && (old.DatabaseName != in.Target.DatabaseName || old.Host != in.Target.Host || old.Port != in.Target.Port || old.Service != in.Target.Service || old.Transport != in.Target.Transport || old.Environment != in.Target.Environment) {
 				return conflict("A connection with migration history or other execution accounts cannot change its destination or environment. Register a new connection.")
 			}
 
@@ -264,7 +317,12 @@ func (s *Service) SaveConnection(ctx context.Context, t Trace, tid string, in Co
 					return e
 				}
 			}
-			if _, e = tx.ExecContext(ctx, "UPDATE database_targets SET name=?,environment=?,host=?,port=?,service=?,transport=? WHERE id=?", in.Target.Name, in.Target.Environment, in.Target.Host, in.Target.Port, in.Target.Service, in.Target.Transport, tid); e != nil {
+			if _, e = tx.ExecContext(ctx, "UPDATE database_targets SET name=?,environment=?,host=?,port=?,service=?,transport=?,database_name=?,profile_revision=profile_revision+CASE WHEN host<>? OR port<>? OR database_name<>? OR environment<>? OR ? THEN 1 ELSE 0 END WHERE id=?", in.Target.Name, in.Target.Environment, in.Target.Host, in.Target.Port, in.Target.Service, in.Target.Transport, in.Target.DatabaseName, in.Target.Host, in.Target.Port, in.Target.DatabaseName, in.Target.Environment, profileChanged, tid); e != nil {
+				return e
+			}
+		}
+		if in.Target.Engine == "postgresql" {
+			if e := saveProfile(ctx, tx, tid, in.Target.Profile); e != nil {
 				return e
 			}
 		}
@@ -454,4 +512,29 @@ func operationPage[T any](out []T, pages []Page) []T {
 		return []T{}
 	}
 	return out[offset:min(len(out), offset+limit)]
+}
+
+func (s *Service) probeConnection(ctx context.Context, in ConnectionInput) (ConnectionResult, error) {
+	if in.Target.Engine != "postgresql" {
+		r, e := s.probeOracleConnection(ctx, in)
+		return ConnectionResult{Result: r}, e
+	}
+	select {
+	case connectionSlots <- struct{}{}:
+		defer func() { <-connectionSlots }()
+	default:
+		return ConnectionResult{}, &Error{Status: 429, Code: "CONNECTION_BUSY", Message: "Connection tests are busy; retry shortly."}
+	}
+	unavailable := ConnectionResult{Engine: "postgresql", Result: oracle.Result{NetworkState: "unknown", AuthenticationState: "unknown", Schemas: []oracle.SchemaCandidate{}, Warnings: []string{}, ErrorCode: "POSTGRESQL_PROBE_UNAVAILABLE", ErrorMessage: "Configure the approved pinned JDBC runtime."}}
+	if s.execution == nil {
+		return unavailable, nil
+	}
+	probe, ok := s.execution.runner.(interface {
+		ProbePostgreSQL(context.Context, postgresql.Config) (postgresql.Result, error)
+	})
+	if !ok {
+		return unavailable, nil
+	}
+	r, e := probe.ProbePostgreSQL(ctx, postgresql.Config{Host: in.Target.Host, Port: in.Target.Port, DatabaseName: in.Target.DatabaseName, Username: in.Username, Password: in.Password, CAPEM: in.Target.Profile.CAPEM, OverallTimeout: time.Duration(in.TimeoutSeconds) * time.Second})
+	return ConnectionResult{Result: r.Result, Engine: "postgresql", DatabaseName: r.DatabaseName, ServerVersion: r.ServerVersion, SessionUser: r.SessionUser, TLSMode: r.TLSMode, JDBCDriver: r.JDBCDriver}, e
 }

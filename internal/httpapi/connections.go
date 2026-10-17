@@ -2,12 +2,12 @@ package httpapi
 
 import (
 	"flyway-manager/internal/core"
-	"flyway-manager/internal/oracle"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
 func (h phase2) registerConnections(r chi.Router) {
+	r.Get("/engine-capabilities", result(h, func(r *http.Request) ([]core.EngineCapability, error) { return core.EngineCapabilities(), nil }))
 	r.Get("/migration-connections", result(h, func(r *http.Request) ([]core.Target, error) {
 		return h.s.MigrationConnections(r.Context(), actor(r), page(r))
 	}))
@@ -16,10 +16,10 @@ func (h phase2) registerConnections(r chi.Router) {
 	}))
 	r.Group(func(r chi.Router) {
 		r.Use(h.admin)
-		r.Post("/connections/test", bodyResult(h, 200, func(r *http.Request, in core.ConnectionInput) (oracle.Result, error) {
+		r.Post("/connections/test", bodyResult(h, 200, func(r *http.Request, in core.ConnectionInput) (core.ConnectionResult, error) {
 			return h.s.TestConnection(r.Context(), trace(r), "", in)
 		}))
-		r.Post("/connections/{id}/test", bodyResult(h, 200, func(r *http.Request, in core.ConnectionInput) (oracle.Result, error) {
+		r.Post("/connections/{id}/test", bodyResult(h, 200, func(r *http.Request, in core.ConnectionInput) (core.ConnectionResult, error) {
 			return h.s.TestConnection(r.Context(), trace(r), pathID(r), in)
 		}))
 		r.Post("/connections", bodyResult(h, 201, func(r *http.Request, in core.ConnectionInput) (core.Connection, error) {

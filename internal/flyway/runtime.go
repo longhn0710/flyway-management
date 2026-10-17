@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"flyway-manager/internal/postgresql"
 )
 
 const maxOutput = 2 << 20
@@ -52,10 +54,15 @@ type Readiness struct {
 // Request describes one supported Flyway command and an immutable SQL snapshot.
 type Request struct {
 	Command       string
+	Engine        string
 	Host          string
 	Port          int
 	Service       string
+	DatabaseName  string
 	Transport     string
+	CAPEM         string
+	CAHash        string
+	TLSMode       string
 	Schema        string
 	HistorySchema string
 	HistoryTable  string
@@ -156,6 +163,22 @@ func (r *Runtime) Execute(ctx context.Context, req Request) Result {
 		result.Stderr = err.Error()
 		return result
 	}
+	if req.Engine == "postgresql" {
+		probe, probeErr := r.ProbePostgreSQL(ctx, postgresql.Config{Host: req.Host, Port: req.Port, DatabaseName: req.DatabaseName, Username: req.Username, Password: req.Password, CAPEM: req.CAPEM})
+		if probeErr != nil || probe.AuthenticationState != "verified" || probe.ErrorCode != "" || probe.DatabaseName != req.DatabaseName || probe.SessionUser != req.Username || !strings.HasPrefix(probe.ServerVersion, "17") {
+			result.Stderr = "PostgreSQL runtime identity, version, or TLS verification failed"
+			return result
+		}
+		foundSchema, foundHistory := false, false
+		for _, candidate := range probe.Schemas {
+			foundSchema = foundSchema || candidate.Name == req.Schema
+			foundHistory = foundHistory || candidate.Name == req.HistorySchema
+		}
+		if !foundSchema || !foundHistory {
+			result.Stderr = "PostgreSQL schema is not visible with USAGE privilege"
+			return result
+		}
+	}
 	ready := r.Check(ctx)
 	if !ready.Ready {
 		result.Stderr = "Flyway runtime is not ready: " + strings.Join(ready.Blockers, "; ")
@@ -190,7 +213,20 @@ func (r *Runtime) Execute(ctx context.Context, req Request) Result {
 		return result
 	}
 	configPath := filepath.Join(work, "flyway.toml")
-	if err := os.WriteFile(configPath, []byte(makeConfig(req)), 0600); err != nil {
+	configText := makeConfig(req)
+	if req.Engine == "postgresql" {
+		if _, err := pinnedPostgreSQLJar(root); err != nil {
+			result.Stderr = "pinned PostgreSQL JDBC dependency is unavailable"
+			return result
+		}
+		caPath := filepath.Join(work, "ca.pem")
+		if err := os.WriteFile(caPath, []byte(req.CAPEM), 0600); err != nil {
+			result.Stderr = "unable to stage PostgreSQL TLS trust"
+			return result
+		}
+		configText = makePostgreSQLConfig(req, caPath)
+	}
+	if err := os.WriteFile(configPath, []byte(configText), 0600); err != nil {
 		result.Stderr = "unable to write private Flyway configuration"
 		return result
 	}
@@ -243,6 +279,12 @@ func validCommand(s string) bool {
 var safeIdentifier = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_$#]{0,127}$`)
 
 func validateRequest(r Request) error {
+	if r.Engine == "postgresql" {
+		return validatePostgreSQLRequest(r)
+	}
+	if r.Engine != "" && r.Engine != "oracle" {
+		return errors.New("unsupported database engine")
+	}
 	if r.Host == "" || strings.ContainsAny(r.Host, "\r\n\x00") || r.Port < 1 || r.Port > 65535 || r.Service == "" || strings.ContainsAny(r.Service, "\r\n\x00/@") {
 		return errors.New("invalid Oracle target configuration")
 	}
@@ -907,6 +949,9 @@ func (r *Runtime) release() { <-r.slots }
 // on dispatch also prevents a future application upgrade changing queued SQL
 // semantics even when the Flyway binary/version remains pinned.
 func ConfigurationSnapshot(req Request) map[string]string {
+	if req.Engine == "postgresql" {
+		return postgresqlConfigurationSnapshot(req)
+	}
 	props := configProperties(req)
 	delete(props, "flyway.password")
 	props["outputType"] = "json"

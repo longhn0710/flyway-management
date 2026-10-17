@@ -126,6 +126,7 @@ function MigrationPage() {
     mappedAccounts[0];
   const authorized =
     canSubmit &&
+    target?.engine !== "postgresql" &&
     identity.grants.some(
       (g) =>
         g.target_id === selectedTargetID &&
@@ -324,8 +325,9 @@ function MigrationPage() {
       <div className="layout-editor">
         <Panel title="1 · Destination">
           <p className="small muted">
-            Oracle is the only operational engine today. PostgreSQL, MySQL, and
-            SQL Server are future options and cannot be selected for migration.
+            Oracle is operational. PostgreSQL connection and Info are available;
+            migration remains disabled pending Gate E/F acceptance. Other
+            engines are not implemented.
           </p>
           {targets.isPending ? (
             <div
@@ -356,8 +358,14 @@ function MigrationPage() {
                 {(targets.data ?? [])
                   .filter((t) => t.active)
                   .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      Oracle · {t.name} · {t.environment} · {t.service}
+                    <option
+                      key={t.id}
+                      value={t.id}
+                      disabled={t.engine === "postgresql"}
+                    >
+                      {t.engine === "postgresql" ? "PostgreSQL" : "Oracle"} ·{" "}
+                      {t.name} · {t.environment} ·{" "}
+                      {t.database_name || t.service}
                     </option>
                   ))}
               </select>

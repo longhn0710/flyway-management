@@ -9,33 +9,43 @@ import (
 )
 
 type Target struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Environment string `json:"environment"`
-	Host        string `json:"host"`
-	Port        int    `json:"port"`
-	Service     string `json:"service"`
-	Transport   string `json:"transport"`
-	Active      bool   `json:"active"`
-	CreatedAt   string `json:"created_at"`
+	Engine          string `json:"engine,omitempty"`
+	DatabaseName    string `json:"database_name,omitempty"`
+	ProfileRevision int    `json:"profile_revision,omitempty"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Environment     string `json:"environment"`
+	Host            string `json:"host"`
+	Port            int    `json:"port"`
+	Service         string `json:"service"`
+	Transport       string `json:"transport"`
+	Active          bool   `json:"active"`
+	CreatedAt       string `json:"created_at"`
 }
 type TargetInput struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Environment string `json:"environment"`
-	Host        string `json:"host"`
-	Port        int    `json:"port"`
-	Service     string `json:"service"`
-	Transport   string `json:"transport"`
-	Active      bool   `json:"active"`
+	Engine       string             `json:"engine"`
+	DatabaseName string             `json:"database_name"`
+	Profile      *ConnectionProfile `json:"profile,omitempty"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	Environment  string             `json:"environment"`
+	Host         string             `json:"host"`
+	Port         int                `json:"port"`
+	Service      string             `json:"service"`
+	Transport    string             `json:"transport"`
+	Active       bool               `json:"active"`
 }
 
-const targetColumns = `id,name,environment,host,port,service,transport,active,created_at`
+const targetColumns = `id,name,environment,host,port,service,transport,active,created_at,engine,database_name,profile_revision`
 
 func targetScan(row interface{ Scan(...any) error }) (Target, error) {
 	var x Target
 	var c int64
-	e := row.Scan(&x.ID, &x.Name, &x.Environment, &x.Host, &x.Port, &x.Service, &x.Transport, &x.Active, &c)
+	e := row.Scan(&x.ID, &x.Name, &x.Environment, &x.Host, &x.Port, &x.Service, &x.Transport, &x.Active, &c, &x.Engine, &x.DatabaseName, &x.ProfileRevision)
+	if x.Engine == "oracle" {
+		x.Engine = ""
+		x.ProfileRevision = 0
+	}
 	x.CreatedAt = stamp(c)
 	return x, translate(e)
 }
@@ -70,7 +80,7 @@ func (s *Service) Targets(ctx context.Context, a Actor, p Page) ([]Target, error
 		return nil, e
 	}
 	// Apply authorization before pagination: scoped users never page through hidden resources.
-	rows, e := s.db.QueryContext(ctx, "SELECT "+targetColumns+" FROM database_targets WHERE (name LIKE ? OR host LIKE ? OR service LIKE ? OR id LIKE ?) AND (?='' OR environment=?) ORDER BY name,id", "%"+p.Query+"%", "%"+p.Query+"%", "%"+p.Query+"%", "%"+p.Query+"%", p.Environment, p.Environment)
+	rows, e := s.db.QueryContext(ctx, "SELECT "+targetColumns+" FROM database_targets WHERE (name LIKE ? OR host LIKE ? OR service LIKE ? OR database_name LIKE ? OR id LIKE ?) AND (?='' OR environment=?) ORDER BY name,id", "%"+p.Query+"%", "%"+p.Query+"%", "%"+p.Query+"%", "%"+p.Query+"%", "%"+p.Query+"%", p.Environment, p.Environment)
 	if e != nil {
 		return nil, e
 	}
@@ -117,6 +127,9 @@ func (s *Service) SaveTarget(ctx context.Context, t Trace, tid string, in Target
 	}
 	e := s.mutation(ctx, t, action, tid, func(tx *sql.Tx) error {
 		if create {
+			if in.Engine == "postgresql" {
+				return invalid("engine", "Use connection discovery to register PostgreSQL atomically.")
+			}
 			_, e := tx.ExecContext(ctx, "INSERT INTO database_targets(id,name,environment,host,port,service,transport,active,created_at) VALUES(?,?,?,?,?,?,?,1,?)", tid, in.Name, in.Environment, in.Host, in.Port, in.Service, in.Transport, now())
 			return e
 		}
@@ -125,6 +138,12 @@ func (s *Service) SaveTarget(ctx context.Context, t Trace, tid string, in Target
 		old, e = targetScan(tx.QueryRowContext(ctx, "SELECT "+targetColumns+" FROM database_targets WHERE id=?", tid))
 		if e != nil {
 			return e
+		}
+		if engineOf(old.Engine) != in.Engine {
+			return invalid("engine", "Engine is immutable.")
+		}
+		if in.Engine == "postgresql" && (old.Host != in.Host || old.Port != in.Port || old.DatabaseName != in.DatabaseName || old.Environment != in.Environment) {
+			return conflict("Use the connection wizard to revise a PostgreSQL profile.")
 		}
 		// An environment change is a new security decision: revoke inherited operational PROD grants.
 		if old.Environment != in.Environment {
@@ -218,8 +237,12 @@ func (s *Service) SaveSchema(ctx context.Context, t Trace, tid, sid string, in S
 		sid = id()
 		in.Active = true
 	}
-	in.Name = strings.ToUpper(strings.TrimSpace(in.Name))
-	in.HistorySchema = strings.ToUpper(strings.TrimSpace(in.HistorySchema))
+	target, err := s.Target(ctx, t.Actor, tid)
+	if err != nil {
+		return Schema{}, err
+	}
+	in.Name = normalizeDBName(target.Engine, in.Name)
+	in.HistorySchema = normalizeDBName(target.Engine, in.HistorySchema)
 	in.HistoryTable = strings.TrimSpace(in.HistoryTable)
 	if in.HistorySchema == "" {
 		in.HistorySchema = in.Name
@@ -227,8 +250,8 @@ func (s *Service) SaveSchema(ctx context.Context, t Trace, tid, sid string, in S
 	if in.HistoryTable == "" {
 		in.HistoryTable = "flyway_schema_history"
 	}
-	if !oracleName.MatchString(in.Name) || !oracleName.MatchString(in.HistorySchema) || !oracleName.MatchString(in.HistoryTable) {
-		return Schema{}, invalid("schema", "Use unquoted Oracle identifiers (up to 128 characters) for schema and history names.")
+	if !validDBName(target.Engine, in.Name) || !validDBName(target.Engine, in.HistorySchema) || !validDBName(target.Engine, in.HistoryTable) {
+		return Schema{}, invalid("schema", "Use unquoted identifiers supported by the selected engine for schema and history names.")
 	}
 	action := "schema.update"
 	if create {
@@ -382,10 +405,20 @@ func (s *Service) SaveAccount(ctx context.Context, t Trace, aid string, in Accou
 	} else if in.Password != "" {
 		return ExecutionAccount{}, invalid("password", "Use the write-only credential route to replace a credential.")
 	}
-	in.Username = strings.ToUpper(strings.TrimSpace(in.Username))
+	targetID := in.TargetID
+	if !create {
+		if err := s.db.QueryRowContext(ctx, "SELECT target_id FROM execution_accounts WHERE id=?", aid).Scan(&targetID); err != nil {
+			return ExecutionAccount{}, translate(err)
+		}
+	}
+	target, err := s.Target(ctx, t.Actor, targetID)
+	if err != nil {
+		return ExecutionAccount{}, err
+	}
+	in.Username = normalizeDBName(target.Engine, in.Username)
 	in.Name = strings.TrimSpace(in.Name)
-	if !oracleName.MatchString(in.Username) || !validText(in.Name, 200) || len(in.SchemaIDs) > 1000 {
-		return ExecutionAccount{}, invalid("account", "A name, unquoted Oracle username and valid schema mappings are required.")
+	if !validDBName(target.Engine, in.Username) || !validText(in.Name, 200) || len(in.SchemaIDs) > 1000 {
+		return ExecutionAccount{}, invalid("account", "A name, engine-supported unquoted username and valid schema mappings are required.")
 	}
 	if len(in.Password) > 4096 {
 		return ExecutionAccount{}, invalid("password", "Credential is too long.")
@@ -512,9 +545,22 @@ func normalizeTarget(tid string, in TargetInput) (TargetInput, error) {
 	if ip := net.ParseIP(in.Host); ip != nil {
 		in.Host = ip.String()
 	}
-	in.Service = strings.ToUpper(strings.TrimSpace(in.Service))
+	in.Engine = engineOf(in.Engine)
+	if in.Engine != "oracle" && in.Engine != "postgresql" {
+		return in, invalid("engine", "Engine is not implemented.")
+	}
+	if in.Engine == "oracle" {
+		if in.DatabaseName != "" || in.Profile != nil {
+			return in, invalid("profile", "Oracle uses its existing service and transport.")
+		}
+		in.Service = strings.ToUpper(strings.TrimSpace(in.Service))
+	} else {
+		if in.Service != "" || !validDBName(in.Engine, in.DatabaseName) || in.Transport != "TCPS" {
+			return in, invalid("database_name", "PostgreSQL requires an explicit lowercase database, empty service and verified TLS.")
+		}
+	}
 	in.Environment = strings.ToUpper(in.Environment)
-	if !identifier.MatchString(tid) || !validText(in.Name, 200) || (!hostname.MatchString(in.Host) && net.ParseIP(in.Host) == nil) || !serviceName.MatchString(in.Service) || in.Port < 1 || in.Port > 65535 {
+	if !identifier.MatchString(tid) || !validText(in.Name, 200) || (!hostname.MatchString(in.Host) && net.ParseIP(in.Host) == nil) || (in.Engine == "oracle" && !serviceName.MatchString(in.Service)) || in.Port < 1 || in.Port > 65535 {
 		return in, invalid("target", "Valid stable ID, name, host, port (1–65535) and Oracle service/PDB are required.")
 	}
 	if in.Environment != "DEV" && in.Environment != "SIT" && in.Environment != "UAT" && in.Environment != "PROD" {

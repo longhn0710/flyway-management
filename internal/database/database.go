@@ -150,20 +150,20 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (version int, resul
 		conn.Close()
 		return 0, err
 	}
-	needsSITMigration := false
+	needsTargetRebuild := false
 	for _, item := range migrations {
-		if item.version == 7 {
-			needsSITMigration = true
+		if item.version == 7 || item.version == 8 {
+			needsTargetRebuild = true
 			break
 		}
 	}
-	needsSITMigration = needsSITMigration && userVersion < 7
+	needsTargetRebuild = needsTargetRebuild && userVersion < 8
 	var tx *sql.Tx
 	defer func() {
 		if tx != nil {
 			_ = tx.Rollback()
 		}
-		if needsSITMigration {
+		if needsTargetRebuild {
 			restoreCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
 			_, restoreErr := conn.ExecContext(restoreCtx, fmt.Sprintf("PRAGMA foreign_keys=%d", originalForeignKeys))
@@ -186,7 +186,7 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (version int, resul
 			resultErr = fmt.Errorf("close SQLite migration connection: %w", closeErr)
 		}
 	}()
-	if needsSITMigration {
+	if needsTargetRebuild {
 		if _, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
 			return 0, fmt.Errorf("disable SQLite foreign keys for table rebuild: %w", err)
 		}
@@ -302,7 +302,7 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (version int, resul
 		}
 	}
 	for _, item := range migrations[current:] {
-		if needsSITMigration && item.version == 7 {
+		if needsTargetRebuild && (item.version == 7 || item.version == 8) {
 			var objects int
 			if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE tbl_name='database_targets' AND type IN ('index','trigger') AND sql IS NOT NULL`).Scan(&objects); err != nil {
 				return current, err
@@ -318,7 +318,7 @@ func migrateFS(ctx context.Context, db *sql.DB, files fs.FS) (version int, resul
 			return current, fmt.Errorf("record migration %d: %w", item.version, err)
 		}
 	}
-	if needsSITMigration {
+	if needsTargetRebuild {
 		check, checkErr := tx.QueryContext(ctx, "PRAGMA foreign_key_check")
 		if checkErr != nil {
 			return current, fmt.Errorf("check SQLite foreign keys after migration: %w", checkErr)

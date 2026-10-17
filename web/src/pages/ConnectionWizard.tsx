@@ -25,6 +25,9 @@ type Candidate = {
   capability_reason: string;
 };
 type Discovery = {
+  database_name?: string;
+  server_version?: string;
+  tls_mode?: string;
   network_state: string;
   authentication_state: string;
   actual_user: string;
@@ -38,6 +41,13 @@ type Discovery = {
   error_message?: string;
 };
 type Connection = {
+  profile?: {
+    auth_kind: string;
+    tls_mode: string;
+    ca_pem: string;
+    ca_sha256: string;
+    revision: number;
+  };
   target: DatabaseTarget;
   account: ExecutionAccount;
   schemas: TargetSchema[];
@@ -57,6 +67,8 @@ export default function ConnectionWizard({
   const [environment, setEnvironment] = useState(target?.environment ?? "DEV");
   const [host, setHost] = useState(target?.host ?? "");
   const [port, setPort] = useState(target?.port ?? 1521);
+  const [databaseName, setDatabaseName] = useState(target?.database_name ?? "");
+  const [caPEM, setCAPEM] = useState("");
   const [service, setService] = useState(target?.service ?? "");
   const [transport, setTransport] = useState(target?.transport ?? "TCP");
   const [username, setUsername] = useState("");
@@ -96,7 +108,29 @@ export default function ConnectionWizard({
         : username))
     : username;
   const input = () => ({
-    target: { name, environment, host, port, service, transport },
+    target: {
+      name,
+      environment,
+      host,
+      port,
+      service: engine === "PostgreSQL" ? "" : service,
+      transport: engine === "PostgreSQL" ? "TCPS" : transport,
+      ...(engine === "PostgreSQL"
+        ? {
+            engine: "postgresql",
+            database_name: databaseName,
+            ...(caPEM
+              ? {
+                  profile: {
+                    auth_kind: "password",
+                    tls_mode: "verify-full",
+                    ca_pem: caPEM,
+                  },
+                }
+              : {}),
+          }
+        : {}),
+    },
     account_id: accountID,
     username: effectiveUsername,
     password,
@@ -115,7 +149,7 @@ export default function ConnectionWizard({
     onSuccess: (result) => {
       setDiscovery(result);
       setAck(false);
-      if (result.authentication_state === "verified") {
+      if (result.authentication_state === "verified" && !result.error_code) {
         const current =
           accountID && saved.data?.account?.id === accountID
             ? saved.data.schemas.map((x) => x.name)
@@ -163,7 +197,9 @@ export default function ConnectionWizard({
     !!target && (accounts.isPending || (!!accountID && !saved.isSuccess));
   const invalidSelection =
     (!selected.length && !(target && accountID)) || (!!uncertain && !ack);
-  const [engine, setEngine] = useState("Oracle");
+  const [engine, setEngine] = useState(
+    target?.engine === "postgresql" ? "PostgreSQL" : "Oracle",
+  );
   const [discard, setDiscard] = useState(false);
   const requestClose = () => {
     if (!busy) setDiscard(true);
@@ -176,6 +212,8 @@ export default function ConnectionWizard({
           disabled={!!target}
           onChange={(e) => {
             setEngine(e.target.value);
+            setPort(e.target.value === "PostgreSQL" ? 5432 : 1521);
+            setDiscovery(undefined);
             setPassword("");
           }}
         >
@@ -185,13 +223,13 @@ export default function ConnectionWizard({
           <option>SQL Server</option>
         </select>
       </Field>
-      {engine !== "Oracle" && (
+      {engine !== "Oracle" && engine !== "PostgreSQL" && (
         <Notice tone="warning">
           {engine} · Future engine. Registration, testing, discovery and
           migrations are unavailable. Oracle fields below are disabled.
         </Notice>
       )}
-      {engine !== "Oracle" && (
+      {engine !== "Oracle" && engine !== "PostgreSQL" && (
         <fieldset disabled className="future-engine-preview">
           <h3>{engine} connection preview · Future</h3>
           <div className="grid-two">
@@ -252,8 +290,8 @@ export default function ConnectionWizard({
         </fieldset>
       )}
       <fieldset
-        disabled={engine !== "Oracle" || busy}
-        hidden={engine !== "Oracle"}
+        disabled={(engine !== "Oracle" && engine !== "PostgreSQL") || busy}
+        hidden={engine !== "Oracle" && engine !== "PostgreSQL"}
       >
         <div className="grid-two">
           <Field label="Connection display name" required>
@@ -298,25 +336,67 @@ export default function ConnectionWizard({
           </Field>
         </div>
         <div className="grid-two">
-          <Field label="Transport">
+          <Field label={engine === "PostgreSQL" ? "TLS policy" : "Transport"}>
             <select
-              value={transport}
+              value={engine === "PostgreSQL" ? "TCPS" : transport}
+              disabled={engine === "PostgreSQL"}
               onChange={(e) =>
                 setTransport(e.target.value as DatabaseTarget["transport"])
               }
             >
               <option>TCP</option>
-              <option>TCPS</option>
+              <option value="TCPS">
+                {engine === "PostgreSQL" ? "verify-full (required)" : "TCPS"}
+              </option>
             </select>
           </Field>
-          <Field label="Oracle service / PDB" required>
+          <Field
+            label={
+              engine === "PostgreSQL"
+                ? "PostgreSQL database"
+                : "Oracle service / PDB"
+            }
+            required
+          >
             <input
               required
-              value={service}
-              onChange={(e) => setService(e.target.value)}
+              value={engine === "PostgreSQL" ? databaseName : service}
+              onChange={(e) =>
+                engine === "PostgreSQL"
+                  ? setDatabaseName(e.target.value)
+                  : setService(e.target.value)
+              }
             />
           </Field>
         </div>
+        {engine === "PostgreSQL" && (
+          <>
+            <Notice>
+              PostgreSQL 17 · Connection and native Info. Migration disabled
+              pending Gate E/F acceptance. Use existing lowercase database,
+              schema and role names.
+            </Notice>
+            <Field label="Approved TLS CA bundle (PEM)" required={!target}>
+              <textarea
+                required={!target}
+                value={caPEM}
+                onChange={(e) => setCAPEM(e.target.value)}
+                maxLength={65536}
+                placeholder={
+                  target
+                    ? "Leave empty to preserve saved trust"
+                    : "Paste approved CA certificates"
+                }
+              />
+            </Field>
+            {saved.data?.profile && (
+              <p className="small muted">
+                Trust SHA-256: <code>{saved.data.profile.ca_sha256}</code> ·
+                revision {saved.data.profile.revision}
+              </p>
+            )}
+          </>
+        )}
         {target && (
           <Field label="Execution account">
             <select
@@ -345,7 +425,12 @@ export default function ConnectionWizard({
           </Field>
         )}
         <div className="grid-two">
-          <Field label="Oracle username" required>
+          <Field
+            label={
+              engine === "PostgreSQL" ? "PostgreSQL role" : "Oracle username"
+            }
+            required
+          >
             <input
               required
               autoComplete="off"
@@ -355,7 +440,11 @@ export default function ConnectionWizard({
             />
           </Field>
           <Field
-            label="Oracle password"
+            label={
+              engine === "PostgreSQL"
+                ? "PostgreSQL password"
+                : "Oracle password"
+            }
             required={!accountID}
             hint={
               accountID
@@ -421,7 +510,8 @@ export default function ConnectionWizard({
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
             if (busy || (step === 1 && accountLoading)) return;
-            if (step === 1 && engine === "Oracle") test.mutate();
+            if (step === 1 && (engine === "Oracle" || engine === "PostgreSQL"))
+              test.mutate();
             else if (step === 4 && !invalidSelection) save.mutate();
             else if (step === 3 && !invalidSelection) setStep(4);
             else if (step === 2) setStep(3);
@@ -437,13 +527,18 @@ export default function ConnectionWizard({
                 allowlist before saving.
               </p>
               <div className="destination-strip">
-                <Badge>Oracle · Currently implemented</Badge>
+                <Badge>
+                  {engine === "PostgreSQL"
+                    ? "PostgreSQL · Connection/Info; migration disabled"
+                    : "Oracle · Operational"}
+                </Badge>
                 <Badge tone={environment === "PROD" ? "error" : "accent"}>
                   {environment}
                 </Badge>
                 <strong>{name}</strong>
                 <code>
-                  {host}:{port}/{service}
+                  {host}:{port}/
+                  {engine === "PostgreSQL" ? databaseName : service}
                 </code>
                 <strong className="mono">{effectiveUsername}</strong>
               </div>
@@ -486,8 +581,8 @@ export default function ConnectionWizard({
                   ))}
               </details>
               <Notice>
-                Save performs fresh Oracle discovery and atomic persistence.
-                Per-account allowlists grant no Oracle privileges and do not
+                Save performs fresh database discovery and atomic persistence.
+                Per-account allowlists grant no database privileges and do not
                 constrain cross-schema SQL. Existing migrations and audit
                 history are preserved.
               </Notice>
@@ -496,18 +591,29 @@ export default function ConnectionWizard({
             <>
               <p>
                 <strong>
-                  Oracle account: <code>{discovery?.actual_user}</code>
+                  {engine} account: <code>{discovery?.actual_user}</code>
                 </strong>
                 <br />
-                {host}:{port}/{service} · {environment} · {transport}
+                {host}:{port}/{engine === "PostgreSQL" ? databaseName : service}{" "}
+                · {environment} · {transport}
               </p>
               <p>
                 Network: {discovery?.network_state} · Authentication:{" "}
                 {discovery?.authentication_state}
                 <br />
-                Current schema: <code>{discovery?.current_schema}</code> ·
-                Service: {discovery?.database_service} · PDB:{" "}
-                {discovery?.pdb_name}
+                {engine === "PostgreSQL" ? (
+                  <>
+                    Database: <code>{discovery?.database_name}</code> · Server
+                    version: {discovery?.server_version} · TLS:{" "}
+                    {discovery?.tls_mode}
+                  </>
+                ) : (
+                  <>
+                    Current schema: <code>{discovery?.current_schema}</code> ·
+                    Service: {discovery?.database_service} · PDB:{" "}
+                    {discovery?.pdb_name}
+                  </>
+                )}
               </p>
               {discovery?.warnings?.map((warning, i) => (
                 <Notice key={i} tone="warning">
@@ -522,9 +628,9 @@ export default function ConnectionWizard({
               </div>
               <Notice>
                 Visibility does not prove DDL authorization. Metadata
-                classifications are potential, unknown or unsupported. Oracle
-                checks every statement; the allowlist does not grant Oracle
-                privileges.
+                classifications are potential, unknown or unsupported. The
+                database checks every statement; the allowlist does not grant
+                database privileges.
               </Notice>
               {step === 2 ? (
                 <>
@@ -615,8 +721,8 @@ export default function ConnectionWizard({
                         onChange={(e) => setAck(e.target.checked)}
                       />
                       I acknowledge that selected schemas have unknown DDL
-                      privileges. Oracle may reject migrations; no privilege is
-                      fully verified.
+                      privileges. The database may reject operations; no
+                      privilege is fully verified.
                     </label>
                   )}
                   {!selected.length && (
@@ -632,8 +738,11 @@ export default function ConnectionWizard({
                       checked={grantCurrentUser}
                       onChange={(e) => setGrantCurrentUser(e.target.checked)}
                     />
-                    Authorize my Flyway Manager user to run migrations on the
-                    selected schemas.
+                    Authorize my Flyway Manager user to{" "}
+                    {engine === "PostgreSQL"
+                      ? "operate on"
+                      : "run migrations on"}{" "}
+                    the selected schemas.
                   </label>
                   {environment === "PROD" && grantCurrentUser && (
                     <label className="check">
@@ -647,7 +756,7 @@ export default function ConnectionWizard({
                     </label>
                   )}
                   <p className="small muted">
-                    Save rechecks Oracle metadata and registers the target,
+                    Save rechecks database metadata and registers the target,
                     encrypted credential, schemas and allowlist atomically.
                     Application operators still require scoped grants
                     {environment === "PROD"
@@ -711,7 +820,7 @@ export default function ConnectionWizard({
               type="submit"
               disabled={
                 busy ||
-                engine !== "Oracle" ||
+                (engine !== "Oracle" && engine !== "PostgreSQL") ||
                 (step === 1 && accountLoading) ||
                 ((step === 3 || step === 4) && invalidSelection)
               }

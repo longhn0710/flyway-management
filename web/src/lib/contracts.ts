@@ -30,6 +30,9 @@ export interface AuthStatus {
   bootstrap_token_file?: string;
 }
 export interface DatabaseTarget {
+  engine?: "oracle" | "postgresql";
+  database_name?: string;
+  profile_revision?: number;
   id: string;
   name: string;
   environment: "DEV" | "SIT" | "UAT" | "PROD";

@@ -71,7 +71,8 @@ export function RunLink({
   schema?: TargetSchema;
 }) {
   const identity = useIdentity();
-  const allowed = canRun(identity, target, schema);
+  const allowed =
+    target.engine !== "postgresql" && canRun(identity, target, schema);
   return allowed ? (
     <Link
       className="button secondary compact"
@@ -82,7 +83,12 @@ export function RunLink({
     </Link>
   ) : (
     <span className="small muted">
-      Run unavailable · {target.active ? "permission required" : "inactive"}
+      Run unavailable ·{" "}
+      {target.engine === "postgresql"
+        ? "Gate E/F acceptance required"
+        : target.active
+          ? "permission required"
+          : "inactive"}
     </span>
   );
 }
@@ -110,7 +116,15 @@ export default function Instances() {
         </Link>
       ),
     },
-    { id: "engine", header: "Engine", cell: () => <Badge>Oracle</Badge> },
+    {
+      id: "engine",
+      header: "Engine",
+      cell: ({ row }) => (
+        <Badge>
+          {row.original.engine === "postgresql" ? "PostgreSQL" : "Oracle"}
+        </Badge>
+      ),
+    },
     {
       accessorKey: "environment",
       header: "Environment",
@@ -127,7 +141,10 @@ export default function Instances() {
         <span className="mono">
           {row.original.host}:{row.original.port}
           <small className="block muted">
-            Service / PDB · {row.original.service}
+            {row.original.engine === "postgresql"
+              ? "Database"
+              : "Service / PDB"}{" "}
+            · {row.original.database_name || row.original.service}
           </small>
         </span>
       ),
@@ -157,7 +174,7 @@ export default function Instances() {
     <>
       <PageHeading
         title="Instances"
-        description="Database instances · Oracle currently implemented"
+        description="Oracle · Operational; PostgreSQL · Connection/Info; migration gated"
         actions={
           <Button
             variant="primary"
@@ -197,7 +214,8 @@ export default function Instances() {
         >
           <option value="">Engine: All engines</option>
           <option value="Oracle">Oracle</option>
-          {["PostgreSQL", "MySQL", "SQL Server"].map((v) => (
+          <option value="PostgreSQL">PostgreSQL · Connection/Info</option>
+          {["MySQL", "SQL Server"].map((v) => (
             <option key={v} disabled>
               {v} · Future
             </option>
@@ -222,7 +240,10 @@ export default function Instances() {
           data={targets.data.filter(
             (t) =>
               (!env || t.environment === env) &&
-              [t.name, t.host, t.service]
+              (!engine ||
+                (t.engine === "postgresql" ? "PostgreSQL" : "Oracle") ===
+                  engine) &&
+              [t.name, t.host, t.service, t.database_name]
                 .join(" ")
                 .toLowerCase()
                 .includes(search.toLowerCase()),
@@ -273,6 +294,8 @@ export function InstanceDetails() {
           host: target.data!.host,
           port: target.data!.port,
           service: target.data!.service,
+          engine: target.data!.engine,
+          database_name: target.data!.database_name,
           transport: target.data!.transport,
           active: !target.data!.active,
         }),
@@ -326,7 +349,11 @@ export function InstanceDetails() {
             )}
           </>
         }
-        description="Engine: Oracle · Currently implemented"
+        description={
+          target.data?.engine === "postgresql"
+            ? "PostgreSQL · Connection/Info; migration disabled pending Gate E/F"
+            : "Oracle · Operational"
+        }
         actions={
           <>
             <Badge tone={t.environment === "PROD" ? "error" : "accent"}>
@@ -370,10 +397,25 @@ export function InstanceDetails() {
             <Panel title="Endpoint definition">
               <KeyValues
                 rows={[
-                  ["Engine", "Oracle"],
+                  [
+                    "Engine",
+                    t.engine === "postgresql" ? "PostgreSQL" : "Oracle",
+                  ],
                   ["Host", <code>{t.host}</code>],
                   ["Port", t.port],
-                  ["Oracle Service / PDB", <code>{t.service}</code>],
+                  [
+                    t.engine === "postgresql"
+                      ? "Database"
+                      : "Oracle Service / PDB",
+                    <code>{t.database_name || t.service}</code>,
+                  ],
+                  ["Profile revision", t.profile_revision || "Legacy Oracle"],
+                  [
+                    "Migration capability",
+                    t.engine === "postgresql"
+                      ? "Disabled pending Gate E/F acceptance"
+                      : "Operational",
+                  ],
                   ["Transport", t.transport],
                   [
                     "Registry state",
@@ -609,7 +651,10 @@ function SchemaList({
           <div className="spread wrap section-heading">
             <div>
               <h2>{selected.name}</h2>
-              <p className="muted">Registered schema · Oracle</p>
+              <p className="muted">
+                Registered schema ·{" "}
+                {target.engine === "postgresql" ? "PostgreSQL" : "Oracle"}
+              </p>
             </div>
             <div className="actions wrap">
               <Link
@@ -720,6 +765,8 @@ function Connections({
               host: target.host,
               port: target.port,
               service: target.service,
+              engine: target.engine,
+              database_name: target.database_name,
               transport: target.transport,
             },
             account_id: a.id,
@@ -850,7 +897,7 @@ function Connections({
         />
       )}
       {probe.isPending && (
-        <Notice>Testing connection and discovering Oracle metadata…</Notice>
+        <Notice>Testing connection and discovering database metadata…</Notice>
       )}
       {probe.isError && <Notice tone="error">{probe.error.message}</Notice>}
       {result && (
@@ -880,7 +927,7 @@ function Connections({
         </Panel>
       )}
       <Notice>
-        Per-account allowlists restrict Flyway choices. They grant no Oracle
+        Per-account allowlists restrict Flyway choices. They grant no database
         privileges and do not constrain cross-schema SQL. Changes affect future
         runs; historical evidence remains available.
       </Notice>
@@ -962,7 +1009,7 @@ export function SchemaCatalog() {
     <>
       <PageHeading
         title="Databases / Schemas"
-        description="Registered Oracle schemas across your authorized instances"
+        description="Registered schemas across your authorized database instances"
       />
       {pending ? (
         <div
@@ -1041,7 +1088,7 @@ export function SchemaCatalog() {
                   schema.name,
                   target.name,
                   target.host,
-                  target.service,
+                  target.database_name || target.service,
                   schema.history_schema,
                   schema.history_table,
                 ]
