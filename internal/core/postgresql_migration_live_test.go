@@ -135,6 +135,27 @@ func TestPostgreSQLManagerMigrationLive(t *testing.T) {
 		return r
 	}
 	base := map[string]string{"V1__base.sql": "CREATE TABLE rows(id integer PRIMARY KEY); INSERT INTO rows VALUES(1);", "V2__second.sql": "INSERT INTO rows VALUES(2);", "R__count.sql": "CREATE OR REPLACE VIEW row_count AS SELECT count(*) AS n FROM rows;"}
+	t.Run("nontransactional-maintenance-admission", func(t *testing.T) {
+		forms := []string{"ALTER TABLE t DETACH PARTITION p CONCURRENTLY", "CLUSTER", "CLUSTER partitioned_table", "ALTER SUBSCRIPTION s REFRESH PUBLICATION", "ALTER SUBSCRIPTION s SET PUBLICATION p"}
+		for i, sql := range forms {
+			input := upload(t, "unsupported", map[string]string{"V1__maintenance.sql": sql})
+			pre, e := f.s.Preflight(testCtx, f.trace(), input)
+			must(t, e)
+			if pre.Ready || len(pre.Blockers) == 0 || pre.Blockers[0].Code != "UNSUPPORTED_MIGRATION_SQL" {
+				t.Fatal("maintenance SQL bypassed real Manager admission", sql, pre.Blockers)
+			}
+			_, e = f.s.SubmitRun(testCtx, f.trace(), input, fmt.Sprintf("maintenance-%d", i))
+			status(t, e, 409)
+		}
+		var jobs, commands int
+		must(t, f.db.SQL.QueryRow("SELECT count(*) FROM migration_runs").Scan(&jobs))
+		must(t, f.db.SQL.QueryRow("SELECT count(*) FROM run_executions").Scan(&commands))
+		objects := query(t, dbName, "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='unsupported'")
+		if jobs != 0 || commands != 0 || objects != "0" {
+			t.Fatal("unsupported maintenance created a job, command or database object", jobs, commands, objects)
+		}
+		evidence["maintenance-admission"] = map[string]any{"rejected_forms": forms, "jobs": jobs, "commands": commands, "schema_objects": objects}
+	})
 	t.Run("database-execution-policy", func(t *testing.T) {
 		input := upload(t, "policy", map[string]string{"V1__policy.sql": "CREATE TABLE observed_policy AS SELECT current_setting('statement_timeout') AS statement_timeout, current_setting('transaction_timeout') AS transaction_timeout, current_setting('lock_timeout') AS lock_timeout, current_setting('idle_session_timeout') AS idle_session_timeout, current_setting('idle_in_transaction_session_timeout') AS idle_transaction_timeout, current_setting('standard_conforming_strings') AS standard_conforming_strings, current_setting('application_name') AS application_name, pg_backend_pid() AS backend_pid;"})
 		final := wait(t, submit(t, input, "observed-policy").ID)

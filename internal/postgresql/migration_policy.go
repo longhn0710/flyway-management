@@ -9,7 +9,9 @@ import (
 // This admission check rejects known unsupported statements. It is deliberately
 // not a complete PostgreSQL parser or a security sandbox for migration authors.
 // Database privileges remain the boundary for the SQL they submit.
-var unsupportedMigrationSQL = regexp.MustCompile(`(?i)(\b(?:CREATE|DROP) (?:UNIQUE )?INDEX CONCURRENTLY\b|\bREINDEX\b|\bVACUUM\b|\b(?:CREATE|DROP) (?:DATABASE|TABLESPACE|SUBSCRIPTION)\b|\b(?:CREATE|ALTER) (?:OR REPLACE )?(?:FUNCTION|PROCEDURE)\b|\bALTER SYSTEM\b|\bSET_CONFIG\b|(?:^|;)\s*(?:BEGIN|START TRANSACTION|COMMIT|END|ROLLBACK|ABORT|PREPARE TRANSACTION|SET|RESET|DISCARD|LOAD|DO|CALL)\b)`)
+// CLUSTER, subscription changes and partition detach are conservatively blocked
+// as families because transaction support depends on their options or objects.
+var unsupportedMigrationSQL = regexp.MustCompile(`(?i)(\b(?:CREATE|DROP) (?:UNIQUE )?INDEX CONCURRENTLY\b|\bREINDEX\b|\bVACUUM\b|\b(?:CREATE|DROP) (?:DATABASE|TABLESPACE|SUBSCRIPTION)\b|\bALTER SUBSCRIPTION\b|\bALTER TABLE\b[^;]*\bDETACH PARTITION\b|\b(?:CREATE|ALTER) (?:OR REPLACE )?(?:FUNCTION|PROCEDURE)\b|\bALTER SYSTEM\b|\bSET_CONFIG\b|(?:^|;)\s*(?:BEGIN|START TRANSACTION|COMMIT|END|ROLLBACK|ABORT|PREPARE TRANSACTION|SET|RESET|DISCARD|LOAD|DO|CALL|CLUSTER)\b)`)
 
 func ValidateMigrationSQL(sql []byte) error {
 	tokens, err := migrationTokens(string(sql))
