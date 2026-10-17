@@ -1,0 +1,4 @@
+=== RUN   TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection
+--- PASS: TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection (1.99s)
+PASS
+ok  	flyway-manager/internal/core	2.002s

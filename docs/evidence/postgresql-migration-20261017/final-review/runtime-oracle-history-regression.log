@@ -1,0 +1,4 @@
+ok  	flyway-manager/internal/flyway	4.349s
+ok  	flyway-manager/internal/postgresql	0.044s
+ok  	flyway-manager/internal/oracle	0.004s
+ok  	flyway-manager/internal/httpapi	5.982s

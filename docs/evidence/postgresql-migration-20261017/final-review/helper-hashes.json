@@ -1,0 +1,13 @@
+{
+  "compiler": "javac 21.0.12",
+  "flags": [
+    "--release",
+    "11",
+    "-proc:none",
+    "-g:none"
+  ],
+  "classes": {
+    "PostgreSQLExecutionGuard.class": "824368ecf6417f88162fe555dc3ada722908fdd2166bf35f0067a8871285edad",
+    "PostgreSQLExecutionGuard$Session.class": "76f022d754db51f926581825b57d146eaef11de901d601286953ab40e0345cfa"
+  }
+}

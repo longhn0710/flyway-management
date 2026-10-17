@@ -12,6 +12,12 @@ These captures are from local disposable PostgreSQL 17.11 lab resources. They ar
 
 The 5c330c4 and 538994c manifests describe the earlier qualification builds with migration policy disabled and a compile-time-only overlay. The source comparison links that qualification source to the enabled production source; the follow-up results above verify the current enabled source and its live database behavior. No deployment or external infrastructure change is represented here.
 
+## Final independent PR review
+
+Review of initial PR head `a61144f` found that dispatch and HTTP startup could precede journal import. The fix imports journals synchronously before dispatch or server startup; database reconciliation remains asynchronous. Registry/import persistence errors abort startup, while unreadable individual journals leave streams held. The strengthened [regression fails on the old head](final-review/startup-before-final.log), [passes after the fix](final-review/startup-after-final.log), and [passes under the race detector](final-review/startup-race.log). It checks blocked startup, independent queued work remaining unclaimed, dispatch after import, and startup error/lock cleanup.
+
+A fresh [actual Manager/PostgreSQL restart run](final-review/live-restart-manager-migration.log) and [database/lifecycle capture](final-review/live-restart-manager-migration.json) pass with imported journals, held outcome, and replay denied. The [core suite](final-review/core-regression.log) and [runtime/Oracle/HTTP history regressions](final-review/runtime-oracle-history-regression.log) pass. [Java regeneration](final-review/java-reproducibility.log) and [hashes](final-review/helper-hashes.json) confirm both embedded classes match committed source and pins. Prior full Gate E/F evidence remains retained; this final change has focused restart coverage rather than a repeat of every live case. No deployed acceptance is claimed.
+
 ## Captures
 
 | Evidence | What it establishes |

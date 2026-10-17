@@ -32,6 +32,14 @@ func (s *Service) StartExecution(parent context.Context, runner FlywayRunner, pi
 		s.execution = nil
 		return e
 	}
+	// Import local PostgreSQL lifecycle evidence before dispatch is enabled or
+	// StartExecution returns to the server startup path.
+	if e = s.importRecoveredPostgreSQLJournals(ctx); e != nil {
+		cancel()
+		release()
+		s.execution = nil
+		return e
+	}
 	s.execution.wg.Add(1)
 	go func() { defer s.execution.wg.Done(); s.dispatch(ctx) }()
 	s.execution.wg.Add(1)
@@ -293,39 +301,29 @@ func (s *Service) workerFailure(rid string) {
 // durable exit evidence, even matching history cannot prove absence of partial
 // DDL, so the original run and stream remain NEEDS_REVIEW/held.
 func (s *Service) reconcileRecovered(ctx context.Context) {
-	rows, e := s.db.QueryContext(ctx, `SELECT r.id,t.engine FROM migration_runs r JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id JOIN database_targets t ON t.id=r.target_id WHERE r.status='NEEDS_REVIEW' AND s.held=1 ORDER BY r.sequence`)
+	rows, e := s.db.QueryContext(ctx, `SELECT r.id FROM migration_runs r JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id WHERE r.status='NEEDS_REVIEW' AND s.held=1 ORDER BY r.sequence`)
 	if e != nil {
 		return
 	}
-	type recoveredRun struct{ id, engine string }
-	ids := []recoveredRun{}
+	ids := []string{}
 	for rows.Next() {
-		var run recoveredRun
-		if e = rows.Scan(&run.id, &run.engine); e != nil {
+		var rid string
+		if e = rows.Scan(&rid); e != nil {
 			break
 		}
-		ids = append(ids, run)
+		ids = append(ids, rid)
 	}
-	rows.Close()
+	if e == nil {
+		e = rows.Err()
+	}
+	_ = rows.Close()
 	if e != nil {
 		return
 	}
-	// Retain local evidence for every held PostgreSQL run before any network
-	// inspection. An older unavailable or slow database must not hide another
-	// run's already durable process/backend correlation after restart.
-	for _, run := range ids {
+	for _, rid := range ids {
 		if ctx.Err() != nil {
 			return
 		}
-		if run.engine == "postgresql" {
-			s.retainPostgreSQLJournals(ctx, run.id)
-		}
-	}
-	for _, recovered := range ids {
-		if ctx.Err() != nil {
-			return
-		}
-		rid := recovered.id
 		run, e := runScan(s.db.QueryRowContext(ctx, "SELECT "+runColumns+" FROM migration_runs WHERE id=?", rid))
 		if e != nil {
 			continue
@@ -367,36 +365,80 @@ func (s *Service) reconcileRecovered(ctx context.Context) {
 	}
 }
 
+func (s *Service) importRecoveredPostgreSQLJournals(ctx context.Context) error {
+	rows, err := s.db.QueryContext(ctx, `SELECT r.id FROM migration_runs r JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id JOIN database_targets t ON t.id=r.target_id WHERE r.status='NEEDS_REVIEW' AND s.held=1 AND t.engine='postgresql' ORDER BY r.sequence`)
+	if err != nil {
+		return err
+	}
+	ids := []string{}
+	for rows.Next() {
+		var rid string
+		if err = rows.Scan(&rid); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, rid)
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err = rows.Close(); err != nil {
+		return err
+	}
+	for _, rid := range ids {
+		if err = ctx.Err(); err != nil {
+			return err
+		}
+		if err = s.retainPostgreSQLJournals(ctx, rid); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Guard journals survive abrupt Manager exit. Import their metadata under the
 // existing run without changing native command evidence, outcome or stream hold.
-func (s *Service) retainPostgreSQLJournals(ctx context.Context, rid string) {
+func (s *Service) retainPostgreSQLJournals(ctx context.Context, rid string) error {
 	reader, ok := s.execution.runner.(interface {
 		ReadPostgreSQLLifecycle(string) (json.RawMessage, error)
 	})
 	if !ok {
-		return
+		return errors.New("Flyway runner does not support PostgreSQL lifecycle journal recovery")
 	}
 	const prefix = "PostgreSQL execution correlation: "
 	rows, err := s.db.QueryContext(ctx, `SELECT command,message FROM migration_logs WHERE run_id=? AND message LIKE ? ORDER BY sequence`, rid, prefix+"%")
 	if err != nil {
-		return
+		return err
 	}
 	type correlation struct{ command, tag string }
 	tags := []correlation{}
 	for rows.Next() {
 		var command, message string
-		if rows.Scan(&command, &message) != nil {
-			break
+		if err = rows.Scan(&command, &message); err != nil {
+			rows.Close()
+			return err
 		}
 		tags = append(tags, correlation{command, strings.TrimPrefix(message, prefix)})
 	}
-	rows.Close()
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err = rows.Close(); err != nil {
+		return err
+	}
 	for _, tag := range tags {
 		journal, err := reader.ReadPostgreSQLLifecycle(tag.tag)
-		if err != nil {
+		if err != nil || !json.Valid(journal) {
+			// Missing or malformed evidence is not a reason to alter the held
+			// outcome, and must never be replaced by a synthetic success.
 			continue
 		}
 		message := "PostgreSQL recovered lifecycle journal: " + string(journal)
-		_, _ = s.db.ExecContext(ctx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM migration_logs WHERE run_id=? AND message=?)`, rid, tag.command, "stderr", message, utcNow(), rid, message)
+		if _, err = s.db.ExecContext(ctx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM migration_logs WHERE run_id=? AND message=?)`, rid, tag.command, "stderr", message, utcNow(), rid, message); err != nil {
+			return err
+		}
 	}
+	return nil
 }

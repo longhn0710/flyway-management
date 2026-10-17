@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection
+    postgresql_journal_recovery_test.go:143: startup succeeded after journal import persistence context was cancelled
+--- FAIL: TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection (0.92s)
+FAIL
+FAIL	flyway-manager/internal/core	0.943s
+FAIL
