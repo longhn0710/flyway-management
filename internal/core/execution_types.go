@@ -13,6 +13,14 @@ type FlywayRunner interface {
 	Check(context.Context) flyway.Readiness
 	Execute(context.Context, flyway.Request) flyway.Result
 }
+type RunFile struct {
+	ArtifactID string `json:"artifact_id"`
+	Path       string `json:"path"`
+	SHA256     string `json:"sha256"`
+	Kind       string `json:"kind"`
+	Version    string `json:"version"`
+	Size       int    `json:"size"`
+}
 type Execution struct {
 	runner      FlywayRunner
 	pin         string

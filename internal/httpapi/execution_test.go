@@ -122,7 +122,9 @@ func multipartRequest(t *testing.T, f *apiFixture, targetID, schemaID string, fi
 }
 
 func TestExecutionHTTPArtifactPreflightRunAndScopedRead(t *testing.T) {
-	f, _ := executionFixture(t, artifact.DefaultLimits())
+	limits := artifact.DefaultLimits()
+	limits.MaxFileBytes = 128
+	f, _ := executionFixture(t, limits)
 	resources := createExecutionResources(t, f)
 	assertStatus(t, f.call("GET", "/runtime", nil, f.cookie, nil), 200)
 	accounts := decodeData[[]core.ExecutionAccount](t, f.call("GET", fmt.Sprintf("/database-targets/%s/schemas/%s/execution-accounts", resources.target.ID, resources.schema.ID), nil, f.cookie, nil), 200)
@@ -186,6 +188,28 @@ func TestExecutionHTTPArtifactPreflightRunAndScopedRead(t *testing.T) {
 	if len(logs) == 0 || len(execs) < 5 || repairs.Outcome != "SKIPPED" || len(artifacts) != 1 {
 		t.Fatalf("run evidence incomplete: logs=%d executions=%d repair=%+v artifacts=%d", len(logs), len(execs), repairs, len(artifacts))
 	}
+	effective := decodeData[[]core.RunFile](t, f.call("GET", "/migration-runs/"+run.ID+"/files", nil, f.cookie, nil), 200)
+	if len(effective) != 1 || effective[0].ArtifactID != created.ID || effective[0].Path != "nested/V1__init.sql" || effective[0].SHA256 != created.Files[0].SHA256 || effective[0].Size != len(content) {
+		t.Fatalf("unexpected frozen effective manifest: %+v", effective)
+	}
+	bound := f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+created.ID+"&path=nested%2FV1__init.sql", nil, f.cookie, nil)
+	assertStatus(t, bound, 200)
+	if !bytes.Equal(bound.Body.Bytes(), content) {
+		t.Fatal("run-bound content did not preserve SQL bytes")
+	}
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+created.ID+"&path=..%2Fsecret.sql", nil, f.cookie, nil), 404)
+	otherArtifact := decodeData[core.Artifact](t, multipartRequest(t, f, resources.target.ID, resources.schema.ID, map[string][]byte{"nested/V9__other.sql": []byte("SELECT 9;\r\n")}, f.cookie, nil), 201)
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+otherArtifact.ID+"&path=nested%2FV9__other.sql", nil, f.cookie, nil), 404)
+	viewer := decodeData[core.User](t, f.call("POST", "/access/users", map[string]string{"username": "run-reader", "password": "test-password-for-user", "role": "Viewer"}, f.cookie, nil), 201)
+	decodeData[[]core.Grant](t, f.call("PUT", "/access/users/"+viewer.ID+"/grants", map[string]any{"grants": []core.Grant{{TargetID: resources.target.ID, SchemaID: resources.schema.ID, Read: true}}}, f.cookie, nil), 200)
+	viewerLogin := f.call("POST", "/auth/login", map[string]string{"provider": "local", "username": "run-reader", "password": "test-password-for-user"}, nil, nil)
+	viewerCookie := viewerLogin.Result().Cookies()[0]
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files", nil, viewerCookie, nil), 200)
+	viewerBytes := f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+created.ID+"&path=nested%2FV1__init.sql", nil, viewerCookie, nil)
+	assertStatus(t, viewerBytes, 200)
+	if !bytes.Equal(viewerBytes.Body.Bytes(), content) {
+		t.Fatal("read-only viewer did not receive exact CRLF bytes")
+	}
 	record := f.call("GET", "/migration-runs/"+run.ID+"/record", nil, f.cookie, nil)
 	assertStatus(t, record, 200)
 	if !strings.Contains(record.Body.String(), `"repair"`) || !strings.Contains(record.Body.String(), `"executions"`) {
@@ -197,11 +221,31 @@ func TestExecutionHTTPArtifactPreflightRunAndScopedRead(t *testing.T) {
 	decodeData[[]core.Grant](t, f.call("PUT", "/access/service-accounts/"+service.ID+"/grants", map[string]any{"grants": []core.Grant{{TargetID: resources.target.ID, SchemaID: scopeSchema.ID, Read: true, Operate: true}}}, f.cookie, nil), 200)
 	issued := decodeData[core.IssuedToken](t, f.call("POST", "/access/service-accounts/"+service.ID+"/tokens", map[string]string{"name": "scope", "expires_at": time.Now().Add(time.Hour).UTC().Format(time.RFC3339)}, f.cookie, nil), 201)
 	bearer := map[string]string{"Authorization": "Bearer " + issued.Token}
-	for _, suffix := range []string{"", "/logs", "/artifacts", "/executions", "/repair", "/record"} {
+	for _, suffix := range []string{"", "/logs", "/artifacts", "/files", "/files/content?artifact_id=" + created.ID + "&path=nested%2FV1__init.sql", "/executions", "/repair", "/record"} {
 		assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+suffix, nil, nil, bearer), 403)
 	}
 	assertStatus(t, f.call("GET", "/artifacts/"+created.ID, nil, nil, bearer), 403)
 	assertStatus(t, f.call("GET", "/artifacts/"+created.ID+"/files?path=nested%2FV1__init.sql", nil, nil, bearer), 403)
+	// Simulate disk-level corruption beneath the immutable evidence triggers.
+	for _, name := range []string{"file_immutable_update", "file_immutable_delete"} {
+		if _, err := f.db.SQL.Exec("DROP TRIGGER " + name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	corrupt := append([]byte(nil), content...)
+	corrupt[0] ^= 1
+	if _, err := f.db.SQL.Exec("UPDATE migration_files SET content=? WHERE artifact_id=? AND path=?", corrupt, created.ID, "nested/V1__init.sql"); err != nil {
+		t.Fatal(err)
+	}
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+created.ID+"&path=nested%2FV1__init.sql", nil, f.cookie, nil), 500)
+	if _, err := f.db.SQL.Exec("UPDATE migration_files SET sha256=? WHERE artifact_id=? AND path=?", strings.Repeat("0", 64), created.ID, "nested/V1__init.sql"); err != nil {
+		t.Fatal(err)
+	}
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files", nil, f.cookie, nil), 409)
+	if _, err := f.db.SQL.Exec("UPDATE migration_files SET content=? WHERE artifact_id=? AND path=?", bytes.Repeat([]byte("x"), 129), created.ID, "nested/V1__init.sql"); err != nil {
+		t.Fatal(err)
+	}
+	assertStatus(t, f.call("GET", "/migration-runs/"+run.ID+"/files/content?artifact_id="+created.ID+"&path=nested%2FV1__init.sql", nil, f.cookie, nil), 409)
 }
 
 func TestExecutionHTTPRejectsUnsafeMultipartAndEnforcesLimits(t *testing.T) {

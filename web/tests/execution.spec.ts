@@ -429,15 +429,16 @@ test("controlled fake Flyway completes the real UI workflow through download and
     await expect(
       page.getByText("SUCCEEDED", { exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator(".run-progress-step.skipped")).toContainText(
-      "Repair skipped",
-    );
+    await expect(
+      page.locator(".run-outcomes").getByText("SKIPPED", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText("No repair needed", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("Repair does not change migration outcome"),
     ).toHaveCount(0);
+    await page.getByRole("link", { name: "Execution Logs" }).click();
     await expect(
       page.getByRole("heading", { name: "Searchable logs" }),
     ).toBeVisible();
@@ -459,9 +460,10 @@ test("controlled fake Flyway completes the real UI workflow through download and
     await expect(
       page.locator(".log-viewer").getByText(/"migrationsExecuted": 1/),
     ).toBeVisible();
+    await page.getByRole("link", { name: "SQL Scripts" }).click();
     const [download] = await Promise.all([
       page.waitForEvent("download"),
-      page.getByRole("link", { name: "SQL", exact: true }).click(),
+      page.getByRole("link", { name: "Download original file" }).click(),
     ]);
     expect(download.suggestedFilename()).toBe("V1__browser.sql");
     expect((await readFile(await download.path()!)).toString()).toContain(
@@ -471,7 +473,9 @@ test("controlled fake Flyway completes the real UI workflow through download and
       .trim()
       .split("\n");
     expect(commands.filter((command) => command === "migrate")).toHaveLength(1);
-    await page.getByRole("link", { name: "Flyway Info for this run" }).click();
+    await page
+      .getByRole("link", { name: "Migration Info", exact: true })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Native migrations", exact: true }),
     ).toBeVisible();

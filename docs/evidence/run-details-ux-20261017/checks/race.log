@@ -1,0 +1,43 @@
+npm --prefix web run build
+
+> flyway-manager-web@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 1723 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                               0.40 kB │ gzip:   0.28 kB
+dist/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2   21.17 kB
+dist/assets/jetbrains-mono-latin-500-normal-BWZEU5yA.woff2   21.83 kB
+dist/assets/inter-latin-400-normal-C38fXH4l.woff2            23.66 kB
+dist/assets/inter-latin-500-normal-Cerq10X2.woff2            24.27 kB
+dist/assets/inter-latin-600-normal-LgqL8muc.woff2            24.45 kB
+dist/assets/jetbrains-mono-latin-400-normal-6-qcROiO.woff    27.50 kB
+dist/assets/jetbrains-mono-latin-500-normal-CJOVTJB7.woff    28.21 kB
+dist/assets/inter-latin-400-normal-CyCys3Eg.woff             30.70 kB
+dist/assets/inter-latin-600-normal-CiBQ2DWP.woff             31.26 kB
+dist/assets/inter-latin-500-normal-BL9OpVg8.woff             31.28 kB
+dist/assets/index-tsnJJb-R.css                               48.19 kB │ gzip:  10.56 kB
+dist/assets/index-BjnApCkw.js                               568.74 kB │ gzip: 167.05 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.57s
+mkdir -p bin
+CGO_ENABLED=0 go build -trimpath -o bin/flyway-manager ./cmd/flyway-manager
+go test -race ./cmd/... ./internal/... ./web
+ok  	flyway-manager/cmd/flyway-manager	5.073s
+ok  	flyway-manager/internal/artifact	1.036s
+ok  	flyway-manager/internal/config	1.027s
+ok  	flyway-manager/internal/core	69.850s
+ok  	flyway-manager/internal/database	12.672s
+ok  	flyway-manager/internal/flyway	4.863s
+ok  	flyway-manager/internal/httpapi	19.731s
+ok  	flyway-manager/internal/identityprovider	3.103s
+ok  	flyway-manager/internal/oracle	1.035s
+ok  	flyway-manager/internal/secrets	1.041s
+?   	flyway-manager/web	[no test files]

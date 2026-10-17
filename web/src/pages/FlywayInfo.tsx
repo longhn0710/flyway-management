@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { NativeInfoCapture } from "../components/NativeInfoCapture";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,25 +10,11 @@ import {
   type ExecutionAccount,
 } from "../lib/contracts";
 import { type Artifact } from "../lib/execution";
-import {
-  type InfoCapture,
-  type NativeMigration,
-  nativeValue,
-} from "../lib/flyway-info";
+import { type InfoCapture } from "../lib/flyway-info";
 import { useIdentity } from "../lib/identity-context";
 import { canRun } from "../lib/permissions";
 import { schemaHref } from "../lib/navigation";
-import {
-  Badge,
-  Button,
-  DataTable,
-  Field,
-  KeyValues,
-  Notice,
-  PageHeading,
-  Panel,
-  SearchBox,
-} from "../components/ui";
+import { Button, Field, Notice, PageHeading, Panel } from "../components/ui";
 
 export default function FlywayInfo() {
   const [params] = useSearchParams();
@@ -55,12 +41,10 @@ function InfoView({
 }) {
   const identity = useIdentity(),
     client = useQueryClient();
-  const returnFocus = useRef<string | null>(null);
   const [params, setParams] = useSearchParams();
   const [account, setAccount] = useState(""),
     [artifact, setArtifact] = useState<Artifact | null>(null),
-    [files, setFiles] = useState<File[]>([]),
-    [selected, setSelected] = useState<NativeMigration | null>(null);
+    [files, setFiles] = useState<File[]>([]);
   const base = `/database-targets/${encodeURIComponent(target)}/schemas/${encodeURIComponent(schema)}/flyway-info`;
   const key = ["flyway-info", target, schema, run];
   const registry = useQuery({
@@ -138,30 +122,6 @@ function InfoView({
       });
     },
   });
-  const set = (name: string, value: string) => {
-    const next = new URLSearchParams(params);
-    if (value) next.set(name, value);
-    else next.delete(name);
-    next.delete("page");
-    setParams(next);
-  };
-  const rows = recorded?.json?.migrations;
-  const migrations = Array.isArray(rows) ? rows : [];
-  const counts = new Map<string, number>();
-  for (const row of migrations)
-    counts.set(
-      row.state || "Unknown",
-      (counts.get(row.state || "Unknown") || 0) + 1,
-    );
-  const filtered = migrations.filter(
-    (row) =>
-      (!params.get("state") || row.state === params.get("state")) &&
-      (!params.get("category") || row.category === params.get("category")) &&
-      [row.version, row.description, row.filepath, row.script]
-        .join(" ")
-        .toLowerCase()
-        .includes((params.get("q") || "").toLowerCase()),
-  );
   return (
     <>
       <PageHeading
@@ -215,246 +175,7 @@ function InfoView({
             </Notice>
           ) : (
             <>
-              <Panel
-                title={`${recorded.snapshot.target.name} / ${recorded.snapshot.schema.name}`}
-                aside={
-                  <Badge tone={recorded.success ? "neutral" : "warning"}>
-                    {recorded.success
-                      ? "Recorded snapshot"
-                      : "Partial / failed inspection"}
-                  </Badge>
-                }
-              >
-                <KeyValues
-                  rows={[
-                    [
-                      "Captured",
-                      new Date(recorded.captured_at).toLocaleString(),
-                    ],
-                    [
-                      "Source",
-                      recorded.source_run_id ? (
-                        <Link
-                          to={`/runs/${encodeURIComponent(recorded.source_run_id)}`}
-                        >
-                          Run {recorded.source_run_id} · execution {recorded.id}
-                        </Link>
-                      ) : (
-                        `Read-only inspection ${recorded.id}`
-                      ),
-                    ],
-                    [
-                      "Artifact",
-                      <span className="mono">
-                        {recorded.artifact_id}
-                        <br />
-                        {recorded.artifact_sha256}
-                      </span>,
-                    ],
-                  ]}
-                />
-                <details>
-                  <summary>
-                    Capture details · account, history and runtime
-                  </summary>
-                  <KeyValues
-                    rows={[
-                      ["Captured by", recorded.actor_name],
-                      [
-                        "Execution account",
-                        `${recorded.snapshot.account.name} · ${recorded.snapshot.account.username}`,
-                      ],
-                      [
-                        "History",
-                        `${recorded.snapshot.schema.history_schema}.${recorded.snapshot.schema.history_table}`,
-                      ],
-                      [
-                        "Schema version",
-                        nativeValue(recorded.json?.schemaVersion),
-                      ],
-                      ["Runtime", recorded.runtime_version],
-                      [
-                        "Database identity",
-                        nativeValue(
-                          recorded.json?.database ??
-                            recorded.json?.databaseType,
-                        ) + " · CLI-reported; DBID not independently verified",
-                      ],
-                      [
-                        "Captured endpoint",
-                        `${recorded.snapshot.target.host}:${recorded.snapshot.target.port}/${recorded.snapshot.target.service}`,
-                      ],
-                    ]}
-                  />
-                </details>
-                {recorded.warnings.map((w, i) => (
-                  <Notice key={i} tone="warning">
-                    {w}
-                  </Notice>
-                ))}
-              </Panel>
-              <section aria-label="Native migration information">
-                <div className="spread wrap section-heading">
-                  <h2>Native migrations</h2>
-                  <span>
-                    {migrations.length} total · {filtered.length} matching
-                  </span>
-                </div>
-                <div className="actions wrap">
-                  {[...counts].map(([state, count]) => (
-                    <Badge key={state}>
-                      {state}: {count}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="filter-bar">
-                  <SearchBox
-                    value={params.get("q") || ""}
-                    onChange={(v) => set("q", v)}
-                    placeholder="Search version, description or filepath…"
-                  />
-                  <select
-                    aria-label="Native state"
-                    value={params.get("state") || ""}
-                    onChange={(e) => set("state", e.target.value)}
-                  >
-                    <option value="">All states</option>
-                    {[...counts.keys()].map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                  <select
-                    aria-label="Migration category"
-                    value={params.get("category") || ""}
-                    onChange={(e) => set("category", e.target.value)}
-                  >
-                    <option value="">All categories</option>
-                    {[
-                      ...new Set(
-                        migrations.map((r) => r.category).filter(Boolean),
-                      ),
-                    ].map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                {!Array.isArray(rows) ? (
-                  <Notice tone="warning">
-                    Native migration table unavailable. Inspect diagnostics for
-                    incomplete or invalid output.
-                  </Notice>
-                ) : (
-                  <DataTable
-                    data={filtered}
-                    pageSize={20}
-                    empty={
-                      recorded.success
-                        ? "No native migrations match this view. An empty table does not prove that schema history exists."
-                        : "No migration rows were returned by this failed inspection."
-                    }
-                    columns={[
-                      {
-                        header: "Category",
-                        accessorKey: "category",
-                        cell: ({ row }) => nativeValue(row.original.category),
-                      },
-                      {
-                        header: "Version",
-                        accessorKey: "version",
-                        cell: ({ row }) => (
-                          <Button
-                            variant="ghost"
-                            id={`info-version-${row.id}`}
-                            onClick={(event) => {
-                              returnFocus.current = event.currentTarget.id;
-                              setSelected(row.original);
-                            }}
-                          >
-                            {nativeValue(row.original.version)}
-                          </Button>
-                        ),
-                      },
-                      {
-                        header: "Description",
-                        accessorKey: "description",
-                        cell: ({ row }) => (
-                          <button
-                            className="text-link"
-                            id={`info-description-${row.id}`}
-                            onClick={(event) => {
-                              returnFocus.current = event.currentTarget.id;
-                              setSelected(row.original);
-                            }}
-                          >
-                            {nativeValue(row.original.description)}
-                          </button>
-                        ),
-                      },
-                      { header: "Type", accessorKey: "type" },
-                      {
-                        header: "Installed On",
-                        id: "installed",
-                        cell: ({ row }) =>
-                          nativeValue(
-                            row.original.installedOnUTC ??
-                              row.original.installedOn,
-                          ),
-                      },
-                      {
-                        header: "State",
-                        accessorKey: "state",
-                        cell: ({ row }) => (
-                          <Badge
-                            tone={
-                              row.original.state === "Success"
-                                ? "success"
-                                : row.original.state?.includes("Failed")
-                                  ? "error"
-                                  : row.original.state === "Pending"
-                                    ? "accent"
-                                    : "neutral"
-                            }
-                          >
-                            {nativeValue(row.original.state)}
-                          </Badge>
-                        ),
-                      },
-                      {
-                        header: "Undoable",
-                        accessorKey: "undoable",
-                        cell: ({ row }) => nativeValue(row.original.undoable),
-                      },
-                    ]}
-                  />
-                )}
-              </section>
-              <details className="panel">
-                <summary>
-                  Detailed diagnostics · original redacted stdout / stderr /
-                  JSON
-                </summary>
-                <div className="panel-content">
-                  <p>
-                    Exit code {recorded.exit_code} · {recorded.files.length}{" "}
-                    captured files
-                  </p>
-                  <h3>File manifest</h3>
-                  <pre>{JSON.stringify(recorded.files, null, 2)}</pre>
-                  <h3>stdout</h3>
-                  <pre>{recorded.stdout || "—"}</pre>
-                  <h3>stderr</h3>
-                  <pre>{recorded.stderr || "—"}</pre>
-                  <h3>Native JSON</h3>
-                  <pre>{JSON.stringify(recorded.json, null, 2)}</pre>
-                  {recorded.source_run_id && (
-                    <Link
-                      to={`/runs/${encodeURIComponent(recorded.source_run_id)}`}
-                    >
-                      Associated execution logs
-                    </Link>
-                  )}
-                </div>
-              </details>
+              <NativeInfoCapture recorded={recorded} />
             </>
           )}
           {operate ? (
@@ -543,51 +264,6 @@ function InfoView({
           )}
         </>
       )}
-      <Dialog.Root
-        open={!!selected}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-overlay" />
-          <Dialog.Content
-            className="dialog-content info-drawer"
-            onCloseAutoFocus={(event) => {
-              // Table cells can remount when drawer state changes. Resolve the
-              // current row button rather than retaining a detached element.
-              const trigger = returnFocus.current
-                ? document.getElementById(returnFocus.current)
-                : null;
-              if (trigger) {
-                event.preventDefault();
-                trigger.focus();
-              }
-            }}
-          >
-            <Dialog.Title>Migration details</Dialog.Title>
-            <Dialog.Description>
-              Complete native Flyway migration metadata.
-            </Dialog.Description>
-            <Dialog.Close asChild>
-              <Button
-                className="dialog-close"
-                aria-label="Close migration details"
-              >
-                Close
-              </Button>
-            </Dialog.Close>
-            {selected && (
-              <KeyValues
-                rows={Object.entries(selected).map(([k, v]) => [
-                  k,
-                  nativeValue(v),
-                ])}
-              />
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
     </>
   );
 }

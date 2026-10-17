@@ -2198,6 +2198,62 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
         default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/files:
+    get:
+      summary: Read the frozen effective file manifest for a run
+      operationId: get_migration_runs_id_files
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Effective files reserved by this run; queued or preflight-only runs can have an empty list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/RunFile'}
+                required: [data]
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
+  /migration-runs/{id}/files/content:
+    get:
+      summary: Download a file frozen into a run
+      operationId: get_migration_runs_id_files_content
+      security:
+      - Session: []
+      - Bearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string}
+      - name: artifact_id
+        in: query
+        required: true
+        schema: {type: string}
+      - name: path
+        in: query
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Exact SQL bytes, after run and artifact authorization, frozen membership, and digest checks.
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        default: {$ref: '#/components/responses/Error'}
   /migration-runs/{id}/executions:
     get:
       summary: Read bounded Flyway process execution evidence
@@ -3313,6 +3369,13 @@ components:
         version: {type: string}
         size: {type: integer, minimum: 0}
       required: [path, sha256, kind, version, size]
+    RunFile:
+      allOf:
+      - {$ref: '#/components/schemas/ArtifactFile'}
+      - type: object
+        properties:
+          artifact_id: {type: string}
+        required: [artifact_id]
     ArtifactInput:
       type: object
       properties:

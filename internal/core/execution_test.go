@@ -235,6 +235,57 @@ func TestPreflightTimeoutReturnsDiagnosticsAndPersistsAudit(t *testing.T) {
 	}
 }
 
+func TestRunFilesFailsClosedOnMissingReservationAndReturnsEmptyForNoItems(t *testing.T) {
+	f, _, target, schema, account := executionFixture(t)
+	in := uploadRun(t, f, target, schema, account, "V1__missing.sql", "SELECT 1 FROM dual;\r\n")
+	run, e := f.s.SubmitRun(testCtx, f.trace(), in, "run-files-missing-row")
+	must(t, e)
+	if got := waitRun(t, f, run.ID); got.Status != "SUCCEEDED" {
+		t.Fatalf("run did not complete: %s", got.Status)
+	}
+
+	conn, e := f.db.SQL.Conn(testCtx)
+	must(t, e)
+	if _, e = conn.ExecContext(testCtx, "PRAGMA foreign_keys=OFF"); e != nil {
+		conn.Close()
+		t.Fatal(e)
+	}
+	if _, e = conn.ExecContext(testCtx, "DROP TRIGGER file_immutable_delete"); e != nil {
+		conn.Close()
+		t.Fatal(e)
+	}
+	if _, e = conn.ExecContext(testCtx, "DELETE FROM migration_files WHERE artifact_id=? AND path=?", in.ArtifactID, "V1__missing.sql"); e != nil {
+		conn.Close()
+		t.Fatal(e)
+	}
+	if _, e = conn.ExecContext(testCtx, "PRAGMA foreign_keys=ON"); e != nil {
+		conn.Close()
+		t.Fatal(e)
+	}
+	must(t, conn.Close())
+
+	if _, e = f.s.RunFiles(testCtx, f.admin, run.ID); e == nil {
+		t.Fatal("missing reserved content was accepted")
+	} else {
+		status(t, e, 409)
+	}
+	// The early error path must close its rows before the next database read.
+	if _, e = f.s.Run(testCtx, f.admin, run.ID); e != nil {
+		t.Fatalf("database connection remained busy after missing content: %v", e)
+	}
+	if _, e = f.db.SQL.Exec("DROP TRIGGER item_immutable_delete"); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = f.db.SQL.Exec("DELETE FROM migration_run_items WHERE run_id=?", run.ID); e != nil {
+		t.Fatal(e)
+	}
+	files, e := f.s.RunFiles(testCtx, f.admin, run.ID)
+	must(t, e)
+	if files == nil || len(files) != 0 {
+		t.Fatalf("empty reservations should return an empty list, got %#v", files)
+	}
+}
+
 func TestDurableRunContinuityIdempotencyAndImmutableEvidence(t *testing.T) {
 	f, engine, target, schema, account := executionFixture(t)
 	in := uploadRun(t, f, target, schema, account, "nested/V1__initial.sql", "CREATE TABLE fixture(id NUMBER);\r\n")
