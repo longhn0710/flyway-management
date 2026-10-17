@@ -54,8 +54,17 @@ async function fixture(
     manifest?: "missing";
     many?: boolean;
     repetitive?: boolean;
+    postgresql?: boolean;
   } = {},
 ) {
+  const captureTarget = options.postgresql
+    ? {
+        ...target,
+        engine: "postgresql",
+        database_name: "captured_db",
+        service: "",
+      }
+    : target;
   const repetitiveBytes = Buffer.alloc(200_000, "x");
   const effectiveFiles = options.repetitive
     ? [
@@ -116,7 +125,7 @@ async function fixture(
         flyway_version: "13.10.3",
         migration_outcome: "SUCCEEDED",
         repair_outcome: "SKIPPED",
-        target,
+        target: captureTarget,
         schema,
         account: {},
         context: {},
@@ -195,7 +204,15 @@ async function fixture(
         artifact_id: artifact,
         artifact_sha256: "artifact-hash",
         snapshot: {
-          target,
+          target: captureTarget,
+          profile: options.postgresql
+            ? {
+                auth_kind: "password",
+                tls_mode: "verify-full",
+                ca_sha256: "a".repeat(64),
+                revision: 3,
+              }
+            : undefined,
           schema,
           account: { id: "secret-account", name: "", username: "" },
         },
@@ -390,4 +407,35 @@ test("SQL search bounds repetitive input and keeps later lines accessible", asyn
   await expect(
     page.getByRole("status").filter({ hasText: "2 of 10000+ matches" }),
   ).toBeVisible();
+});
+
+test("master integration preserves PostgreSQL database and trust metadata in run and native Info", async ({
+  page,
+}) => {
+  await fixture(page, { postgresql: true });
+  await page.goto("/runs/run");
+  await expect(
+    page.getByText("PostgreSQL migration run", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".run-destination")).toContainText("captured_db");
+  await expect(
+    page.getByRole("heading", { name: "Run snapshot" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Migration Info", exact: true }).click();
+  await page
+    .getByText("Capture details · account, history and runtime", {
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Historical capture identity" }),
+  ).toContainText("PostgreSQL / captured_db");
+  await expect(
+    page.getByRole("region", { name: "Historical capture identity" }),
+  ).toContainText(
+    "verify-full · CA SHA-256 " + "a".repeat(64) + " · revision 3",
+  );
+  await expect(
+    page.getByRole("region", { name: "Historical capture identity" }),
+  ).toContainText("unreachable.invalid:1521/captured_db");
 });

@@ -1,0 +1,147 @@
+npm --prefix web run build
+
+> flyway-manager-web@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 1723 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                               0.40 kB │ gzip:   0.28 kB
+dist/assets/jetbrains-mono-latin-400-normal-V6pRDFza.woff2   21.17 kB
+dist/assets/jetbrains-mono-latin-500-normal-BWZEU5yA.woff2   21.83 kB
+dist/assets/inter-latin-400-normal-C38fXH4l.woff2            23.66 kB
+dist/assets/inter-latin-500-normal-Cerq10X2.woff2            24.27 kB
+dist/assets/inter-latin-600-normal-LgqL8muc.woff2            24.45 kB
+dist/assets/jetbrains-mono-latin-400-normal-6-qcROiO.woff    27.50 kB
+dist/assets/jetbrains-mono-latin-500-normal-CJOVTJB7.woff    28.21 kB
+dist/assets/inter-latin-400-normal-CyCys3Eg.woff             30.70 kB
+dist/assets/inter-latin-600-normal-CiBQ2DWP.woff             31.26 kB
+dist/assets/inter-latin-500-normal-BL9OpVg8.woff             31.28 kB
+dist/assets/index-rT9WLEYD.css                               48.23 kB │ gzip:  10.57 kB
+dist/assets/index-D5lwnEcM.js                               572.24 kB │ gzip: 167.90 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.34s
+mkdir -p bin
+CGO_ENABLED=0 go build -trimpath -o bin/flyway-manager ./cmd/flyway-manager
+go vet ./cmd/... ./internal/... ./web
+go test ./cmd/... ./internal/... ./web
+ok  	flyway-manager/cmd/flyway-manager	2.245s
+ok  	flyway-manager/internal/artifact	(cached)
+ok  	flyway-manager/internal/config	0.008s
+ok  	flyway-manager/internal/core	25.424s
+ok  	flyway-manager/internal/database	1.159s
+ok  	flyway-manager/internal/flyway	3.281s
+ok  	flyway-manager/internal/httpapi	6.756s
+ok  	flyway-manager/internal/identityprovider	(cached)
+ok  	flyway-manager/internal/oracle	(cached)
+ok  	flyway-manager/internal/postgresql	0.084s
+ok  	flyway-manager/internal/secrets	(cached)
+?   	flyway-manager/web	[no test files]
+npm --prefix web run lint
+
+> flyway-manager-web@0.1.0 lint
+> eslint .
+
+npm --prefix web test
+
+> flyway-manager-web@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 /home/longhn0710/workspace/flyway-management-run-ux/web
+
+
+ Test Files  4 passed (4)
+      Tests  22 passed (22)
+   Start at  10:26:57
+   Duration  274ms (tests 45%, transform 34%, import 15%, worker 6%)
+
+go test -race ./cmd/... ./internal/... ./web
+ok  	flyway-manager/cmd/flyway-manager	4.186s
+ok  	flyway-manager/internal/artifact	(cached)
+ok  	flyway-manager/internal/config	1.030s
+ok  	flyway-manager/internal/core	82.050s
+ok  	flyway-manager/internal/database	14.819s
+ok  	flyway-manager/internal/flyway	5.007s
+ok  	flyway-manager/internal/httpapi	21.491s
+ok  	flyway-manager/internal/identityprovider	(cached)
+ok  	flyway-manager/internal/oracle	(cached)
+ok  	flyway-manager/internal/postgresql	1.182s
+ok  	flyway-manager/internal/secrets	(cached)
+?   	flyway-manager/web	[no test files]
+npm --prefix web run test:e2e
+
+> flyway-manager-web@0.1.0 test:e2e
+> playwright test
+
+
+Running 43 tests using 2 workers
+
+(node:3191538) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3191539) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 tests/connections.spec.ts:341:1 › empty discovery leaves schema selection disabled (1.7s)
+  ✓   1 tests/connections.spec.ts:205:1 › connection wizard discovers, filters, constrains, and atomically saves schemas (2.7s)
+  ✓   3 tests/connections.spec.ts:383:1 › authentication failure stays on connection step and shows discovery error (1.4s)
+  ✓   4 tests/connections.spec.ts:422:1 › saved connection account can be edited and its credential rotated (1.6s)
+  ✓   5 tests/connections.spec.ts:514:1 › non-admin users cannot start the connection wizard (1.8s)
+  ✓   6 tests/connections.spec.ts:565:1 › future engine preview disables connection actions and sends no API request (1.3s)
+  ✓   7 tests/console.spec.ts:35:1 › first-run setup is one-time; sessions are server-authoritative (1.7s)
+  ✓   8 tests/execution.spec.ts:318:1 › migration upload shows a real manifest and stays blocked without Flyway runtime (1.3s)
+  ✓   9 tests/console.spec.ts:93:1 › connect a database, then create and scope a user (2.8s)
+  ✓  11 tests/console.spec.ts:236:1 › service account grants, one-time token display, rotation and revocation (1.5s)
+  ✓  12 tests/console.spec.ts:331:1 › execution account credentials are write-only and encrypted metadata is live (903ms)
+  ✓  10 tests/execution.spec.ts:417:1 › controlled fake Flyway completes the real UI workflow through download and filtered history (5.2s)
+  ✓  13 tests/console.spec.ts:346:1 › authentication settings show server configuration and unavailable runtime is explicit (1.0s)
+  ✓  14 tests/execution.spec.ts:523:1 › controlled fake Flyway keeps a failed migration failed after one safe repair without SQL retry (4.1s)
+  -  16 tests/postgresql-live.spec.ts:108:1 › PostgreSQL 17 live browser acceptance: verify-full registration and native Info
+  ✓  17 tests/projects-info.spec.ts:28:1 › Projects and native Info: real APIs, read-only refresh, RBAC, browser workflows and responsive evidence (7.6s)
+  ✓  18 tests/run-details.spec.ts:235:1 › read-only long SQL: native row journey, nested path, repeatable, search, pagination, mobile focus and safe text (2.0s)
+  ✓  15 tests/console.spec.ts:367:1 › authenticated routes render without overflow at reviewed viewport widths (13.2s)
+  ✓  19 tests/run-details.spec.ts:316:3 › historical none Info never falls back to a newer capture (412ms)
+  ✓  20 tests/run-details.spec.ts:316:3 › historical empty Info never falls back to a newer capture (432ms)
+  ✓  21 tests/run-details.spec.ts:340:3 › SQL missing artifact shows explicit error and no stale source (473ms)
+  ✓  22 tests/run-details.spec.ts:340:3 › SQL corrupt artifact shows explicit error and no stale source (468ms)
+  ✓  24 tests/run-details.spec.ts:358:1 › missing historical manifest and unknown deep link do not substitute current uploads (385ms)
+  ✓  23 tests/run-details.spec.ts:340:3 › SQL forbidden artifact shows explicit error and no stale source (472ms)
+  ✓  25 tests/run-details.spec.ts:369:1 › native Info sorting and pagination preserve unknown states (596ms)
+  ✓  26 tests/run-details.spec.ts:393:1 › SQL search bounds repetitive input and keeps later lines accessible (677ms)
+  ✓  27 tests/run-details.spec.ts:412:1 › master integration preserves PostgreSQL database and trust metadata in run and native Info (525ms)
+  ✓  29 tests/schema-catalog.spec.ts:175:1 › global catalog aggregates, searches, filters and paginates multiple instances (833ms)
+  ✓  30 tests/schema-catalog.spec.ts:226:1 › legacy schema-only deep link resolves correct parent despite stale instance/filter, refresh and browser back (733ms)
+  ✓  31 tests/schema-catalog.spec.ts:260:3 › unknown or wrong-parent schema is explicit: /schemas?schema=unknown (412ms)
+  ✓  28 tests/schema-catalog-api.spec.ts:8:1 › real APIs enforce schema catalog visibility for Admin, Operator and Viewer (2.7s)
+  ✓  32 tests/schema-catalog.spec.ts:260:3 › unknown or wrong-parent schema is explicit: /schemas?schema= (395ms)
+  ✓  33 tests/schema-catalog.spec.ts:260:3 › unknown or wrong-parent schema is explicit: /instances/finance/schemas?schema=schema-11 (351ms)
+  ✓  34 tests/schema-catalog.spec.ts:260:3 › unknown or wrong-parent schema is explicit: /instances/finance/schemas?schema=unknown (344ms)
+  ✓  35 tests/schema-catalog.spec.ts:275:3 › Admin sees only returned authorized schemas and permitted actions/accounts (936ms)
+  ✓  36 tests/schema-catalog.spec.ts:275:3 › Operator sees only returned authorized schemas and permitted actions/accounts (990ms)
+  ✓  37 tests/schema-catalog.spec.ts:275:3 › Viewer sees only returned authorized schemas and permitted actions/accounts (957ms)
+  ✓  39 tests/schema-catalog.spec.ts:354:1 › schema API pages are fully consumed before local filtering (409ms)
+  ✓  38 tests/schema-catalog.spec.ts:332:1 › empty registry and temporary errors have distinct states and Retry recovers (1.9s)
+  ✓  40 tests/schema-catalog.spec.ts:371:1 › instance search/status, overview, migration history and run snapshot use canonical schema links (1.4s)
+  ✓  42 tests/schema-catalog.spec.ts:435:1 › instance history honors URL filters and keeps instance scope (501ms)
+  ✓  41 tests/schema-catalog.spec.ts:408:1 › catalog stays usable at desktop, tablet and mobile widths (1.6s)
+  ✓  43 tests/schema-catalog.spec.ts:470:1 › catalog pagination survives opening a schema, browser back and refresh (849ms)
+
+  1 skipped
+  42 passed (38.1s)
+npm --prefix web audit --audit-level=moderate
+found 0 vulnerabilities
+go run golang.org/x/vuln/cmd/govulncheck@latest ./cmd/... ./internal/... ./web
+=== Symbol Results ===
+
+No vulnerabilities found.
+
+Your code is affected by 0 vulnerabilities.
+This scan also found 0 vulnerabilities in packages you import and 1
+vulnerability in modules you require, but your code doesn't appear to call these
+vulnerabilities.
+Use '-show verbose' for more details.
