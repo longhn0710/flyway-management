@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flyway-manager/internal/artifact"
 	"flyway-manager/internal/flyway"
+	"flyway-manager/internal/postgresql"
 	"fmt"
 	"path"
 	"sort"
@@ -77,6 +78,13 @@ func (s *Service) executionSnapshot(ctx context.Context, q queryer, in RunInput)
 		snap.Profile = &ProfileSnapshot{profile.AuthKind, profile.TLSMode, profile.CASHA256, profile.Revision}
 	}
 	snap.FlywayConfiguration = flyway.ConfigurationSnapshot(requestFor(executionPlan{snapshot: snap}, "info"))
+	if snap.Target.Engine == "postgresql" && s.execution != nil {
+		if policy, ok := s.execution.runner.(interface{ PostgreSQLExecutionPolicy() map[string]string }); ok {
+			for key, value := range policy.PostgreSQLExecutionPolicy() {
+				snap.FlywayConfiguration[key] = value
+			}
+		}
+	}
 	return snap, plain, nil
 }
 func migrationKey(f artifact.File) string {
@@ -224,10 +232,24 @@ func requestFor(plan executionPlan, command string) flyway.Request {
 	return req
 }
 func fillPlan(p *Preflight, plan executionPlan) {
+	if plan.snapshot.Target.Engine == "postgresql" {
+		p.Warnings = []string{"Earlier migrations can remain committed if a later script fails. PostgreSQL failures and uncertain outcomes hold the stream for review; no automatic Repair or retry.", "PostgreSQL role privileges govern cross-schema access; schema configuration is not a security boundary."}
+	}
 	for _, f := range plan.files {
 		p.Files = append(p.Files, ArtifactFile{f.Path, f.SHA256, f.Kind, f.Version, len(f.Bytes)})
 	}
 	p.LocalReady = true
+}
+
+func validateMigrationPlan(plan executionPlan) error {
+	if plan.snapshot.Target.Engine == "postgresql" {
+		for _, file := range plan.files {
+			if err := postgresql.ValidateMigrationSQL(file.Bytes); err != nil {
+				return conflict(err.Error())
+			}
+		}
+	}
+	return nil
 }
 func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Preflight, error) {
 	p := preflightBase()
@@ -241,6 +263,7 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 		return p, e
 	}
 	if e := s.migrationEngineGate(ctx, t.Actor, in.TargetID); e != nil {
+		p.Warnings = []string{}
 		p.block("ENGINE_MIGRATION_DISABLED", safeExecutionError(e))
 		return p, nil
 	}
@@ -278,12 +301,17 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 	}
 	defer clear(plan.password)
 	fillPlan(&p, plan)
+	if e = validateMigrationPlan(plan); e != nil {
+		p.LocalReady = false
+		p.block("UNSUPPORTED_MIGRATION_SQL", safeExecutionError(e))
+		return p, nil
+	}
 	info := s.execution.runner.Execute(ctx, requestFor(plan, "info"))
 	validate := flyway.Result{}
 	if info.Success {
 		validate = s.execution.runner.Execute(ctx, requestFor(plan, "validate"))
 	}
-	applyLivePreflight(&p, info, validate)
+	applyLivePreflight(&p, info, validate, plan.snapshot.Target.Engine)
 	if p.Ready {
 		if e = resolvedSnapshot(plan, info.JSON); e != nil {
 			p.block("INCOMPLETE_FLYWAY_LOCATIONS", safeExecutionError(e))
@@ -297,7 +325,11 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 	if ctx.Err() != nil {
 		p.Ready = false
 		p.LiveStatus = "NOT_VERIFIED"
-		p.block("REQUEST_TIMEOUT", "Preflight timed out while inspecting Oracle. No migration was started.")
+		message := "Preflight timed out while inspecting Oracle. No migration was started."
+		if plan.snapshot.Target.Engine == "postgresql" {
+			message = "Preflight timed out while inspecting PostgreSQL. No migration was started."
+		}
+		p.block("REQUEST_TIMEOUT", message)
 		auditCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 		defer cancel()
 		if e = s.Event(auditCtx, t, "migration.preflight", in.SchemaID, p.LiveStatus); e != nil {
@@ -373,7 +405,8 @@ func safeHistory(payload json.RawMessage) error {
 	}
 	return nil
 }
-func applyLivePreflight(p *Preflight, info, validation flyway.Result) {
+func applyLivePreflight(p *Preflight, info, validation flyway.Result, engine ...string) {
+	postgres := len(engine) > 0 && engine[0] == "postgresql"
 	p.Info = info.JSON
 	p.Validation = validation.JSON
 	for _, name := range []string{"network", "authentication", "service", "schema_access", "history"} {
@@ -381,7 +414,12 @@ func applyLivePreflight(p *Preflight, info, validation flyway.Result) {
 	}
 	p.Diagnostics = append(p.Diagnostics, Diagnostic{"migration_privileges", "NOT_VERIFIED", "Read-only validation cannot prove all DDL privileges or cross-schema isolation."})
 	if !info.Success {
-		connectivityFailure(p, info)
+		if postgres {
+			p.LiveStatus = "NOT_VERIFIED"
+			p.block("POSTGRESQL_NOT_VERIFIED", "PostgreSQL identity, TLS, schema or history inspection could not be verified. No migration was started.")
+		} else {
+			connectivityFailure(p, info)
+		}
 		return
 	}
 	for i := 0; i < 3; i++ {
@@ -392,6 +430,12 @@ func applyLivePreflight(p *Preflight, info, validation flyway.Result) {
 	p.Diagnostics[4].Status = "INSPECTED"
 	p.Diagnostics[4].Detail = "Flyway inspected schema history. An empty history does not prove the physical history table already exists."
 	p.Diagnostics = append(p.Diagnostics, Diagnostic{"database_identity", "NOT_VERIFIED", "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab."})
+	if postgres {
+		for i := 0; i < 3; i++ {
+			p.Diagnostics[i].Detail = "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+		}
+		p.Diagnostics[len(p.Diagnostics)-1] = Diagnostic{"database_identity", "VERIFIED", "Actual PostgreSQL database and session/effective role match the declared profile."}
+	}
 	if e := safeHistory(info.JSON); e != nil {
 		p.LiveStatus = "FAILED"
 		p.block("HISTORY_UNSAFE", e.Error())

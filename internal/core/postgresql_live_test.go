@@ -85,9 +85,10 @@ func TestPostgreSQLRealConnectionAndInfo(t *testing.T) {
 	artifact1, e := f.s.UploadArtifact(testCtx, f.trace(), saved.Target.ID, saved.Schemas[0].ID, []artifact.Input{{Name: "V1__foundation.sql", Bytes: v1}})
 	must(t, e)
 	run := RunInput{TargetID: saved.Target.ID, SchemaID: saved.Schemas[0].ID, ExecutionAccountID: saved.Account.ID, ArtifactID: artifact1.ID}
- // An independent nonexistent history location makes absent-history acceptance
- // repeatable even when the controlled fixture history already exists.
- _,e=f.s.SaveSchema(testCtx,f.trace(),run.TargetID,run.SchemaID,SchemaInput{Name:"app",HistoryTable:"absent_info_history",DefaultAccountID:saved.Account.ID,Active:true});must(t,e)
+	// An independent nonexistent history location makes absent-history acceptance
+	// repeatable even when the controlled fixture history already exists.
+	_, e = f.s.SaveSchema(testCtx, f.trace(), run.TargetID, run.SchemaID, SchemaInput{Name: "app", HistoryTable: "absent_info_history", DefaultAccountID: saved.Account.ID, Active: true})
+	must(t, e)
 	initial, e := f.s.RefreshInfo(testCtx, f.trace(), run)
 	must(t, e)
 	if !initial.Success {
@@ -96,8 +97,9 @@ func TestPostgreSQLRealConnectionAndInfo(t *testing.T) {
 	if postgresDump(t) != before {
 		t.Fatal("absent-history Info mutated database")
 	}
-	_,e=f.s.SaveSchema(testCtx,f.trace(),run.TargetID,run.SchemaID,SchemaInput{Name:"app",HistoryTable:"flyway_schema_history",DefaultAccountID:saved.Account.ID,Active:true});must(t,e)
- // These are controlled lab fixtures, never a Manager migration submission.
+	_, e = f.s.SaveSchema(testCtx, f.trace(), run.TargetID, run.SchemaID, SchemaInput{Name: "app", HistoryTable: "flyway_schema_history", DefaultAccountID: saved.Account.ID, Active: true})
+	must(t, e)
+	// These are controlled lab fixtures, never a Manager migration submission.
 	plan, e := f.s.localPlan(testCtx, f.db.SQL, f.admin, run, "13.10.3", true)
 	must(t, e)
 	fixture := requestFor(plan, "migrate")
@@ -148,25 +150,21 @@ func TestPostgreSQLRealConnectionAndInfo(t *testing.T) {
 	status(t, e, 403)
 	_, e = f.s.LatestInfo(testCtx, viewer, run.TargetID, run.SchemaID, "")
 	must(t, e)
-	// Unmapped account and a corrupt immutable migration are rejected before CLI.
+	// An unmapped account is rejected before CLI. Stored-content fault injection
+	// stays in unit fixtures; live acceptance does not edit the Manager registry.
 	bad = run
 	bad.ExecutionAccountID = secondSaved.Account.ID
 	_, e = f.s.RefreshInfo(testCtx, f.trace(), bad)
 	status(t, e, 409)
-	_, e = f.db.SQL.Exec("UPDATE migration_files SET sha256=? WHERE artifact_id=?", strings.Repeat("0", 64), artifact1.ID)
-	if e == nil {
-		_, e = f.s.RefreshInfo(testCtx, f.trace(), run)
-		if e == nil {
-			t.Fatal("corrupt checksum accepted")
+	if !postgresqlMigrationAccepted {
+		pre, e := f.s.Preflight(testCtx, f.trace(), run)
+		must(t, e)
+		if pre.Ready {
+			t.Fatal("PostgreSQL migration gate bypassed")
 		}
-	} // immutable triggers may reject corruption itself
-	pre, e := f.s.Preflight(testCtx, f.trace(), run)
-	must(t, e)
-	if pre.Ready {
-		t.Fatal("PostgreSQL migration gate bypassed")
+		_, e = f.s.SubmitRun(testCtx, f.trace(), run, "pg-must-stay-disabled")
+		status(t, e, 409)
 	}
-	_, e = f.s.SubmitRun(testCtx, f.trace(), run, "pg-must-stay-disabled")
-	status(t, e, 409)
 	for _, table := range []string{"migration_runs", "migration_streams", "stream_files", "run_executions", "repair_operations"} {
 		var n int
 		must(t, f.db.SQL.QueryRow("SELECT count(*) FROM "+table).Scan(&n))
@@ -199,7 +197,8 @@ func TestPostgreSQLRealConnectionAndInfo(t *testing.T) {
 	evidence["readonly_info"] = roCapture
 	sum := sha256.Sum256([]byte(populated))
 	evidence["database_before_after_sha256"] = hex.EncodeToString(sum[:])
-	evidence["migration_enabled"] = false
+	evidence["migration_policy_enabled"] = postgresqlMigrationAccepted
+	evidence["info_created_migrations"] = false
 	if out := os.Getenv("FWM_LAB_EVIDENCE"); out != "" {
 		must(t, os.MkdirAll(out, 0700))
 		b, e := json.MarshalIndent(evidence, "", "  ")

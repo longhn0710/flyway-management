@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flyway-manager/internal/artifact"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -109,6 +110,9 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 			return e
 		}
 		defer clear(plan.password)
+		if e = validateMigrationPlan(plan); e != nil {
+			return e
+		}
 		snapshot, _ := json.Marshal(plan.snapshot)
 		if _, e = tx.ExecContext(ctx, `INSERT INTO migration_streams(target_id,schema_id,configuration,runtime_pin) VALUES(?,?,?,?) ON CONFLICT(target_id,schema_id) DO NOTHING`, in.TargetID, in.SchemaID, plan.configuration, s.execution.pin); e != nil {
 			return e
@@ -146,7 +150,7 @@ func (s *Service) recoverExecution(ctx context.Context) error {
 	defer tx.Rollback()
 	// Even interrupted PREFLIGHT is held: a previous process might have crossed a
 	// side-effect boundary before it could persist an outcome.
-	reason := "Application stopped during execution or repair; Oracle outcome requires reconciliation. SQL was not replayed."
+	reason := "Application stopped during execution or repair; database outcome requires reconciliation. SQL was not replayed."
 	if _, e = tx.ExecContext(ctx, `UPDATE migration_streams SET held=1,reason=? WHERE EXISTS(SELECT 1 FROM migration_runs r JOIN jobs j ON j.run_id=r.id WHERE r.target_id=migration_streams.target_id AND r.schema_id=migration_streams.schema_id AND (r.status IN ('PREFLIGHT','RUNNING','REPAIRING') OR j.claimed=1))`, reason); e != nil {
 		return e
 	}
@@ -171,7 +175,7 @@ func (s *Service) claim(ctx context.Context) (string, error) {
 		return "", e
 	}
 	defer tx.Rollback()
-	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason='Stream is held for Oracle reconciliation.',finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1)`, now()); e != nil {
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason='Stream is held for database reconciliation.',finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1)`, now()); e != nil {
 		return "", e
 	}
 	var rid string
@@ -282,10 +286,10 @@ func (s *Service) CancelRun(ctx context.Context, t Trace, rid string) error {
 func (s *Service) workerFailure(rid string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = s.changeRun(ctx, rid, "NEEDS_REVIEW", "Execution evidence could not be persisted or operation was interrupted; reconcile Oracle before further migration.", "", "", nil, true, true)
+	_ = s.changeRun(ctx, rid, "NEEDS_REVIEW", "Execution evidence could not be persisted or operation was interrupted; reconcile the database before further migration.", "", "", nil, true, true)
 }
 
-// Startup reconciliation only inspects Oracle through info/validate. Without
+// Startup reconciliation only inspects the database through info/validate. Without
 // durable exit evidence, even matching history cannot prove absence of partial
 // DDL, so the original run and stream remain NEEDS_REVIEW/held.
 func (s *Service) reconcileRecovered(ctx context.Context) {
@@ -312,6 +316,9 @@ func (s *Service) reconcileRecovered(ctx context.Context) {
 		run, e := runScan(s.db.QueryRowContext(ctx, "SELECT "+runColumns+" FROM migration_runs WHERE id=?", rid))
 		if e != nil {
 			continue
+		}
+		if run.Target.Engine == "postgresql" {
+			s.retainPostgreSQLJournals(ctx, rid)
 		}
 		lock := s.execution.stream(run.TargetID, run.SchemaID)
 		lock.Lock()
@@ -347,5 +354,39 @@ func (s *Service) reconcileRecovered(ctx context.Context) {
 			}
 			_ = s.Event(durable, t, "migration.reconciliation", rid, outcome)
 		}()
+	}
+}
+
+// Guard journals survive abrupt Manager exit. Import their metadata under the
+// existing run without changing native command evidence, outcome or stream hold.
+func (s *Service) retainPostgreSQLJournals(ctx context.Context, rid string) {
+	reader, ok := s.execution.runner.(interface {
+		ReadPostgreSQLLifecycle(string) (json.RawMessage, error)
+	})
+	if !ok {
+		return
+	}
+	const prefix = "PostgreSQL execution correlation: "
+	rows, err := s.db.QueryContext(ctx, `SELECT command,message FROM migration_logs WHERE run_id=? AND message LIKE ? ORDER BY sequence`, rid, prefix+"%")
+	if err != nil {
+		return
+	}
+	type correlation struct{ command, tag string }
+	tags := []correlation{}
+	for rows.Next() {
+		var command, message string
+		if rows.Scan(&command, &message) != nil {
+			break
+		}
+		tags = append(tags, correlation{command, strings.TrimPrefix(message, prefix)})
+	}
+	rows.Close()
+	for _, tag := range tags {
+		journal, err := reader.ReadPostgreSQLLifecycle(tag.tag)
+		if err != nil {
+			continue
+		}
+		message := "PostgreSQL recovered lifecycle journal: " + string(journal)
+		_, _ = s.db.ExecContext(ctx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) SELECT ?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM migration_logs WHERE run_id=? AND message=?)`, rid, tag.command, "stderr", message, utcNow(), rid, message)
 	}
 }
