@@ -1,11 +1,17 @@
 import { defineConfig } from "@playwright/test";
+import { chmodSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const outputDir = mkdtempSync(join(tmpdir(), "fwm-postgres-browser-results-"));
+chmodSync(outputDir, 0o700);
 
 // The opt-in live PostgreSQL spec starts its own isolated Manager. Do not start
 // the shared 18081 webServer configured by playwright.config.ts.
 export default defineConfig({
   testDir: "./tests",
   testMatch: "postgresql-live.spec.ts",
-  outputDir: "/tmp/fwm-postgres-browser-results",
+  outputDir,
   fullyParallel: false,
   workers: 1,
   timeout: 300_000,

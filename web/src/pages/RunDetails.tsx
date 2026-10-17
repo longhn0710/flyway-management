@@ -220,15 +220,33 @@ export default function RunDetails() {
             </section>
             {row.status === "FAILED" && (
               <Notice tone="error" title="Migration failed">
-                {row.reason || "Flyway reported a failed migration."} Oracle DDL
-                may have partially committed; this run remains failed regardless
-                of repair outcome.
+                {row.reason || "Flyway reported a failed migration."}{" "}
+                {row.target?.engine === "postgresql"
+                  ? "The run remains held for operator review. Earlier scripts may already be committed. No automatic PostgreSQL retry or Repair is performed."
+                  : "Oracle DDL may have partially committed; this run remains failed regardless of repair outcome."}
               </Notice>
             )}
-            {row.status === "NEEDS_REVIEW" || row.status === "BLOCKED" ? (
-              <Notice tone="warning" title="Execution requires review">
-                {row.reason ||
-                  "The execution outcome is not safe to retry automatically."}
+            {row.status === "NEEDS_REVIEW" ||
+            row.status === "BLOCKED" ||
+            (row.target?.engine === "postgresql" && row.status === "CANCELLED") ? (
+              <Notice
+                tone="warning"
+                title={
+                  row.target?.engine === "postgresql" && row.status === "CANCELLED"
+                    ? "Migration cancelled"
+                    : row.target?.engine === "postgresql" && row.status === "BLOCKED"
+                      ? "Migration blocked"
+                      : "Execution requires review"
+                }
+              >
+                {row.target?.engine === "postgresql"
+                  ? row.status === "NEEDS_REVIEW"
+                    ? `${row.reason || "The PostgreSQL execution outcome could not be confirmed."} The run remains held for operator review. Earlier scripts may already be committed. No automatic retry or Repair is performed.`
+                    : row.status === "CANCELLED"
+                      ? "Cancelled before execution. No migration SQL ran, so no retry or Repair is needed."
+                      : row.reason || "The migration was blocked before dispatch."
+                  : row.reason ||
+                    "The execution outcome is not safe to retry automatically."}
               </Notice>
             ) : null}
             <nav className="instance-tabs run-tabs" aria-label="Run sections">
@@ -410,8 +428,9 @@ export default function RunDetails() {
                     tone={repairSummary?.tone ?? "info"}
                     title={repairSummary?.title}
                   >
-                    {repairSummary?.message} The original migration SQL was not
-                    rerun.
+                    {row.target?.engine === "postgresql"
+                      ? "Automatic PostgreSQL Repair is disabled; the original migration SQL was not rerun."
+                      : `${repairSummary?.message} The original migration SQL was not rerun.`}
                   </Notice>
                 )}
                 <details className="advanced-diagnostics">
