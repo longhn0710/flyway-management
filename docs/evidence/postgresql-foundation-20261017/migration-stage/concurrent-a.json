@@ -1,0 +1,24 @@
+{
+  "database" : "fwm_gate_acceptance_20261016t191333z",
+  "databaseType" : "PostgreSQL",
+  "exception" : null,
+  "flywayVersion" : "13.10.3",
+  "initialSchemaVersion" : null,
+  "licenseFailed" : false,
+  "migrations" : [ {
+    "category" : "Versioned",
+    "description" : "concurrent",
+    "executionTime" : 4024,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/concurrent/V1__concurrent.sql",
+    "type" : "SQL",
+    "version" : "1"
+  } ],
+  "migrationsExecuted" : 1,
+  "operation" : "migrate",
+  "schemaName" : "gate_concurrent",
+  "success" : true,
+  "targetSchemaVersion" : "1",
+  "timestamp" : "2026-10-17T02:14:17.203667141+07:00",
+  "totalMigrationTime" : 4024,
+  "warnings" : [ ]
+}

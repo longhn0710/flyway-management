@@ -1,0 +1,10 @@
+Description:
+    Validates the applied migrations against the ones on the classpath
+
+Configuration parameters: (Format: -key=value)
+    ignoreMigrationPatterns  Patterns of migrations and states to ignore
+    validateMigrationNaming  Validate file names of SQL migrations (including callbacks)
+    cherryPick               [teams] Comma separated list of migrations that Flyway should consider
+
+Example:
+    flyway validate -ignoreMigrationPatterns=*:missing

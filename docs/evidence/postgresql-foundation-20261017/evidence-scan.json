@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "files_scanned": 28,
+  "checks": [
+    "exact private lab credential bytes absent",
+    "private-key PEM markers absent",
+    "JSON evidence parses"
+  ],
+  "checked_at": "2026-10-16T19:18:37.403872+00:00"
+}

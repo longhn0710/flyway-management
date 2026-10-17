@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Flyway Manager API
-  version: 0.5.0
-  description: Standalone identity, Oracle registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
+  version: 0.6.0
+  description: Standalone identity, engine-aware registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
     JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
     plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
     web sessions and cannot access administration. Lists with limit/offset are filtered by authorization before
@@ -2334,6 +2334,20 @@ paths:
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
         default: {$ref: '#/components/responses/Error'}
+  /engine-capabilities:
+    get:
+      summary: Server-owned implemented engine capabilities and migration policy
+      responses:
+        '200':
+          description: Profile-specific availability; runtime and acceptance remain separate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: '#/components/schemas/EngineCapability'}
   /connections/test:
     post:
       summary: Test a transient Oracle connection and discover every visible schema
@@ -2984,6 +2998,25 @@ components:
             migration_execution:
               type: boolean
               description: Execution API is implemented; runtime readiness and Oracle verification are separate checks.
+    EngineCapability:
+      type: object
+      properties:
+        engine: {type: string}
+        status: {type: string}
+        connection: {type: boolean}
+        info: {type: boolean}
+        migration: {type: boolean}
+        profile: {type: string}
+    ConnectionProfile:
+      type: object
+      additionalProperties: false
+      required: [auth_kind, tls_mode, ca_pem]
+      properties:
+        auth_kind: {type: string, enum: [password]}
+        tls_mode: {type: string, enum: [verify-full]}
+        ca_pem: {type: string, maxLength: 65536, description: Admin-approved PEM CA certificates only. No paths or private keys. Returned only by administrative connection APIs.}
+        ca_sha256: {type: string, readOnly: true, description: Computed from exact CA content by the server.}
+        revision: {type: integer, readOnly: true}
     ConnectionInput:
       type: object
       additionalProperties: false
@@ -3006,6 +3039,7 @@ components:
         account: {$ref: '#/components/schemas/ExecutionAccount'}
         schemas: {type: array, items: {$ref: '#/components/schemas/Schema'}}
         timeout_seconds: {type: integer}
+        profile: {$ref: '#/components/schemas/ConnectionProfile'}
     SchemaCandidate:
       type: object
       required: [name, own, object_count, known_privileges, migration_capability, capability_reason]
@@ -3018,10 +3052,17 @@ components:
         capability_reason: {type: string}
     ConnectionDiscovery:
       type: object
+      description: Legacy Oracle fields are retained. PostgreSQL adds verified database, session role, server version and TLS/driver evidence; error_code blocks registration even after authentication.
       required: [network_state, authentication_state, actual_user, current_schema, database_service, pdb_name, schema_total, schemas, warnings, capabilities]
       properties:
         network_state: {type: string, enum: [verified, failed, unknown]}
-        authentication_state: {type: string, enum: [verified, failed, unknown]}
+        authentication_state: {type: string, enum: [verified, failed, rejected, unknown]}
+        engine: {type: string, enum: [oracle, postgresql]}
+        database_name: {type: string}
+        session_user: {type: string}
+        server_version: {type: string}
+        tls_mode: {type: string}
+        jdbc_driver: {type: string}
         error_code: {type: string}
         error_message: {type: string}
         actual_user: {type: string}
@@ -3045,7 +3086,11 @@ components:
               detail: {type: string}
     Target:
       type: object
+      description: Legacy Oracle JSON omits additive engine fields to preserve snapshot bytes. Missing engine means Oracle in memory.
       properties:
+        engine: {type: string, enum: [oracle, postgresql]}
+        database_name: {type: string}
+        profile_revision: {type: integer}
         id: &id007
           type: string
         name: &id008
@@ -3074,7 +3119,11 @@ components:
         created_at: *id006
     TargetInput:
       type: object
+      description: Missing engine preserves legacy Oracle behavior. PostgreSQL creation uses the connection wizard, requires database_name, empty service, TCPS and verify-full profile; engine is immutable.
       properties:
+        engine: {type: string, enum: [oracle, postgresql], default: oracle}
+        database_name: {type: string, pattern: '^[a-z_][a-z0-9_]{0,62}$'}
+        profile: {$ref: '#/components/schemas/ConnectionProfile'}
         id: *id007
         name: *id008
         environment: *id009
@@ -3088,7 +3137,6 @@ components:
       - environment
       - host
       - port
-      - service
       - transport
     Schema:
       type: object
@@ -3352,6 +3400,14 @@ components:
         artifact_id: {type: string}
         context: {$ref: '#/components/schemas/RunContext'}
       required: [target_id, schema_id, execution_account_id, artifact_id]
+    ProfileSnapshot:
+      type: object
+      required: [auth_kind, tls_mode, ca_sha256, revision]
+      properties:
+        auth_kind: {type: string, enum: [password]}
+        tls_mode: {type: string, enum: [verify-full]}
+        ca_sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        revision: {type: integer, minimum: 1}
     AccountSnapshot:
       type: object
       properties:
@@ -3440,6 +3496,8 @@ components:
     Run:
       type: object
       properties:
+        snapshot_version: {type: integer, enum: [2], description: Omitted for legacy Oracle version-1 evidence.}
+        profile: {$ref: '#/components/schemas/ProfileSnapshot'}
         id: {type: string}
         run_id: {type: string}
         artifact_name: {type: string}

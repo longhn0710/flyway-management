@@ -1,0 +1,12 @@
+=== RUN   TestPostgreSQLRealConnectionAndInfo
+=== RUN   TestPostgreSQLRealConnectionAndInfo/success
+=== RUN   TestPostgreSQLRealConnectionAndInfo/pending
+=== RUN   TestPostgreSQLRealConnectionAndInfo/future
+=== RUN   TestPostgreSQLRealConnectionAndInfo/missing
+--- PASS: TestPostgreSQLRealConnectionAndInfo (178.58s)
+    --- PASS: TestPostgreSQLRealConnectionAndInfo/success (19.36s)
+    --- PASS: TestPostgreSQLRealConnectionAndInfo/pending (22.56s)
+    --- PASS: TestPostgreSQLRealConnectionAndInfo/future (19.91s)
+    --- PASS: TestPostgreSQLRealConnectionAndInfo/missing (23.82s)
+PASS
+ok  	flyway-manager/internal/core	178.592s

@@ -1,0 +1,16 @@
+Description:
+    Authenticates Flyway with Redgate licensing
+
+Flags:
+    -IAgreeToTheEula [REQUIRED]  Confirm you consent to the EULA found at https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=eula
+    -logout                      Log out a previous authentication
+    -startTeamsTrial             Start a Teams trial
+    -startEnterpriseTrial        Start an Enterprise trial
+
+Example:
+    flyway auth -IAgreeToTheEula
+
+
+
+Description:
+    Authenticates Flyway with Redgate licensing

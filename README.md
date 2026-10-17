@@ -2,6 +2,8 @@
 
 Native Go server with an embedded React console and SQLite. Phase 3 adds immutable SQL bundles, integrity-pinned Flyway CLI execution, durable asynchronous jobs, stream history, logs and guarded automatic repair to the existing identity, RBAC and encrypted registry. **IMPLEMENTED — Oracle Free application smoke verified; Oracle 19c/21c remain unverified.** No Oracle 19c/21c compatibility or production-readiness claim is made from fixture tests.
 
+PostgreSQL 17 connection/discovery and native Info are available with password/SCRAM and verify-full TLS. PostgreSQL migration remains disabled because failure/recovery acceptance is incomplete. See the [foundation implementation and lab acceptance](docs/postgresql-foundation-acceptance.md), including SQLite v8 upgrade and local evidence. Oracle remains the operational migration engine.
+
 Requirements: Go 1.26.9+, Node.js 22.12+ and npm for building. Make pins Go 1.26.9. The compiled console needs no Go, Node or Docker. Migration execution additionally needs an approved Flyway distribution, compatible Java and Oracle JDBC/module assets. Verification targets Linux amd64; other operating systems require acceptance.
 
 ```sh

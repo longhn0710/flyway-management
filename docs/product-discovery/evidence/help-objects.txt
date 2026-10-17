@@ -1,0 +1,11 @@
+Description:
+    Lists the objects present in a comparison source
+
+Configuration parameters: (Format: -key=value)
+    objects.source [REQUIRED]  The source to list objects from. Valid values:
+                                - schemaModel - the schema model folder referenced by schemaModelLocation
+    objects.artifactFilename   The output location of the objects artifact.
+                               Default: %temp%/flyway.artifact.diff
+
+Example:
+    flyway objects -objects.source=schemaModel

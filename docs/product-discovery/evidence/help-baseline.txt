@@ -1,0 +1,10 @@
+Description:
+    Baselines an existing database at the baselineVersion
+
+Configuration parameters: (Format: -key=value)
+    baselineVersion      Version to tag schema with when executing baseline
+    baselineDescription  Description to tag schema with when executing baseline
+    createSchemas        Whether Flyway should attempt to create the schemas specified in the schemas property
+
+Example:
+    flyway baseline -baselineVersion=1.0 -baselineDescription="Base Migration"

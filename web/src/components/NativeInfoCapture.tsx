@@ -87,7 +87,7 @@ export function NativeInfoCapture({
             rows={[
               [
                 "Destination",
-                `${recorded.snapshot.target.name} / ${recorded.snapshot.target.service} / ${recorded.snapshot.schema.name}`,
+                `${recorded.snapshot.target.name} / ${recorded.snapshot.target.database_name || recorded.snapshot.target.service} / ${recorded.snapshot.schema.name}`,
               ],
               [
                 "Source",
@@ -106,6 +106,18 @@ export function NativeInfoCapture({
                 <span className="mono">{recorded.artifact_sha256}</span>,
               ],
               ["Captured by", recorded.actor_name],
+              [
+                "Engine / database",
+                recorded.snapshot.target.engine === "postgresql"
+                  ? `PostgreSQL / ${recorded.snapshot.target.database_name}`
+                  : `Oracle / ${recorded.snapshot.target.service}`,
+              ],
+              [
+                "TLS trust",
+                recorded.snapshot.profile
+                  ? `${recorded.snapshot.profile.tls_mode} · CA SHA-256 ${recorded.snapshot.profile.ca_sha256} · revision ${recorded.snapshot.profile.revision}`
+                  : "Legacy Oracle transport policy",
+              ],
               [
                 "Execution account",
                 recorded.snapshot.account.username
@@ -126,7 +138,7 @@ export function NativeInfoCapture({
               ],
               [
                 "Captured endpoint",
-                `${recorded.snapshot.target.host}:${recorded.snapshot.target.port}/${recorded.snapshot.target.service}`,
+                `${recorded.snapshot.target.host}:${recorded.snapshot.target.port}/${recorded.snapshot.target.database_name || recorded.snapshot.target.service}`,
               ],
             ]}
           />

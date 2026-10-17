@@ -61,6 +61,8 @@ type AccountSnapshot struct {
 	CredentialVersion int    `json:"credential_version"`
 }
 type RunSnapshot struct {
+	SnapshotVersion     int               `json:"snapshot_version,omitempty"`
+	Profile             *ProfileSnapshot  `json:"profile,omitempty"`
 	FlywayConfiguration map[string]string `json:"flyway_configuration"`
 	Target              Target            `json:"target"`
 	Schema              Schema            `json:"schema"`

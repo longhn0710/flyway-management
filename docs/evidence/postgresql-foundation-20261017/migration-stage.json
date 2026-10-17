@@ -1,0 +1,60 @@
+{
+  "result": "NOT_ACCEPTED",
+  "profile": "PostgreSQL 17.11 / Flyway 13.10.3 / JDBC 42.7.14 / verify-full",
+  "stage": "Separate controlled native CLI migration fixtures",
+  "passed_cases": [
+    "V1/V2 and repeatable",
+    "identical repeat invocation does not replay SQL",
+    "failed migration transactional DDL rollback",
+    "earlier successful migration remains committed after later failure",
+    "checksum mismatch rejected from native validationSuccessful=false even when CLI exits zero",
+    "cross-schema least-privilege denial with unchanged guard data",
+    "artifact-relative Missing/Future",
+    "concurrent clients apply one version once"
+  ],
+  "unaccepted_case": {
+    "name": "Observed active SQL followed by client termination",
+    "client_exit": 143,
+    "long_statement_observed_before_termination": true,
+    "backend_active_after_10_seconds": true,
+    "reason": "Client termination did not promptly stop the active backend. Manager timeout/restart hold and reconciliation behavior is not qualified."
+  },
+  "later_read_only_observation": {
+    "active_long_statement_sessions": 1,
+    "transient_table_exists": false,
+    "timeout_history_success_rows": 0
+  },
+  "later_observed_at": "2026-10-16T19:15:38.927200+00:00",
+  "manager_migration_enabled": false,
+  "manager_queue_idempotency_restart_hold_recovery_acceptance": "NOT_EXECUTED",
+  "commands_used": [
+    "info",
+    "validate",
+    "migrate"
+  ],
+  "repair_baseline_clean_or_history_edits": false,
+  "private_original_evidence": "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-evidence",
+  "source_files": {
+    "success-first.json": "347f600e5450f5793fac8da768f4e742feef87f3b529303176b2b50b7bb9d9de",
+    "success-repeat.json": "5919d00258147bfaee5bb8a51ce4522c2b22d4f68e7f0807995ba2e2e5c65e4d",
+    "rollback-failed.json": "be84154cd263f239900d573f7b248b12686d62a7277f849ab7d00ac3b328044b",
+    "partial-failed.json": "9dab6d703132666af697afd1043dda7c451da74568e4b9f60a1f490305697c0f",
+    "checksum-first.json": "4720bfeecaa9a62f3b429f1ed1114b9d2e536202b082ff87d04b0766621a7a92",
+    "checksum-mismatch.json": "c5ddcd0e273d38b541ac38e8bba521cdaec0ed44a4aa11722a1dc6dd8c3f03d7",
+    "cross-schema-denied.json": "f58dca96c258db3605b67f889af7242afc7ac8597916b7fc7ad95421d0e75d38",
+    "future-before.json": "a32780ee16de4aaf5cb1917fa42773ecfd13496c59f0b5123c06611b54725d31",
+    "future-info.json": "ad28166a0b46198074db12e3b933d72b482cea574f9a161d2805494b7607203d",
+    "missing-info.json": "9ec4cfc7a4cd753964905aa8cadc2f9824c3a7b9f6bbde9d93e013be08b5234f",
+    "concurrent-a.json": "930d6445dbe59d6f2b2a2ece2ae4f6ff069d28b32383df58e6f601c62ee40568",
+    "concurrent-b.json": "571f939c2d0d5c93e5b356591929959e0aa498abc107aae3907c020da4ed49ce",
+    "timeout-status.txt": "85bdc6fc804dbee9887a9839d0cac9028b9891b4454539bc1598840daca11199",
+    "timeout-terminated.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "eventual_read_only_observation": {
+    "active_long_statement_sessions": 0,
+    "transient_table_exists": false,
+    "timeout_history_success_rows": 0
+  },
+  "eventual_observed_at": "2026-10-16T19:17:55.828768+00:00",
+  "termination_stdout": "Empty output preserved as timeout-terminated.stdout.log; process terminated before JSON completion."
+}

@@ -1,0 +1,17 @@
+{
+  "database" : "fwm_gate_acceptance_20261016t191333z",
+  "databaseType" : "PostgreSQL",
+  "exception" : null,
+  "flywayVersion" : "13.10.3",
+  "initialSchemaVersion" : "2",
+  "licenseFailed" : false,
+  "migrations" : [ ],
+  "migrationsExecuted" : 0,
+  "operation" : "migrate",
+  "schemaName" : "gate_success",
+  "success" : true,
+  "targetSchemaVersion" : null,
+  "timestamp" : "2026-10-17T02:13:43.851637534+07:00",
+  "totalMigrationTime" : 0,
+  "warnings" : [ ]
+}

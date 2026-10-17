@@ -1,0 +1,237 @@
+Compiled from "ConfigurationModel.java"
+public class org.flywaydb.core.internal.configuration.models.ConfigurationModel {
+  public static org.flywaydb.core.internal.configuration.models.ConfigurationModel defaults();
+  public org.flywaydb.core.internal.configuration.models.ConfigurationModel merge(org.flywaydb.core.internal.configuration.models.ConfigurationModel);
+  public static org.flywaydb.core.internal.configuration.models.ConfigurationModel clone(org.flywaydb.core.internal.configuration.models.ConfigurationModel);
+  public java.util.Map<java.lang.String, org.flywaydb.core.internal.configuration.models.EnvironmentModel> getEnvironments();
+  public org.flywaydb.core.internal.configuration.models.FlywayModel getFlyway();
+  public java.lang.String getId();
+  public java.util.Map<java.lang.String, java.lang.Object> getRootConfigurations();
+  public void setEnvironments(java.util.Map<java.lang.String, org.flywaydb.core.internal.configuration.models.EnvironmentModel>);
+  public void setFlyway(org.flywaydb.core.internal.configuration.models.FlywayModel);
+  public void setId(java.lang.String);
+  public void setRootConfigurations(java.util.Map<java.lang.String, java.lang.Object>);
+  public org.flywaydb.core.internal.configuration.models.ConfigurationModel();
+}
+
+Compiled from "FlywayModel.java"
+public class org.flywaydb.core.internal.configuration.models.FlywayModel extends org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel {
+  public static org.flywaydb.core.internal.configuration.models.FlywayModel defaults();
+  public void setEnvironmentProvisionMode(java.lang.String);
+  public org.flywaydb.core.internal.configuration.models.FlywayModel merge(org.flywaydb.core.internal.configuration.models.FlywayModel);
+  public java.lang.String getEnvironment();
+  public java.lang.String getOutputType();
+  public java.lang.Boolean getOutputProgress();
+  public java.lang.Boolean getOutputLogsInJson();
+  public java.lang.String getProvisionMode();
+  public java.lang.String getColor();
+  public void setEnvironment(java.lang.String);
+  public void setOutputType(java.lang.String);
+  public void setOutputProgress(java.lang.Boolean);
+  public void setOutputLogsInJson(java.lang.Boolean);
+  public void setProvisionMode(java.lang.String);
+  public void setColor(java.lang.String);
+  public org.flywaydb.core.internal.configuration.models.FlywayModel();
+}
+
+Compiled from "EnvironmentModel.java"
+public class org.flywaydb.core.internal.configuration.models.EnvironmentModel {
+  public org.flywaydb.core.internal.configuration.models.EnvironmentModel merge(org.flywaydb.core.internal.configuration.models.EnvironmentModel);
+  public java.lang.String getUrl();
+  public java.lang.String getUser();
+  public java.lang.String getPassword();
+  public java.lang.String getDriver();
+  public java.lang.String getDisplayName();
+  public java.util.List<java.lang.String> getSchemas();
+  public java.lang.Integer getConnectRetries();
+  public java.lang.Integer getConnectRetriesInterval();
+  public java.lang.String getInitSql();
+  public java.util.Map<java.lang.String, java.lang.String> getJdbcProperties();
+  public java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.Object>> getResolvers();
+  public java.lang.String getProvisioner();
+  public org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel getFlyway();
+  public void setUrl(java.lang.String);
+  public void setUser(java.lang.String);
+  public void setPassword(java.lang.String);
+  public void setDriver(java.lang.String);
+  public void setDisplayName(java.lang.String);
+  public void setSchemas(java.util.List<java.lang.String>);
+  public void setConnectRetries(java.lang.Integer);
+  public void setConnectRetriesInterval(java.lang.Integer);
+  public void setInitSql(java.lang.String);
+  public void setJdbcProperties(java.util.Map<java.lang.String, java.lang.String>);
+  public void setResolvers(java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.Object>>);
+  public void setProvisioner(java.lang.String);
+  public void setFlyway(org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel);
+  public void setUnknownConfigurations(java.util.Map<java.lang.String, java.lang.Object>);
+  public org.flywaydb.core.internal.configuration.models.EnvironmentModel();
+  public java.util.Map<java.lang.String, java.lang.Object> getUnknownConfigurations();
+}
+
+Compiled from "FlywayEnvironmentModel.java"
+public class org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel {
+  public static final java.lang.String DEFAULT_REPORT_FILENAME;
+  public org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel merge(org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel);
+  public void setReportFilename(java.lang.String);
+  public java.lang.String toString();
+  public java.lang.String getReportFilename();
+  public java.lang.Boolean getDetectEncoding();
+  public java.lang.String getEncoding();
+  public java.lang.String getPlaceholderPrefix();
+  public java.lang.String getPlaceholderSuffix();
+  public java.lang.String getPlaceholderSeparator();
+  public java.lang.String getScriptPlaceholderPrefix();
+  public java.lang.String getScriptPlaceholderSuffix();
+  public java.lang.String getPowershellExecutable();
+  public java.lang.String getSqlMigrationPrefix();
+  public java.lang.Boolean getExecuteInTransaction();
+  public java.lang.String getRepeatableSqlMigrationPrefix();
+  public java.lang.String getSqlMigrationSeparator();
+  public java.util.List<java.lang.String> getSqlMigrationSuffixes();
+  public java.lang.Boolean getCleanDisabled();
+  public java.lang.Boolean getCommunityDBSupportEnabled();
+  public java.util.List<java.lang.String> getLocations();
+  public java.util.List<java.lang.String> getCallbackLocations();
+  public java.util.List<java.lang.String> getJarDirs();
+  public java.lang.String getTable();
+  public java.lang.String getTablespace();
+  public java.lang.String getTarget();
+  public java.lang.Boolean getFailOnMissingTarget();
+  public java.lang.Boolean getPlaceholderReplacement();
+  public java.util.List<java.lang.String> getIgnoreMigrationPatterns();
+  public java.lang.Boolean getValidateMigrationNaming();
+  public java.lang.Boolean getValidateOnMigrate();
+  public java.lang.String getBaselineVersion();
+  public java.lang.String getBaselineDescription();
+  public java.lang.Boolean getBaselineOnMigrate();
+  public java.lang.Boolean getOutOfOrder();
+  public java.lang.Boolean getSkipExecutingMigrations();
+  public java.util.List<java.lang.String> getCallbacks();
+  public java.lang.Boolean getSkipDefaultCallbacks();
+  public java.util.List<java.lang.String> getMigrationResolvers();
+  public java.lang.Boolean getSkipDefaultResolvers();
+  public java.lang.Boolean getMixed();
+  public java.lang.Boolean getGroup();
+  public java.lang.String getInstalledBy();
+  public java.lang.Boolean getCreateSchemas();
+  public java.util.List<java.lang.String> getErrorOverrides();
+  public java.lang.String getDryRunOutput();
+  public java.lang.Boolean getStream();
+  public java.lang.Boolean getBatch();
+  public java.lang.Boolean getOutputQueryResults();
+  public java.lang.Integer getLockRetryCount();
+  public java.lang.String getKerberosConfigFile();
+  public java.lang.Boolean getFailOnMissingLocations();
+  public java.util.List<java.lang.String> getLoggers();
+  public java.util.Map<java.lang.String, java.lang.String> getPlaceholders();
+  public java.lang.String getDefaultSchema();
+  public java.util.Map<java.lang.String, org.flywaydb.core.internal.configuration.models.PropertyResolver> getPropertyResolvers();
+  public java.lang.Boolean getReportEnabled();
+  public void setDetectEncoding(java.lang.Boolean);
+  public void setEncoding(java.lang.String);
+  public void setPlaceholderPrefix(java.lang.String);
+  public void setPlaceholderSuffix(java.lang.String);
+  public void setPlaceholderSeparator(java.lang.String);
+  public void setScriptPlaceholderPrefix(java.lang.String);
+  public void setScriptPlaceholderSuffix(java.lang.String);
+  public void setPowershellExecutable(java.lang.String);
+  public void setSqlMigrationPrefix(java.lang.String);
+  public void setExecuteInTransaction(java.lang.Boolean);
+  public void setRepeatableSqlMigrationPrefix(java.lang.String);
+  public void setSqlMigrationSeparator(java.lang.String);
+  public void setSqlMigrationSuffixes(java.util.List<java.lang.String>);
+  public void setCleanDisabled(java.lang.Boolean);
+  public void setCommunityDBSupportEnabled(java.lang.Boolean);
+  public void setLocations(java.util.List<java.lang.String>);
+  public void setCallbackLocations(java.util.List<java.lang.String>);
+  public void setJarDirs(java.util.List<java.lang.String>);
+  public void setTable(java.lang.String);
+  public void setTablespace(java.lang.String);
+  public void setTarget(java.lang.String);
+  public void setFailOnMissingTarget(java.lang.Boolean);
+  public void setPlaceholderReplacement(java.lang.Boolean);
+  public void setIgnoreMigrationPatterns(java.util.List<java.lang.String>);
+  public void setValidateMigrationNaming(java.lang.Boolean);
+  public void setValidateOnMigrate(java.lang.Boolean);
+  public void setBaselineVersion(java.lang.String);
+  public void setBaselineDescription(java.lang.String);
+  public void setBaselineOnMigrate(java.lang.Boolean);
+  public void setOutOfOrder(java.lang.Boolean);
+  public void setSkipExecutingMigrations(java.lang.Boolean);
+  public void setCallbacks(java.util.List<java.lang.String>);
+  public void setSkipDefaultCallbacks(java.lang.Boolean);
+  public void setMigrationResolvers(java.util.List<java.lang.String>);
+  public void setSkipDefaultResolvers(java.lang.Boolean);
+  public void setMixed(java.lang.Boolean);
+  public void setGroup(java.lang.Boolean);
+  public void setInstalledBy(java.lang.String);
+  public void setCreateSchemas(java.lang.Boolean);
+  public void setErrorOverrides(java.util.List<java.lang.String>);
+  public void setDryRunOutput(java.lang.String);
+  public void setStream(java.lang.Boolean);
+  public void setBatch(java.lang.Boolean);
+  public void setOutputQueryResults(java.lang.Boolean);
+  public void setLockRetryCount(java.lang.Integer);
+  public void setKerberosConfigFile(java.lang.String);
+  public void setFailOnMissingLocations(java.lang.Boolean);
+  public void setLoggers(java.util.List<java.lang.String>);
+  public void setPlaceholders(java.util.Map<java.lang.String, java.lang.String>);
+  public void setDefaultSchema(java.lang.String);
+  public void setPropertyResolvers(java.util.Map<java.lang.String, org.flywaydb.core.internal.configuration.models.PropertyResolver>);
+  public void setReportEnabled(java.lang.Boolean);
+  public void setPluginConfigurations(java.util.Map<java.lang.String, java.lang.Object>);
+  public org.flywaydb.core.internal.configuration.models.FlywayEnvironmentModel();
+  public java.util.Map<java.lang.String, java.lang.Object> getPluginConfigurations();
+}
+
+Compiled from "OracleConfigurationExtension.java"
+public class org.flywaydb.database.oracle.OracleConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.database.oracle.OracleConfigurationExtension();
+  public java.lang.Boolean getSqlplus();
+  public java.lang.Boolean getSqlplusWarn();
+  public java.lang.String getKerberosCacheFile();
+  public java.lang.String getWalletLocation();
+  public java.lang.Boolean getChecksumIncludeReferencedScripts();
+  public void setSqlplus(java.lang.Boolean);
+  public void setSqlplusWarn(java.lang.Boolean);
+  public void setKerberosCacheFile(java.lang.String);
+  public void setWalletLocation(java.lang.String);
+  public void setChecksumIncludeReferencedScripts(java.lang.Boolean);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+
+Compiled from "PostgreSQLConfigurationExtension.java"
+public class org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  public boolean isTransactionalLock();
+  public void setTransactionalLock(boolean);
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public java.lang.String getNamespace();
+  public org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension();
+  public org.flywaydb.database.postgresql.TransactionalModel getTransactional();
+  public void setTransactional(org.flywaydb.database.postgresql.TransactionalModel);
+  public boolean equals(java.lang.Object);
+  protected boolean canEqual(java.lang.Object);
+  public int hashCode();
+  public java.lang.String toString();
+}
+
+Compiled from "SQLServerConfigurationExtension.java"
+public class org.flywaydb.database.sqlserver.SQLServerConfigurationExtension implements org.flywaydb.core.extensibility.ConfigurationExtension {
+  static final java.lang.String SQLSERVER_KERBEROS_LOGIN_FILE;
+  static final java.lang.String KERBEROS_LOGIN_FILE;
+  static final java.lang.String CLEAN_MODE;
+  static final java.lang.String CLEAN_SCHEMAS_EXCLUDE;
+  public org.flywaydb.database.sqlserver.SQLServerConfigurationExtension();
+  public java.lang.String getNamespace();
+  public java.lang.String getConfigurationParameterFromEnvironmentVariable(java.lang.String);
+  public org.flywaydb.database.sqlserver.KerberosModel getKerberos();
+  public void setKerberos(org.flywaydb.database.sqlserver.KerberosModel);
+  public org.flywaydb.core.internal.command.clean.CleanModel getClean();
+  public void setClean(org.flywaydb.core.internal.command.clean.CleanModel);
+  static {};
+}

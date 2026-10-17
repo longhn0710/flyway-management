@@ -1,0 +1,13 @@
+
+
+Description:
+    Undoes the most recently applied versioned migration
+
+Configuration parameters: (Format: -key=value)
+    target      Target version up to which Flyway should process migrations
+    cherryPick  [teams] Comma separated list of migrations that Flyway should consider
+    group       Whether to group all pending migrations together in the same transaction when applying them
+    outOfOrder  Allows migrations to be run "out of order"
+
+Example:
+    flyway undo -target=1.0

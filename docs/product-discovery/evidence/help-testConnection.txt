@@ -1,0 +1,14 @@
+Description:
+    Attempts to establish a connection to the database using the configured connection settings.
+    If successful, Flyway exits with a zero status code.
+    If unsuccessful, Flyway exits with a non-zero status code and an error message is displayed.
+
+Configuration parameters: (Format: -key=value)
+    testConnection.environmentName  The name to give the environment supplied on standard input when `-environment=-` is used.
+                                    An environment already configured under that name is replaced for the duration of the command,
+                                    so the connection is tested as that environment rather than as a separate one. Provisioners that
+                                    derive resources from the environment name, such as the `docker` provisioner, therefore act on the
+                                    environment being tested instead of standing up a second one. Defaults to `default`.
+
+Example:
+    flyway testConnection -environment=development

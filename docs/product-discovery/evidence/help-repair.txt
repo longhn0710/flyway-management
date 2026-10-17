@@ -1,0 +1,8 @@
+Description:
+    Repairs the schema history table
+
+Configuration parameters: (Format: -key=value)
+    ignoreMigrationPatterns  Patterns of migrations and states to ignore
+
+Example:
+    flyway repair -ignoreMigrationPatterns=*:missing

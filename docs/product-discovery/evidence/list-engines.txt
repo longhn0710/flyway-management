@@ -1,0 +1,45 @@
+WARNING: No locations configured and default location 'sql' not found.
+Flyway Community Edition 13.10.3 by Redgate
+
+See release notes here: https://help.red-gate.com/help/flyway-cli13/help_10.aspx?topic=release-notes-and-older-versions/release-notes-for-flyway-engine
+Database Name
+---------------------------------
+CockroachDB
+DB2 for z/OS
+OceanBase
+QuestDB
+Redshift
+TiDB
+YugabyteDB
+MariaDB
+Azure Synapse
+Fabric Data Warehouse
+Babelfish
+H2
+SQLite
+Testcontainers
+Cassandra
+ClickHouse
+CUBRID
+Databricks
+DB2
+Derby
+DuckDB
+HSQLDB
+Apache Ignite
+Informix
+InterSystems IRIS Data Platform
+Oracle
+PostgreSQL
+SAP HANA
+Snowflake
+Sybase ASE
+Timeplus
+Firebird
+Google Big Query
+MySQL
+SingleStoreDB
+SQL Server
+Google Cloud Spanner
+Couchbase
+MongoDB

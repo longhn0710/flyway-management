@@ -1,0 +1,38 @@
+{
+  "database" : "fwm_gate_acceptance_20261016t191333z",
+  "databaseType" : "PostgreSQL",
+  "exception" : null,
+  "flywayVersion" : "13.10.3",
+  "initialSchemaVersion" : null,
+  "licenseFailed" : false,
+  "migrations" : [ {
+    "category" : "Versioned",
+    "description" : "base",
+    "executionTime" : 12,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/success/V1__base.sql",
+    "type" : "SQL",
+    "version" : "1"
+  }, {
+    "category" : "Versioned",
+    "description" : "second",
+    "executionTime" : 8,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/success/V2__second.sql",
+    "type" : "SQL",
+    "version" : "2"
+  }, {
+    "category" : "Repeatable",
+    "description" : "row count",
+    "executionTime" : 8,
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/success/R__row_count.sql",
+    "type" : "SQL",
+    "version" : ""
+  } ],
+  "migrationsExecuted" : 3,
+  "operation" : "migrate",
+  "schemaName" : "gate_success",
+  "success" : true,
+  "targetSchemaVersion" : "2",
+  "timestamp" : "2026-10-17T02:13:40.284453027+07:00",
+  "totalMigrationTime" : 28,
+  "warnings" : [ ]
+}

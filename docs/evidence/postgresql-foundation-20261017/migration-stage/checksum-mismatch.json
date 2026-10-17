@@ -1,0 +1,22 @@
+{
+  "allErrorMessages" : "Migration checksum mismatch for migration version 1\n-> Applied to database : 1230556679\n-> Resolved locally    : 2104774330\nEither revert the changes to the migration, or run repair to update the schema history.",
+  "database" : "fwm_gate_acceptance_20261016t191333z",
+  "errorDetails" : {
+    "errorCode" : "VALIDATE_ERROR",
+    "errorMessage" : "Migrations have failed validation"
+  },
+  "flywayVersion" : "13.10.3",
+  "invalidMigrations" : [ {
+    "description" : "checksum",
+    "errorDetails" : {
+      "errorCode" : "CHECKSUM_MISMATCH",
+      "errorMessage" : "Migration checksum mismatch for migration version 1\n-> Applied to database : 1230556679\n-> Resolved locally    : 2104774330\nEither revert the changes to the migration, or run repair to update the schema history."
+    },
+    "filepath" : "/home/longhn0710/.local/state/flyway-manager-postgres-lab/gate-ef-20261016t191333z-fixtures/checksum/V1__checksum.sql",
+    "version" : "1"
+  } ],
+  "operation" : "validate",
+  "validateCount" : 0,
+  "validationSuccessful" : false,
+  "warnings" : [ ]
+}

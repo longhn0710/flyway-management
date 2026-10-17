@@ -178,7 +178,12 @@ export default function RunDetails() {
             <section className="run-overview" aria-label="Run status">
               <div className="run-overview-heading">
                 <div>
-                  <p className="eyebrow">Oracle migration run</p>
+                  <p className="eyebrow">
+                    {row.target?.engine === "postgresql"
+                      ? "PostgreSQL"
+                      : "Oracle"}{" "}
+                    migration run
+                  </p>
                   <h2 className="mono">{row.run_id || row.id}</h2>
                 </div>
                 <Status value={row.status} />
@@ -187,7 +192,11 @@ export default function RunDetails() {
                 <Link to={`/instances/${encodeURIComponent(row.target_id)}`}>
                   {row.target?.name || row.target_id}
                 </Link>{" "}
-                / <span className="mono">{row.target?.service}</span> /{" "}
+                /{" "}
+                <span className="mono">
+                  {row.target?.database_name || row.target?.service}
+                </span>{" "}
+                /{" "}
                 <Link to={schemaHref(row.target_id, row.schema_id)}>
                   {row.schema?.name}
                 </Link>{" "}
@@ -319,13 +328,16 @@ export default function RunDetails() {
                     <div>
                       <dt>Engine / instance</dt>
                       <dd>
-                        Oracle · {row.target?.environment} ·{" "}
+                        {row.target?.engine === "postgresql"
+                          ? "PostgreSQL"
+                          : "Oracle"}{" "}
+                        · {row.target?.environment} ·{" "}
                         <Link
                           to={`/instances/${encodeURIComponent(row.target_id)}`}
                         >
                           {row.target?.name || "View instance"}
                         </Link>{" "}
-                        · {row.target?.service}
+                        · {row.target?.database_name || row.target?.service}
                       </dd>
                     </div>
                     <div>

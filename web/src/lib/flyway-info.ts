@@ -35,6 +35,13 @@ export interface InfoCapture {
   artifact_id: string;
   artifact_sha256: string;
   snapshot: {
+    snapshot_version?: number;
+    profile?: {
+      auth_kind: string;
+      tls_mode: string;
+      ca_sha256: string;
+      revision: number;
+    };
     target: DatabaseTarget;
     schema: TargetSchema;
     account: { id: string; name: string; username: string };
