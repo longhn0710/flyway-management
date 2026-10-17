@@ -1,0 +1,12 @@
+=== RUN   TestTransactionalMigrationAdmission
+--- PASS: TestTransactionalMigrationAdmission (0.00s)
+PASS
+ok  	flyway-manager/internal/postgresql	0.006s
+=== RUN   TestPostgreSQLMaintenanceSQLCannotCreateJobs
+--- PASS: TestPostgreSQLMaintenanceSQLCannotCreateJobs (0.63s)
+PASS
+ok  	flyway-manager/internal/core	0.653s
+=== RUN   TestPostgreSQLRuntimeRejectsNontransactionalMaintenance
+--- PASS: TestPostgreSQLRuntimeRejectsNontransactionalMaintenance (0.10s)
+PASS
+ok  	flyway-manager/internal/flyway	0.107s

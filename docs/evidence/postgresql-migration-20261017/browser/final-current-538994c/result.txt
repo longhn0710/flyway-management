@@ -1,0 +1,1 @@
+PASS — strict-admission browser/API harness completed successfully on source commit 538994c using the isolated compile-time policy overlay.

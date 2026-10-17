@@ -1,0 +1,1169 @@
+{
+  "artifact_files": [
+    {
+      "name": "V1__browser_gate.sql",
+      "sha256": "9966c8e770b12bad25abc3310c9a8fc7da846137a311859f53bb687799d69ceb",
+      "size": 131
+    },
+    {
+      "name": "V2__second_row.sql",
+      "sha256": "7e50b1e9a8b24861025508455416d0608af1061123d3d6bcfc243c2e4a801f2f",
+      "size": 51
+    },
+    {
+      "name": "R__row_count.sql",
+      "sha256": "c45a09eb794f362bfd49c78f7a9bcf84d2e61ea323fea504dea7de0dea0531be",
+      "size": 108
+    }
+  ],
+  "artifact_id": "JCm4VYkSKS45habEkxhsD0",
+  "browser_page_errors": 0,
+  "database": "fwm_product_cb6b4096",
+  "native_info": {
+    "actor_name": "browser-admin-bce384",
+    "artifact_id": "JCm4VYkSKS45habEkxhsD0",
+    "artifact_sha256": "665104d6e435bcf1e5a3842256d1c362e3a38d830c079b5be036026af627b125",
+    "captured_at": "2026-10-17T14:26:37.584622138Z",
+    "exit_code": 0,
+    "files": [
+      {
+        "kind": "repeatable",
+        "path": "R__row_count.sql",
+        "sha256": "c45a09eb794f362bfd49c78f7a9bcf84d2e61ea323fea504dea7de0dea0531be",
+        "size": 108,
+        "version": ""
+      },
+      {
+        "kind": "versioned",
+        "path": "V1__browser_gate.sql",
+        "sha256": "9966c8e770b12bad25abc3310c9a8fc7da846137a311859f53bb687799d69ceb",
+        "size": 131,
+        "version": "1"
+      },
+      {
+        "kind": "versioned",
+        "path": "V2__second_row.sql",
+        "sha256": "7e50b1e9a8b24861025508455416d0608af1061123d3d6bcfc243c2e4a801f2f",
+        "size": 51,
+        "version": "2"
+      }
+    ],
+    "id": "w4cLlC_grsGWHbtRpzwBL2",
+    "json": {
+      "allSchemasEmpty": false,
+      "database": "fwm_product_cb6b4096",
+      "exception": null,
+      "flywayVersion": "13.10.3",
+      "licenseFailed": false,
+      "migrations": [
+        {
+          "category": "Versioned",
+          "description": "browser gate",
+          "executionTime": 12,
+          "filepath": "/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V1__browser_gate.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-17T14:26:22.448124Z",
+          "rawVersion": "1",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "1"
+        },
+        {
+          "category": "Versioned",
+          "description": "second row",
+          "executionTime": 5,
+          "filepath": "/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V2__second_row.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-17T14:26:22.487807Z",
+          "rawVersion": "2",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "No",
+          "version": "2"
+        },
+        {
+          "category": "Repeatable",
+          "description": "row count",
+          "executionTime": 6,
+          "filepath": "/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/R__row_count.sql",
+          "installedBy": "fwm_exec",
+          "installedOnUTC": "2026-10-17T14:26:22.509171Z",
+          "rawVersion": "",
+          "shouldExecuteExpression": null,
+          "state": "Success",
+          "type": "SQL",
+          "undoFilepath": "",
+          "undoable": "",
+          "version": ""
+        }
+      ],
+      "operation": "info",
+      "schemaName": "app",
+      "schemaVersion": "2",
+      "timestamp": "2026-10-17T21:26:37.479996077+07:00"
+    },
+    "runtime_version": "13.10.3",
+    "schema_id": "n2RfIG7wVbs9ImUBmKbaHI",
+    "snapshot": {
+      "account": {
+        "credential_version": 1,
+        "id": "Sy0F5NJ7i7GIQ-fcMD7vJh",
+        "name": "fwm_exec",
+        "username": "fwm_exec"
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_product_cb6b4096",
+        "engine": "postgresql",
+        "executionLifecyclePolicy": "postgresql17-bounded-session-v1",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "app",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "app",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_product_cb6b4096?sslmode=verify-full&sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "manager.processTimeoutSeconds": "12",
+        "outputType": "json",
+        "postgresql.idleTimeoutMs": "12000",
+        "postgresql.lockTimeoutMs": "5000",
+        "postgresql.observerSHA256": "824368ecf6417f88162fe555dc3ada722908fdd2166bf35f0067a8871285edad",
+        "postgresql.observerSessionSHA256": "76f022d754db51f926581825b57d146eaef11de901d601286953ab40e0345cfa",
+        "postgresql.standardConformingStrings": "on",
+        "postgresql.statementTimeoutMs": "12000",
+        "postgresql.transactionTimeoutMs": "12000",
+        "tlsMode": "verify-full"
+      },
+      "profile": {
+        "auth_kind": "password",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1,
+        "tls_mode": "verify-full"
+      },
+      "schema": {
+        "active": true,
+        "created_at": "2026-10-17T14:24:46Z",
+        "default_account_id": "Sy0F5NJ7i7GIQ-fcMD7vJh",
+        "history_schema": "app",
+        "history_table": "flyway_schema_history",
+        "id": "n2RfIG7wVbs9ImUBmKbaHI",
+        "name": "app",
+        "target_id": "connection-7mWDjiFPNNz29K691GtTf7"
+      },
+      "snapshot_version": 2,
+      "target": {
+        "active": true,
+        "created_at": "2026-10-17T14:24:46Z",
+        "database_name": "fwm_product_cb6b4096",
+        "engine": "postgresql",
+        "environment": "DEV",
+        "host": "localhost",
+        "id": "connection-7mWDjiFPNNz29K691GtTf7",
+        "name": "PostgreSQL fwm_product_cb6b4096",
+        "port": 55440,
+        "profile_revision": 1,
+        "service": "",
+        "transport": "TCPS"
+      }
+    },
+    "source": "migration-run",
+    "source_run_id": "DG0uDazrBOdO0ghLQURHUw",
+    "started_at": "2026-10-17T14:26:22.749095777Z",
+    "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+    "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":12,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V1__browser_gate.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.448124Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":5,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V2__second_row.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.487807Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":6,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/R__row_count.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.509171Z\",\"rawVersion\":\"\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"\",\"version\":\"\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T21:26:37.479996077+07:00\"}",
+    "success": true,
+    "target_id": "connection-7mWDjiFPNNz29K691GtTf7",
+    "warnings": [
+      "Recorded snapshot, not live database state. Pending and missing states depend on the captured migration files; completeness against external migration sources is not independently verified."
+    ]
+  },
+  "project_id": "Ynrz06kViRoxAkTniUvz4_",
+  "role_checks": {
+    "admin_prod_allowed": {
+      "history": [
+        {
+          "checksum": -1995519207,
+          "description": "prod authorized",
+          "execution_time": 11,
+          "installed_by": "fwm_exec",
+          "installed_on": "2026-10-17T21:32:50.343812",
+          "installed_rank": 1,
+          "script": "V1__prod_authorized.sql",
+          "success": true,
+          "type": "SQL",
+          "version": "1"
+        }
+      ],
+      "rows": [
+        {
+          "id": 1,
+          "note": "admin-prod"
+        }
+      ],
+      "run_id": "ABjo2nVwpM-fp80KelI4w9",
+      "status": "SUCCEEDED"
+    },
+    "crash_restart": {
+      "active_session_recorded": true,
+      "active_sessions": [
+        {
+          "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+          "backend_start": "2026-10-17T14:28:31.345929+00:00",
+          "observed_at": "2026-10-17T14:28:31.671364+00:00",
+          "pid": 97941,
+          "query_start": "2026-10-17T14:28:31.498144+00:00",
+          "state": "active",
+          "transaction_age_ms": 179.987,
+          "wait_event": "PgSleep",
+          "wait_event_type": "Timeout",
+          "xact_start": "2026-10-17T14:28:31.491377+00:00"
+        }
+      ],
+      "artifact_files": [
+        {
+          "name": "V1__committed_marker.sql",
+          "sha256": "3dcbbd5f7719dbb8723b63fab44446d9176e84c51c4223ec61f0bccea28216d6",
+          "size": 111
+        },
+        {
+          "name": "V2__crash_sleep.sql",
+          "sha256": "dd191055137061ea0bcc3c4296e157c5e46e53971e56cdd4b88ad6749dbb04b7",
+          "size": 84
+        }
+      ],
+      "artifact_id": "66gf9Dek0M0IpNd1eZcFhX",
+      "backend_disappearance_after_signal_ms": 11965,
+      "backend_gone": true,
+      "database": {
+        "committed_marker_rows": [
+          {
+            "id": 1
+          }
+        ],
+        "history": [
+          {
+            "checksum": -1063978934,
+            "description": "committed marker",
+            "execution_time": 13,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:28:31.441114",
+            "installed_rank": 1,
+            "script": "V1__committed_marker.sql",
+            "success": true,
+            "type": "SQL",
+            "version": "1"
+          }
+        ],
+        "transient_table_count": 0
+      },
+      "executions": [
+        {
+          "ambiguous": false,
+          "command": "info",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:27:58.851486534Z",
+          "id": "6NkcZt-dlep_NxOfjRUjof",
+          "started_at": "2026-10-17T14:27:43.057448866Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "validate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:28:14.948324166Z",
+          "id": "ylg3ymQxT25KlVg945fBTA",
+          "started_at": "2026-10-17T14:27:58.855648728Z",
+          "success": true
+        }
+      ],
+      "journal": {
+        "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+        "events": [
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "ready",
+            "execution_budget_seconds": 12,
+            "guard_backend_pid": 97760
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "at": "2026-10-17T14:28:28.950781415Z",
+            "cli_pid": 604002,
+            "cli_process_group_id": 604002,
+            "event": "cli_started"
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.343124Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.343124Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.387631Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.343124Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.387631Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.492301Z",
+                "state": "idle in transaction",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": "2026-10-17T14:28:31.481641Z"
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "event": "observed",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.343124Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.387631Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.492301Z",
+                "state": "idle in transaction",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": "2026-10-17T14:28:31.481641Z"
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.498144Z",
+                "state": "active",
+                "wait_event": "PgSleep",
+                "wait_event_type": "Timeout",
+                "xact_start": "2026-10-17T14:28:31.491377Z"
+              }
+            ]
+          },
+          {
+            "application_name": "fwm_0xXPctvsxZtCKIaTJR0BHm",
+            "cleanup_verified": true,
+            "event": "finished",
+            "gone": true,
+            "outcome": "cancelled_gone",
+            "snapshots": [
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.188191Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.306670Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.343124Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.387631Z",
+                "state": "idle",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": ""
+              },
+              {
+                "backend_start": "2026-10-17T14:28:30.838749Z",
+                "pid": 97910,
+                "query_start": "2026-10-17T14:28:31.492301Z",
+                "state": "idle in transaction",
+                "wait_event": "ClientRead",
+                "wait_event_type": "Client",
+                "xact_start": "2026-10-17T14:28:31.481641Z"
+              },
+              {
+                "backend_start": "2026-10-17T14:28:31.345929Z",
+                "pid": 97941,
+                "query_start": "2026-10-17T14:28:31.498144Z",
+                "state": "active",
+                "wait_event": "PgSleep",
+                "wait_event_type": "Timeout",
+                "xact_start": "2026-10-17T14:28:31.491377Z"
+              }
+            ]
+          }
+        ]
+      },
+      "journal_final_event": "finished",
+      "logs": [
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:27:43.057448866Z",
+          "message": "PostgreSQL execution correlation: fwm_6NkcZt-dlep_NxOfjRUjof",
+          "sequence": 18
+        },
+        {
+          "channel": "stdout",
+          "command": "info",
+          "created_at": "2026-10-17T14:27:58.851486534Z",
+          "message": "{\"allSchemasEmpty\":true,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"committed marker\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1517211489/sql/V1__committed_marker.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"crash sleep\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1517211489/sql/V2__crash_sleep.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"}],\"operation\":\"info\",\"schemaName\":\"crash\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:27:58.735630908+07:00\"}",
+          "sequence": 19
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:27:58.851486534Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 20
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:27:58.855648728Z",
+          "message": "PostgreSQL execution correlation: fwm_ylg3ymQxT25KlVg945fBTA",
+          "sequence": 21
+        },
+        {
+          "channel": "stdout",
+          "command": "validate",
+          "created_at": "2026-10-17T14:28:14.948324166Z",
+          "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_product_cb6b4096\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":2,\"validationSuccessful\":true,\"warnings\":[]}",
+          "sequence": 22
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:28:14.948324166Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 23
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:28:14.954648363Z",
+          "message": "PostgreSQL execution correlation: fwm_0xXPctvsxZtCKIaTJR0BHm",
+          "sequence": 24
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:28:43.813755178Z",
+          "message": "PostgreSQL recovered lifecycle journal: {\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"events\":[{\"event\":\"ready\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"guard_backend_pid\":97760,\"execution_budget_seconds\":12},{\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"at\":\"2026-10-17T14:28:28.950781415Z\",\"cli_pid\":604002,\"cli_process_group_id\":604002,\"event\":\"cli_started\"},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.343124Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.343124Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.387631Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.343124Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.387631Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:28:31.481641Z\",\"query_start\":\"2026-10-17T14:28:31.492301Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.343124Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.387631Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:28:31.481641Z\",\"query_start\":\"2026-10-17T14:28:31.492301Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"active\",\"xact_start\":\"2026-10-17T14:28:31.491377Z\",\"query_start\":\"2026-10-17T14:28:31.498144Z\",\"wait_event_type\":\"Timeout\",\"wait_event\":\"PgSleep\"}]},{\"event\":\"finished\",\"application_name\":\"fwm_0xXPctvsxZtCKIaTJR0BHm\",\"outcome\":\"cancelled_gone\",\"gone\":true,\"cleanup_verified\":true,\"snapshots\":[{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.188191Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.306670Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.343124Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:28:31.387631Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97910,\"backend_start\":\"2026-10-17T14:28:30.838749Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:28:31.481641Z\",\"query_start\":\"2026-10-17T14:28:31.492301Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":97941,\"backend_start\":\"2026-10-17T14:28:31.345929Z\",\"state\":\"active\",\"xact_start\":\"2026-10-17T14:28:31.491377Z\",\"query_start\":\"2026-10-17T14:28:31.498144Z\",\"wait_event_type\":\"Timeout\",\"wait_event\":\"PgSleep\"}]}]}",
+          "sequence": 25
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:28:49.022899076Z",
+          "message": "PostgreSQL execution correlation: fwm_S9lBnZG4tTk3fFhbdCDm7r",
+          "sequence": 26
+        }
+      ],
+      "new_key_replay_denied": true,
+      "no_successful_execution": true,
+      "observation_tolerance_ms": 1000,
+      "run_id": "8oBQyhPV7EbYNeoH9bZ74g",
+      "same_key_returns_original_after_restart": true,
+      "status": "NEEDS_REVIEW",
+      "transaction_age_at_signal_ms": 179.987,
+      "transaction_budget_ms": 12000,
+      "v1_committed_once": true,
+      "v2_rolled_back": true
+    },
+    "operator_dev_upload_allowed": true,
+    "operator_operate_preflight": true,
+    "prod_denied": true,
+    "prod_migration_destination_hidden": true,
+    "prod_scope_visible_but_denied": true,
+    "service_cross_schema_write_denied": true,
+    "service_queue": {
+      "actor_kind": "service",
+      "artifact_id": "Ywpia_ie1ps_qKcrcjPolI",
+      "database_rows_after_v3": [
+        {
+          "id": 1,
+          "note": "v1"
+        },
+        {
+          "id": 2,
+          "note": "v2"
+        },
+        {
+          "id": 3,
+          "note": "service-v3"
+        }
+      ],
+      "exact_duplicate_idempotency": true,
+      "fresh_v3_applied": true,
+      "original_run_artifact_unchanged": true,
+      "run_id": "67TNgVAS2IIlPKagBhBOg2",
+      "status": "SUCCEEDED",
+      "successful_history_rows_after_v3": 4
+    },
+    "service_schema_scope": "passed",
+    "viewer_operate_denied": true,
+    "viewer_readonly_browser": true
+  },
+  "run_id": "DG0uDazrBOdO0ghLQURHUw",
+  "run_records": {
+    "admin_prod": {
+      "artifact_id": "Z7sfkAwwZeGjKUscDZO_0H",
+      "database": {
+        "history": [
+          {
+            "checksum": -1995519207,
+            "description": "prod authorized",
+            "execution_time": 11,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:32:50.343812",
+            "installed_rank": 1,
+            "script": "V1__prod_authorized.sql",
+            "success": true,
+            "type": "SQL",
+            "version": "1"
+          }
+        ],
+        "rows": [
+          {
+            "id": 1,
+            "note": "admin-prod"
+          }
+        ]
+      },
+      "id": "ABjo2nVwpM-fp80KelI4w9",
+      "status": "SUCCEEDED"
+    },
+    "main": {
+      "actor_kind": "user",
+      "artifact_id": "JCm4VYkSKS45habEkxhsD0",
+      "database": {
+        "history": [
+          {
+            "checksum": -1744307703,
+            "description": "browser gate",
+            "execution_time": 12,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:26:22.448124",
+            "installed_rank": 1,
+            "script": "V1__browser_gate.sql",
+            "success": true,
+            "type": "SQL",
+            "version": "1"
+          },
+          {
+            "checksum": 719128107,
+            "description": "second row",
+            "execution_time": 5,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:26:22.487807",
+            "installed_rank": 2,
+            "script": "V2__second_row.sql",
+            "success": true,
+            "type": "SQL",
+            "version": "2"
+          },
+          {
+            "checksum": -603057525,
+            "description": "row count",
+            "execution_time": 6,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:26:22.509171",
+            "installed_rank": 3,
+            "script": "R__row_count.sql",
+            "success": true,
+            "type": "SQL",
+            "version": null
+          },
+          {
+            "checksum": 681317631,
+            "description": "service account",
+            "execution_time": 13,
+            "installed_by": "fwm_exec",
+            "installed_on": "2026-10-17T21:30:52.822142",
+            "installed_rank": 4,
+            "script": "V3__service_account.sql",
+            "success": true,
+            "type": "SQL",
+            "version": "3"
+          }
+        ],
+        "rows": [
+          {
+            "id": 1,
+            "note": "v1"
+          },
+          {
+            "id": 2,
+            "note": "v2"
+          },
+          {
+            "id": 3,
+            "note": "service-v3"
+          }
+        ]
+      },
+      "executions": [
+        {
+          "ambiguous": false,
+          "command": "info",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:25:51.787284887Z",
+          "id": "mxTEJVIvKfJ_tlRAGAERxQ",
+          "started_at": "2026-10-17T14:25:37.408346637Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "validate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:26:06.801732559Z",
+          "id": "aA6PGYlA1zz_l7B0S9A2sD",
+          "started_at": "2026-10-17T14:25:51.790985311Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "migrate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:26:22.747427249Z",
+          "id": "jdrhOBt2UG090TV6De7kje",
+          "started_at": "2026-10-17T14:26:06.810044002Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "info",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:26:37.584622138Z",
+          "id": "w4cLlC_grsGWHbtRpzwBL2",
+          "started_at": "2026-10-17T14:26:22.749095777Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "validate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:26:52.566654301Z",
+          "id": "uLJ4AaFOPi6b7Xczt_X905",
+          "started_at": "2026-10-17T14:26:37.588716433Z",
+          "success": true
+        }
+      ],
+      "id": "DG0uDazrBOdO0ghLQURHUw",
+      "logs": [
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:25:37.408346637Z",
+          "message": "PostgreSQL execution correlation: fwm_mxTEJVIvKfJ_tlRAGAERxQ",
+          "sequence": 1
+        },
+        {
+          "channel": "stdout",
+          "command": "info",
+          "created_at": "2026-10-17T14:25:51.787284887Z",
+          "message": "{\"allSchemasEmpty\":true,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3675749405/sql/V1__browser_gate.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3675749405/sql/V2__second_row.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3675749405/sql/R__row_count.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"\",\"version\":\"\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:25:51.663198208+07:00\"}",
+          "sequence": 2
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:25:51.787284887Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 3
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:25:51.790985311Z",
+          "message": "PostgreSQL execution correlation: fwm_aA6PGYlA1zz_l7B0S9A2sD",
+          "sequence": 4
+        },
+        {
+          "channel": "stdout",
+          "command": "validate",
+          "created_at": "2026-10-17T14:26:06.801732559Z",
+          "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_product_cb6b4096\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":3,\"validationSuccessful\":true,\"warnings\":[]}",
+          "sequence": 5
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:26:06.801732559Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 6
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:26:06.810044002Z",
+          "message": "PostgreSQL execution correlation: fwm_jdrhOBt2UG090TV6De7kje",
+          "sequence": 7
+        },
+        {
+          "channel": "stdout",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:26:22.747427249Z",
+          "message": "{\"database\":\"fwm_product_cb6b4096\",\"databaseType\":\"PostgreSQL\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"initialSchemaVersion\":null,\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":12,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3819649901/sql/V1__browser_gate.sql\",\"type\":\"SQL\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":5,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3819649901/sql/V2__second_row.sql\",\"type\":\"SQL\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":6,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-3819649901/sql/R__row_count.sql\",\"type\":\"SQL\",\"version\":\"\"}],\"migrationsExecuted\":3,\"operation\":\"migrate\",\"schemaName\":\"app\",\"success\":true,\"targetSchemaVersion\":\"2\",\"timestamp\":\"2026-10-17T21:26:22.445871526+07:00\",\"totalMigrationTime\":23,\"warnings\":[]}",
+          "sequence": 8
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:26:22.747427249Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 9
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:26:22.747427249Z",
+          "message": "PostgreSQL execution lifecycle: {\"application_name\":\"fwm_jdrhOBt2UG090TV6De7kje\",\"cleanup_verified\":true,\"cli_pid\":585948,\"cli_process_group_id\":585948,\"database\":{\"application_name\":\"fwm_jdrhOBt2UG090TV6De7kje\",\"sessions\":[{\"pid\":95012,\"backend_start\":\"2026-10-17T14:26:21.881055Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":95012,\"backend_start\":\"2026-10-17T14:26:21.881055Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:26:22.316399Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":95012,\"backend_start\":\"2026-10-17T14:26:21.881055Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:26:22.351496Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":95013,\"backend_start\":\"2026-10-17T14:26:22.354518Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:26:22.397802Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":95012,\"backend_start\":\"2026-10-17T14:26:21.881055Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:26:22.509171Z\",\"query_start\":\"2026-10-17T14:26:22.526016Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":95013,\"backend_start\":\"2026-10-17T14:26:22.354518Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:26:22.516430Z\",\"query_start\":\"2026-10-17T14:26:22.521228Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}],\"outcome\":\"success_gone\",\"gone\":true,\"cleanup_verified\":true}}",
+          "sequence": 10
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:26:22.749095777Z",
+          "message": "PostgreSQL execution correlation: fwm_w4cLlC_grsGWHbtRpzwBL2",
+          "sequence": 11
+        },
+        {
+          "channel": "stdout",
+          "command": "info",
+          "created_at": "2026-10-17T14:26:37.584622138Z",
+          "message": "{\"allSchemasEmpty\":false,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":12,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V1__browser_gate.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.448124Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":5,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/V2__second_row.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.487807Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":6,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2806638575/sql/R__row_count.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.509171Z\",\"rawVersion\":\"\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"\",\"version\":\"\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T21:26:37.479996077+07:00\"}",
+          "sequence": 12
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:26:37.584622138Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 13
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:26:37.588716433Z",
+          "message": "PostgreSQL execution correlation: fwm_uLJ4AaFOPi6b7Xczt_X905",
+          "sequence": 14
+        },
+        {
+          "channel": "stdout",
+          "command": "validate",
+          "created_at": "2026-10-17T14:26:52.566654301Z",
+          "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_product_cb6b4096\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":3,\"validationSuccessful\":true,\"warnings\":[]}",
+          "sequence": 15
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:26:52.566654301Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 16
+        },
+        {
+          "channel": "event",
+          "command": "orchestration",
+          "created_at": "2026-10-17T14:26:52.56891697Z",
+          "message": "SUCCEEDED: Flyway migrate and post-migration history validation succeeded.",
+          "sequence": 17
+        }
+      ],
+      "schema_id": "n2RfIG7wVbs9ImUBmKbaHI",
+      "status": "SUCCEEDED",
+      "target_id": "connection-7mWDjiFPNNz29K691GtTf7"
+    },
+    "service": {
+      "actor_kind": "service",
+      "artifact_id": "Ywpia_ie1ps_qKcrcjPolI",
+      "executions": [
+        {
+          "ambiguous": false,
+          "command": "info",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:30:24.169205329Z",
+          "id": "0GGJi2DHtConvxYrMDtufB",
+          "started_at": "2026-10-17T14:30:10.150406592Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "validate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:30:38.241718333Z",
+          "id": "u1LC0iByjvPmle7mE69ywX",
+          "started_at": "2026-10-17T14:30:24.172505668Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "migrate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:30:53.100871563Z",
+          "id": "G6T59pFCQo7gdvQWP5EXuf",
+          "started_at": "2026-10-17T14:30:38.247320899Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "info",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:31:07.361443851Z",
+          "id": "OssSuCCa8DN4nh1hG2Df3g",
+          "started_at": "2026-10-17T14:30:53.10259316Z",
+          "success": true
+        },
+        {
+          "ambiguous": false,
+          "command": "validate",
+          "exit_code": 0,
+          "finished_at": "2026-10-17T14:31:21.517840335Z",
+          "id": "0T3UQDKzzyaJi8f2gL_3m8",
+          "started_at": "2026-10-17T14:31:07.364670672Z",
+          "success": true
+        }
+      ],
+      "id": "67TNgVAS2IIlPKagBhBOg2",
+      "logs": [
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:30:10.150406592Z",
+          "message": "PostgreSQL execution correlation: fwm_0GGJi2DHtConvxYrMDtufB",
+          "sequence": 27
+        },
+        {
+          "channel": "stdout",
+          "command": "info",
+          "created_at": "2026-10-17T14:30:24.169205329Z",
+          "message": "{\"allSchemasEmpty\":false,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":12,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1588855744/sql/V1__browser_gate.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.448124Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":5,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1588855744/sql/V2__second_row.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.487807Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":6,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1588855744/sql/R__row_count.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.509171Z\",\"rawVersion\":\"\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"\",\"version\":\"\"},{\"category\":\"Versioned\",\"description\":\"service account\",\"executionTime\":0,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1588855744/sql/V3__service_account.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"3\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"3\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"2\",\"timestamp\":\"2026-10-17T21:30:24.057577118+07:00\"}",
+          "sequence": 28
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:30:24.169205329Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 29
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:30:24.172505668Z",
+          "message": "PostgreSQL execution correlation: fwm_u1LC0iByjvPmle7mE69ywX",
+          "sequence": 30
+        },
+        {
+          "channel": "stdout",
+          "command": "validate",
+          "created_at": "2026-10-17T14:30:38.241718333Z",
+          "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_product_cb6b4096\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":4,\"validationSuccessful\":true,\"warnings\":[]}",
+          "sequence": 31
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:30:38.241718333Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 32
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:30:38.247320899Z",
+          "message": "PostgreSQL execution correlation: fwm_G6T59pFCQo7gdvQWP5EXuf",
+          "sequence": 33
+        },
+        {
+          "channel": "stdout",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:30:53.100871563Z",
+          "message": "{\"database\":\"fwm_product_cb6b4096\",\"databaseType\":\"PostgreSQL\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"initialSchemaVersion\":\"2\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"service account\",\"executionTime\":13,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-2503206207/sql/V3__service_account.sql\",\"type\":\"SQL\",\"version\":\"3\"}],\"migrationsExecuted\":1,\"operation\":\"migrate\",\"schemaName\":\"app\",\"success\":true,\"targetSchemaVersion\":\"3\",\"timestamp\":\"2026-10-17T21:30:52.815960413+07:00\",\"totalMigrationTime\":13,\"warnings\":[]}",
+          "sequence": 34
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:30:53.100871563Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 35
+        },
+        {
+          "channel": "stderr",
+          "command": "migrate",
+          "created_at": "2026-10-17T14:30:53.100871563Z",
+          "message": "PostgreSQL execution lifecycle: {\"application_name\":\"fwm_G6T59pFCQo7gdvQWP5EXuf\",\"cleanup_verified\":true,\"cli_pid\":617176,\"cli_process_group_id\":617176,\"database\":{\"application_name\":\"fwm_G6T59pFCQo7gdvQWP5EXuf\",\"sessions\":[{\"pid\":99114,\"backend_start\":\"2026-10-17T14:30:52.267755Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99114,\"backend_start\":\"2026-10-17T14:30:52.267755Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:30:52.671779Z\",\"query_start\":\"2026-10-17T14:30:52.671894Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99114,\"backend_start\":\"2026-10-17T14:30:52.267755Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:30:52.699248Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99115,\"backend_start\":\"2026-10-17T14:30:52.702624Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:30:52.757872Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}],\"outcome\":\"success_gone\",\"gone\":true,\"cleanup_verified\":true}}",
+          "sequence": 36
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:30:53.10259316Z",
+          "message": "PostgreSQL execution correlation: fwm_OssSuCCa8DN4nh1hG2Df3g",
+          "sequence": 37
+        },
+        {
+          "channel": "stdout",
+          "command": "info",
+          "created_at": "2026-10-17T14:31:07.361443851Z",
+          "message": "{\"allSchemasEmpty\":false,\"database\":\"fwm_product_cb6b4096\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"browser gate\",\"executionTime\":12,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1542354020/sql/V1__browser_gate.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.448124Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"},{\"category\":\"Versioned\",\"description\":\"second row\",\"executionTime\":5,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1542354020/sql/V2__second_row.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.487807Z\",\"rawVersion\":\"2\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"2\"},{\"category\":\"Repeatable\",\"description\":\"row count\",\"executionTime\":6,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1542354020/sql/R__row_count.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:26:22.509171Z\",\"rawVersion\":\"\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"\",\"version\":\"\"},{\"category\":\"Versioned\",\"description\":\"service account\",\"executionTime\":13,\"filepath\":\"/tmp/fwm-pg-acceptance-20261017/private-browser-final-01/manager-browser-2026-10-17T14-24-35.543Z-8385229b/data/flyway-run-1542354020/sql/V3__service_account.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:30:52.822142Z\",\"rawVersion\":\"3\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"3\"}],\"operation\":\"info\",\"schemaName\":\"app\",\"schemaVersion\":\"3\",\"timestamp\":\"2026-10-17T21:31:07.221928595+07:00\"}",
+          "sequence": 38
+        },
+        {
+          "channel": "stderr",
+          "command": "info",
+          "created_at": "2026-10-17T14:31:07.361443851Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 39
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:31:07.364670672Z",
+          "message": "PostgreSQL execution correlation: fwm_0T3UQDKzzyaJi8f2gL_3m8",
+          "sequence": 40
+        },
+        {
+          "channel": "stdout",
+          "command": "validate",
+          "created_at": "2026-10-17T14:31:21.517840335Z",
+          "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_product_cb6b4096\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":4,\"validationSuccessful\":true,\"warnings\":[]}",
+          "sequence": 41
+        },
+        {
+          "channel": "stderr",
+          "command": "validate",
+          "created_at": "2026-10-17T14:31:21.517840335Z",
+          "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+          "sequence": 42
+        },
+        {
+          "channel": "event",
+          "command": "orchestration",
+          "created_at": "2026-10-17T14:31:21.521667405Z",
+          "message": "SUCCEEDED: Flyway migrate and post-migration history validation succeeded.",
+          "sequence": 43
+        }
+      ],
+      "status": "SUCCEEDED",
+      "successful_history_rows": 4
+    }
+  },
+  "schema_id": "n2RfIG7wVbs9ImUBmKbaHI",
+  "screenshots": [
+    "manager-run-desktop.png",
+    "manager-run-mobile.png",
+    "manager-info-mobile.png",
+    "manager-sql-mobile.png",
+    "manager-logs-mobile.png"
+  ],
+  "statuses": {
+    "migration": "SUCCEEDED"
+  },
+  "target_id": "connection-7mWDjiFPNNz29K691GtTf7"
+}

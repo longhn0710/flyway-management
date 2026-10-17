@@ -1,0 +1,1 @@
+FAIL — the gate expected the terminated client backend count to be zero, but observed one. The accompanying pg_stat_activity observations show the original Redgate_Flyway backend remained active in pg_sleep after the CLI exited 143. This is the reproduced cancellation failure, not a pass.

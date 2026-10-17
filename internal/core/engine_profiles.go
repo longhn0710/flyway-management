@@ -82,7 +82,7 @@ func saveProfile(ctx context.Context, tx *sql.Tx, tid string, p *ConnectionProfi
 // Migration promotion is deliberately a server policy, never caller supplied.
 // Qualified by docs/postgresql-migration-acceptance.md; changing the profile
 // or lifecycle contract requires a new controlled product acceptance.
-const postgresqlMigrationAccepted = false
+const postgresqlMigrationAccepted = true
 
 func (s *Service) migrationEngineGate(ctx context.Context, a Actor, tid string) error {
 	target, e := s.Target(ctx, a, tid)

@@ -1,0 +1,20 @@
+=== RUN   TestPostgreSQLGuardLiveEmpty
+--- PASS: TestPostgreSQLGuardLiveEmpty (0.75s)
+=== RUN   TestPostgreSQLGuardLiveNeverSignalsCopiedTag
+--- PASS: TestPostgreSQLGuardLiveNeverSignalsCopiedTag (15.75s)
+=== RUN   TestPostgreSQLProbeLive
+=== RUN   TestPostgreSQLProbeLive/wrong_password
+=== RUN   TestPostgreSQLProbeLive/missing_database
+=== RUN   TestPostgreSQLProbeLive/unavailable_listener
+=== RUN   TestPostgreSQLProbeLive/wrong_TLS_hostname
+=== RUN   TestPostgreSQLProbeLive/untrusted_CA
+=== RUN   TestPostgreSQLProbeLive/read-only_schema_classification
+--- PASS: TestPostgreSQLProbeLive (42.47s)
+    --- PASS: TestPostgreSQLProbeLive/wrong_password (4.00s)
+    --- PASS: TestPostgreSQLProbeLive/missing_database (4.11s)
+    --- PASS: TestPostgreSQLProbeLive/unavailable_listener (3.57s)
+    --- PASS: TestPostgreSQLProbeLive/wrong_TLS_hostname (3.98s)
+    --- PASS: TestPostgreSQLProbeLive/untrusted_CA (3.99s)
+    --- PASS: TestPostgreSQLProbeLive/read-only_schema_classification (4.50s)
+PASS
+ok  	flyway-manager/internal/flyway	58.971s

@@ -1,0 +1,22 @@
+=== RUN   TestTransactionalMigrationAdmission
+    migration_policy_test.go:11: unsupported SQL accepted: ALTER SUBSCRIPTION s REFRESH PUBLICATION
+    migration_policy_test.go:11: unsupported SQL accepted: ALTER SUBSCRIPTION s SET PUBLICATION p
+    migration_policy_test.go:11: unsupported SQL accepted: ALTER TABLE t DETACH PARTITION p CONCURRENTLY
+    migration_policy_test.go:11: unsupported SQL accepted: ALTER TABLE t DETACH PARTITION p
+    migration_policy_test.go:11: unsupported SQL accepted: CLUSTER
+    migration_policy_test.go:11: unsupported SQL accepted: CLUSTER partitioned_table
+    migration_policy_test.go:11: unsupported SQL accepted: SELECT 1; /* comment */ CLUSTER t
+--- FAIL: TestTransactionalMigrationAdmission (0.00s)
+FAIL
+FAIL	flyway-manager/internal/postgresql	0.016s
+=== RUN   TestPostgreSQLMaintenanceSQLCannotCreateJobs
+    postgresql_admission_test.go:27: unsupported maintenance preflight admitted "ALTER TABLE t DETACH PARTITION p CONCURRENTLY": {Ready:true LocalReady:true LiveStatus:VERIFIED Blockers:[] Warnings:[Earlier migrations can remain committed if a later script fails. PostgreSQL failures and uncertain outcomes hold the stream for review; no automatic Repair or retry. PostgreSQL role privileges govern cross-schema access; schema configuration is not a security boundary.] RuntimeVersion:11.20.0 Files:[{Path:V1__maintenance.sql SHA256:ab86eeac87b2ffe9c7f7c5885d4b5acaf45e2f923f8d0f62fe8035ea53bcf965 Kind:versioned Version:1 Size:45}] Diagnostics:[{Name:network Status:VERIFIED Detail:The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection.} {Name:authentication Status:VERIFIED Detail:The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection.} {Name:service Status:VERIFIED Detail:The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection.} {Name:schema_access Status:NOT_VERIFIED Detail:Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege.} {Name:history Status:INSPECTED Detail:Flyway inspected schema history. An empty history does not prove the physical history table already exists.} {Name:migration_privileges Status:NOT_VERIFIED Detail:Read-only validation cannot prove all DDL privileges or cross-schema isolation.} {Name:database_identity Status:VERIFIED Detail:Actual PostgreSQL database and session/effective role match the declared profile.}] Info:[123 34 102 108 121 119 97 121 86 101 114 115 105 111 110 34 58 34 49 49 46 50 48 46 48 34 44 34 109 105 103 114 97 116 105 111 110 115 34 58 91 123 34 100 101 115 99 114 105 112 116 105 111 110 34 58 34 86 49 95 95 109 97 105 110 116 101 110 97 110 99 101 46 115 113 108 34 44 34 105 110 115 116 97 108 108 101 100 79 110 34 58 34 34 44 34 115 99 114 105 112 116 34 58 34 86 49 95 95 109 97 105 110 116 101 110 97 110 99 101 46 115 113 108 34 44 34 115 116 97 116 101 34 58 34 80 101 110 100 105 110 103 34 44 34 116 121 112 101 34 58 34 83 81 76 34 44 34 118 101 114 115 105 111 110 34 58 34 49 34 125 93 44 34 111 112 101 114 97 116 105 111 110 34 58 34 105 110 102 111 34 44 34 115 99 104 101 109 97 78 97 109 101 34 58 34 97 112 112 34 44 34 115 99 104 101 109 97 86 101 114 115 105 111 110 34 58 34 49 34 125] Validation:[123 34 102 108 121 119 97 121 86 101 114 115 105 111 110 34 58 34 49 49 46 50 48 46 48 34 44 34 105 110 118 97 108 105 100 77 105 103 114 97 116 105 111 110 115 34 58 91 93 44 34 111 112 101 114 97 116 105 111 110 34 58 34 118 97 108 105 100 97 116 101 34 44 34 118 97 108 105 100 97 116 101 67 111 117 110 116 34 58 49 44 34 118 97 108 105 100 97 116 105 111 110 83 117 99 99 101 115 115 102 117 108 34 58 116 114 117 101 125]}
+--- FAIL: TestPostgreSQLMaintenanceSQLCannotCreateJobs (0.51s)
+FAIL
+FAIL	flyway-manager/internal/core	0.530s
+=== RUN   TestPostgreSQLRuntimeRejectsNontransactionalMaintenance
+    postgresql_probe_test.go:83: runtime admitted unsupported maintenance "ALTER TABLE t DETACH PARTITION p CONCURRENTLY"
+--- FAIL: TestPostgreSQLRuntimeRejectsNontransactionalMaintenance (0.08s)
+FAIL
+FAIL	flyway-manager/internal/flyway	0.082s
+FAIL

@@ -722,7 +722,6 @@ func TestPostgreSQLManagerMigrationLive(t *testing.T) {
 		must(t, f.s.StartExecution(testCtx, runner, "postgresql-manager-lifecycle-v1", f.dir, artifact.DefaultLimits()))
 		stopped = false
 		final := wait(t, r.ID)
-		record(t, "shutdown-restart", final)
 		if final.Status != "NEEDS_REVIEW" {
 			t.Fatal("shutdown run was retried or released", final.Status)
 		}
@@ -738,6 +737,8 @@ func TestPostgreSQLManagerMigrationLive(t *testing.T) {
 		if journals == 0 {
 			t.Fatal("restart did not retain durable PostgreSQL lifecycle observations")
 		}
+		evidence["shutdown-recovered-journal-count"] = journals
+		record(t, "shutdown-restart", final)
 		_, e = f.s.SubmitRun(testCtx, f.trace(), input, "shutdown-retry")
 		status(t, e, 409)
 	})

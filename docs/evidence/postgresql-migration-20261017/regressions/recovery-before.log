@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection
+    postgresql_journal_recovery_test.go:131: held PostgreSQL run 7FKBzc4ZoijHDl7sOVSHnC has no imported lifecycle evidence while first Info is blocked
+--- FAIL: TestPostgreSQLRecoveryImportsAllHeldJournalsBeforeInspection (0.87s)
+FAIL
+FAIL	flyway-manager/internal/core	0.888s
+FAIL

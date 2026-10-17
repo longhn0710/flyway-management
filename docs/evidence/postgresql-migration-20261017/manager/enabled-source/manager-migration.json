@@ -1,0 +1,921 @@
+{
+  "before_schema_objects": {
+    "success": 0,
+    "independent": 0,
+    "rollback": 0,
+    "partial": 0,
+    "timeout": 0,
+    "shutdown": 0,
+    "process_kill": 0,
+    "unsupported": 0,
+    "changed": 0,
+    "trust": 0,
+    "parallel_a": 0,
+    "parallel_b": 0,
+    "policy": 0,
+    "predecessor": 0,
+    "unsafe": 0,
+    "isolation": 0,
+    "revoked": 0
+  },
+  "database": "fwm_manager_1792247662514139067",
+  "database-observed-policy": {
+    "statement_timeout": "12s",
+    "transaction_timeout": "12s",
+    "lock_timeout": "5s",
+    "idle_session_timeout": "12s",
+    "idle_transaction_timeout": "12s",
+    "standard_conforming_strings": "on",
+    "application_name": "fwm_GKUC2cOU46uoS5gy3hyBmj",
+    "backend_pid": 99680
+  },
+  "disposable_lab_only": true,
+  "maintenance-admission": {
+    "commands": 0,
+    "jobs": 0,
+    "rejected_forms": [
+      "ALTER TABLE t DETACH PARTITION p CONCURRENTLY",
+      "CLUSTER",
+      "CLUSTER partitioned_table",
+      "ALTER SUBSCRIPTION s REFRESH PUBLICATION",
+      "ALTER SUBSCRIPTION s SET PUBLICATION p"
+    ],
+    "schema_objects": "0"
+  },
+  "observed-policy": {
+    "database_history": [
+      {
+        "installed_rank": 1,
+        "version": "1",
+        "description": "policy",
+        "type": "SQL",
+        "script": "V1__policy.sql",
+        "checksum": 2136131981,
+        "installed_by": "fwm_exec",
+        "installed_on": "2026-10-17T21:36:20.170001",
+        "execution_time": 9,
+        "success": true
+      }
+    ],
+    "database_objects": [
+      "flyway_schema_history:r",
+      "flyway_schema_history_pk:i",
+      "flyway_schema_history_s_idx:i",
+      "observed_policy:r"
+    ],
+    "executions": [
+      {
+        "id": "0UnkaPcqH_aEZC71zl0coz",
+        "command": "info",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allSchemasEmpty\":true,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-1466784832/sql/V1__policy.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"policy\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:35:50.158249566+07:00\"}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allSchemasEmpty": true,
+          "database": "fwm_manager_1792247662514139067",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "policy",
+              "executionTime": 0,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-1466784832/sql/V1__policy.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "rawVersion": "1",
+              "shouldExecuteExpression": null,
+              "state": "Pending",
+              "type": "SQL",
+              "undoFilepath": "",
+              "undoable": "No",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaName": "policy",
+          "schemaVersion": null,
+          "timestamp": "2026-10-17T21:35:50.158249566+07:00"
+        },
+        "started_at": "2026-10-17T14:35:33.948087483Z",
+        "finished_at": "2026-10-17T14:35:50.280565851Z",
+        "ambiguous": false
+      },
+      {
+        "id": "urqmS17VjJO87HupnfQFUj",
+        "command": "validate",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allErrorMessages": "",
+          "database": "fwm_manager_1792247662514139067",
+          "errorDetails": null,
+          "flywayVersion": "13.10.3",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true,
+          "warnings": []
+        },
+        "started_at": "2026-10-17T14:35:50.282084931Z",
+        "finished_at": "2026-10-17T14:36:05.073525616Z",
+        "ambiguous": false
+      },
+      {
+        "id": "GKUC2cOU46uoS5gy3hyBmj",
+        "command": "migrate",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"database\":\"fwm_manager_1792247662514139067\",\"databaseType\":\"PostgreSQL\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"initialSchemaVersion\":null,\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":9,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2654886572/sql/V1__policy.sql\",\"type\":\"SQL\",\"version\":\"1\"}],\"migrationsExecuted\":1,\"operation\":\"migrate\",\"schemaName\":\"policy\",\"success\":true,\"targetSchemaVersion\":\"1\",\"timestamp\":\"2026-10-17T21:36:20.167179965+07:00\",\"totalMigrationTime\":9,\"warnings\":[]}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n\nPostgreSQL execution lifecycle: {\"application_name\":\"fwm_GKUC2cOU46uoS5gy3hyBmj\",\"cleanup_verified\":true,\"cli_pid\":641229,\"cli_process_group_id\":641229,\"database\":{\"application_name\":\"fwm_GKUC2cOU46uoS5gy3hyBmj\",\"sessions\":[{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:19.942618Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.049449Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.154809Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99680,\"backend_start\":\"2026-10-17T14:36:20.052820Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.103436Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}],\"outcome\":\"success_gone\",\"gone\":true,\"cleanup_verified\":true}}",
+        "json": {
+          "database": "fwm_manager_1792247662514139067",
+          "databaseType": "PostgreSQL",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "initialSchemaVersion": null,
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "policy",
+              "executionTime": 9,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2654886572/sql/V1__policy.sql",
+              "type": "SQL",
+              "version": "1"
+            }
+          ],
+          "migrationsExecuted": 1,
+          "operation": "migrate",
+          "schemaName": "policy",
+          "success": true,
+          "targetSchemaVersion": "1",
+          "timestamp": "2026-10-17T21:36:20.167179965+07:00",
+          "totalMigrationTime": 9,
+          "warnings": []
+        },
+        "started_at": "2026-10-17T14:36:05.080184848Z",
+        "finished_at": "2026-10-17T14:36:20.385043548Z",
+        "ambiguous": false
+      },
+      {
+        "id": "y2U8WewJnOj1bUYCnwzodY",
+        "command": "info",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allSchemasEmpty\":false,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":9,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2799693590/sql/V1__policy.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:36:20.170001Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"policy\",\"schemaVersion\":\"1\",\"timestamp\":\"2026-10-17T21:36:34.75620341+07:00\"}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allSchemasEmpty": false,
+          "database": "fwm_manager_1792247662514139067",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "policy",
+              "executionTime": 9,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2799693590/sql/V1__policy.sql",
+              "installedBy": "fwm_exec",
+              "installedOnUTC": "2026-10-17T14:36:20.170001Z",
+              "rawVersion": "1",
+              "shouldExecuteExpression": null,
+              "state": "Success",
+              "type": "SQL",
+              "undoFilepath": "",
+              "undoable": "No",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaName": "policy",
+          "schemaVersion": "1",
+          "timestamp": "2026-10-17T21:36:34.75620341+07:00"
+        },
+        "started_at": "2026-10-17T14:36:20.386679701Z",
+        "finished_at": "2026-10-17T14:36:34.880462473Z",
+        "ambiguous": false
+      },
+      {
+        "id": "MKubq11mLNtCIyUfL3LnkR",
+        "command": "validate",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allErrorMessages": "",
+          "database": "fwm_manager_1792247662514139067",
+          "errorDetails": null,
+          "flywayVersion": "13.10.3",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true,
+          "warnings": []
+        },
+        "started_at": "2026-10-17T14:36:34.882224272Z",
+        "finished_at": "2026-10-17T14:36:49.341814441Z",
+        "ambiguous": false
+      }
+    ],
+    "files": [
+      {
+        "artifact_id": "rCvNpp8npDpbJqn5WIfSqk",
+        "path": "V1__policy.sql",
+        "sha256": "8f26c899d8d90de0f6ecc7d623a294b343cf5ba647de5aa073263413e903ca87",
+        "kind": "versioned",
+        "version": "1",
+        "size": 527
+      }
+    ],
+    "logs": [
+      {
+        "sequence": 1,
+        "command": "info",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_0UnkaPcqH_aEZC71zl0coz",
+        "created_at": "2026-10-17T14:35:33.948087483Z"
+      },
+      {
+        "sequence": 2,
+        "command": "info",
+        "channel": "stdout",
+        "message": "{\"allSchemasEmpty\":true,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-1466784832/sql/V1__policy.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"policy\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:35:50.158249566+07:00\"}",
+        "created_at": "2026-10-17T14:35:50.280565851Z"
+      },
+      {
+        "sequence": 3,
+        "command": "info",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:35:50.280565851Z"
+      },
+      {
+        "sequence": 4,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_urqmS17VjJO87HupnfQFUj",
+        "created_at": "2026-10-17T14:35:50.282084931Z"
+      },
+      {
+        "sequence": 5,
+        "command": "validate",
+        "channel": "stdout",
+        "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "created_at": "2026-10-17T14:36:05.073525616Z"
+      },
+      {
+        "sequence": 6,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:36:05.073525616Z"
+      },
+      {
+        "sequence": 7,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_GKUC2cOU46uoS5gy3hyBmj",
+        "created_at": "2026-10-17T14:36:05.080184848Z"
+      },
+      {
+        "sequence": 8,
+        "command": "migrate",
+        "channel": "stdout",
+        "message": "{\"database\":\"fwm_manager_1792247662514139067\",\"databaseType\":\"PostgreSQL\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"initialSchemaVersion\":null,\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":9,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2654886572/sql/V1__policy.sql\",\"type\":\"SQL\",\"version\":\"1\"}],\"migrationsExecuted\":1,\"operation\":\"migrate\",\"schemaName\":\"policy\",\"success\":true,\"targetSchemaVersion\":\"1\",\"timestamp\":\"2026-10-17T21:36:20.167179965+07:00\",\"totalMigrationTime\":9,\"warnings\":[]}",
+        "created_at": "2026-10-17T14:36:20.385043548Z"
+      },
+      {
+        "sequence": 9,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:36:20.385043548Z"
+      },
+      {
+        "sequence": 10,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution lifecycle: {\"application_name\":\"fwm_GKUC2cOU46uoS5gy3hyBmj\",\"cleanup_verified\":true,\"cli_pid\":641229,\"cli_process_group_id\":641229,\"database\":{\"application_name\":\"fwm_GKUC2cOU46uoS5gy3hyBmj\",\"sessions\":[{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:19.942618Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.049449Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99679,\"backend_start\":\"2026-10-17T14:36:19.502107Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.154809Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":99680,\"backend_start\":\"2026-10-17T14:36:20.052820Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:36:20.103436Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}],\"outcome\":\"success_gone\",\"gone\":true,\"cleanup_verified\":true}}",
+        "created_at": "2026-10-17T14:36:20.385043548Z"
+      },
+      {
+        "sequence": 11,
+        "command": "info",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_y2U8WewJnOj1bUYCnwzodY",
+        "created_at": "2026-10-17T14:36:20.386679701Z"
+      },
+      {
+        "sequence": 12,
+        "command": "info",
+        "channel": "stdout",
+        "message": "{\"allSchemasEmpty\":false,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"policy\",\"executionTime\":9,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-2799693590/sql/V1__policy.sql\",\"installedBy\":\"fwm_exec\",\"installedOnUTC\":\"2026-10-17T14:36:20.170001Z\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Success\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"policy\",\"schemaVersion\":\"1\",\"timestamp\":\"2026-10-17T21:36:34.75620341+07:00\"}",
+        "created_at": "2026-10-17T14:36:34.880462473Z"
+      },
+      {
+        "sequence": 13,
+        "command": "info",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:36:34.880462473Z"
+      },
+      {
+        "sequence": 14,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_MKubq11mLNtCIyUfL3LnkR",
+        "created_at": "2026-10-17T14:36:34.882224272Z"
+      },
+      {
+        "sequence": 15,
+        "command": "validate",
+        "channel": "stdout",
+        "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "created_at": "2026-10-17T14:36:49.341814441Z"
+      },
+      {
+        "sequence": 16,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:36:49.341814441Z"
+      },
+      {
+        "sequence": 17,
+        "command": "orchestration",
+        "channel": "event",
+        "message": "SUCCEEDED: Flyway migrate and post-migration history validation succeeded.",
+        "created_at": "2026-10-17T14:36:49.343868447Z"
+      }
+    ],
+    "run": {
+      "artifact_name": "V1__policy.sql",
+      "status_url": "/api/v1/migration-runs/9UytIP1Oqv_9Spk7tedDUT",
+      "logs_url": "/api/v1/migration-runs/9UytIP1Oqv_9Spk7tedDUT/logs",
+      "id": "9UytIP1Oqv_9Spk7tedDUT",
+      "run_id": "9UytIP1Oqv_9Spk7tedDUT",
+      "status": "SUCCEEDED",
+      "target_id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+      "schema_id": "g3TphA0zHVnThIEI8TbkU0",
+      "execution_account_id": "I9aqlysBSAE4ACWf9AXuFQ",
+      "artifact_id": "rCvNpp8npDpbJqn5WIfSqk",
+      "context": {},
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_manager_1792247662514139067",
+        "engine": "postgresql",
+        "executionLifecyclePolicy": "postgresql17-bounded-session-v1",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "policy",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "policy",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_manager_1792247662514139067?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "manager.processTimeoutSeconds": "12",
+        "outputType": "json",
+        "postgresql.idleTimeoutMs": "12000",
+        "postgresql.lockTimeoutMs": "5000",
+        "postgresql.observerSHA256": "824368ecf6417f88162fe555dc3ada722908fdd2166bf35f0067a8871285edad",
+        "postgresql.observerSessionSHA256": "76f022d754db51f926581825b57d146eaef11de901d601286953ab40e0345cfa",
+        "postgresql.standardConformingStrings": "on",
+        "postgresql.statementTimeoutMs": "12000",
+        "postgresql.transactionTimeoutMs": "12000",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_manager_1792247662514139067",
+        "profile_revision": 1,
+        "id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+        "name": "Disposable Manager acceptance",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-17T14:34:29Z"
+      },
+      "schema": {
+        "id": "g3TphA0zHVnThIEI8TbkU0",
+        "target_id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+        "name": "policy",
+        "history_schema": "policy",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "I9aqlysBSAE4ACWf9AXuFQ",
+        "active": true,
+        "created_at": "2026-10-17T14:34:29Z"
+      },
+      "account": {
+        "id": "I9aqlysBSAE4ACWf9AXuFQ",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 1
+      },
+      "actor_id": "tEmAQY8vsjpYIA0hRjwhE6",
+      "actor_kind": "user",
+      "actor_name": "admin",
+      "source": "WEB",
+      "created_at": "2026-10-17T14:35:28Z",
+      "started_at": "2026-10-17T14:35:28Z",
+      "finished_at": "2026-10-17T14:36:49Z",
+      "flyway_version": "13.10.3",
+      "exit_code": 0,
+      "migration_outcome": "SUCCEEDED",
+      "repair_outcome": "SKIPPED",
+      "reason": "Flyway migrate and post-migration history validation succeeded.",
+      "preflight": {
+        "ready": true,
+        "local_ready": true,
+        "live_status": "VERIFIED",
+        "blockers": [],
+        "warnings": [
+          "Earlier migrations can remain committed if a later script fails. PostgreSQL failures and uncertain outcomes hold the stream for review; no automatic Repair or retry.",
+          "PostgreSQL role privileges govern cross-schema access; schema configuration is not a security boundary."
+        ],
+        "runtime_version": "13.10.3",
+        "files": [
+          {
+            "path": "V1__policy.sql",
+            "sha256": "8f26c899d8d90de0f6ecc7d623a294b343cf5ba647de5aa073263413e903ca87",
+            "kind": "versioned",
+            "version": "1",
+            "size": 527
+          }
+        ],
+        "diagnostics": [
+          {
+            "name": "network",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "authentication",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "service",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "schema_access",
+            "status": "NOT_VERIFIED",
+            "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege."
+          },
+          {
+            "name": "history",
+            "status": "INSPECTED",
+            "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists."
+          },
+          {
+            "name": "migration_privileges",
+            "status": "NOT_VERIFIED",
+            "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation."
+          },
+          {
+            "name": "database_identity",
+            "status": "VERIFIED",
+            "detail": "Actual PostgreSQL database and session/effective role match the declared profile."
+          }
+        ],
+        "info": {
+          "allSchemasEmpty": true,
+          "database": "fwm_manager_1792247662514139067",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "policy",
+              "executionTime": 0,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-1466784832/sql/V1__policy.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "rawVersion": "1",
+              "shouldExecuteExpression": null,
+              "state": "Pending",
+              "type": "SQL",
+              "undoFilepath": "",
+              "undoable": "No",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaName": "policy",
+          "schemaVersion": null,
+          "timestamp": "2026-10-17T21:35:50.158249566+07:00"
+        },
+        "validation": {
+          "allErrorMessages": "",
+          "database": "fwm_manager_1792247662514139067",
+          "errorDetails": null,
+          "flywayVersion": "13.10.3",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true,
+          "warnings": []
+        }
+      }
+    }
+  },
+  "server_version": "17.11 (Debian 17.11-1.pgdg13+2)",
+  "shutdown-recovered-journal-count": 1,
+  "shutdown-restart": {
+    "database_history": [],
+    "database_objects": [
+      "flyway_schema_history:r",
+      "flyway_schema_history_pk:i",
+      "flyway_schema_history_s_idx:i"
+    ],
+    "executions": [
+      {
+        "id": "9g2KpLWUya3dskWrfbvCnp",
+        "command": "info",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allSchemasEmpty\":true,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"shutdown\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-3095279380/sql/V1__shutdown.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"shutdown\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:37:14.925787633+07:00\"}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allSchemasEmpty": true,
+          "database": "fwm_manager_1792247662514139067",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "shutdown",
+              "executionTime": 0,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-3095279380/sql/V1__shutdown.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "rawVersion": "1",
+              "shouldExecuteExpression": null,
+              "state": "Pending",
+              "type": "SQL",
+              "undoFilepath": "",
+              "undoable": "No",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaName": "shutdown",
+          "schemaVersion": null,
+          "timestamp": "2026-10-17T21:37:14.925787633+07:00"
+        },
+        "started_at": "2026-10-17T14:36:59.980053332Z",
+        "finished_at": "2026-10-17T14:37:15.080494415Z",
+        "ambiguous": false
+      },
+      {
+        "id": "Hr9dhWbQhHPYqhHix8lvfa",
+        "command": "validate",
+        "success": true,
+        "exit_code": 0,
+        "stdout": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n",
+        "json": {
+          "allErrorMessages": "",
+          "database": "fwm_manager_1792247662514139067",
+          "errorDetails": null,
+          "flywayVersion": "13.10.3",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true,
+          "warnings": []
+        },
+        "started_at": "2026-10-17T14:37:15.083739826Z",
+        "finished_at": "2026-10-17T14:37:30.606731501Z",
+        "ambiguous": false
+      },
+      {
+        "id": "76F8yvNew970W-phGkdWyG",
+        "command": "migrate",
+        "success": false,
+        "exit_code": -1,
+        "stdout": "",
+        "stderr": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m\n\nPostgreSQL backend cleanup could not be verified; execution requires review.\nPostgreSQL execution lifecycle: {\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"cleanup_verified\":false,\"cli_pid\":652558,\"cli_process_group_id\":652558,\"database\":null}",
+        "json": null,
+        "started_at": "2026-10-17T14:37:30.614372227Z",
+        "finished_at": "2026-10-17T14:37:56.256099689Z",
+        "ambiguous": true
+      }
+    ],
+    "files": [
+      {
+        "artifact_id": "YGkssQ1RQ3eMUXubSAziNr",
+        "path": "V1__shutdown.sql",
+        "sha256": "5e89bcd144078771f442960783cf73dd7b6bfeb9d660633462938f812bfe013a",
+        "kind": "versioned",
+        "version": "1",
+        "size": 52
+      }
+    ],
+    "logs": [
+      {
+        "sequence": 18,
+        "command": "info",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_9g2KpLWUya3dskWrfbvCnp",
+        "created_at": "2026-10-17T14:36:59.980053332Z"
+      },
+      {
+        "sequence": 19,
+        "command": "info",
+        "channel": "stdout",
+        "message": "{\"allSchemasEmpty\":true,\"database\":\"fwm_manager_1792247662514139067\",\"exception\":null,\"flywayVersion\":\"13.10.3\",\"licenseFailed\":false,\"migrations\":[{\"category\":\"Versioned\",\"description\":\"shutdown\",\"executionTime\":0,\"filepath\":\"/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-3095279380/sql/V1__shutdown.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"rawVersion\":\"1\",\"shouldExecuteExpression\":null,\"state\":\"Pending\",\"type\":\"SQL\",\"undoFilepath\":\"\",\"undoable\":\"No\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaName\":\"shutdown\",\"schemaVersion\":null,\"timestamp\":\"2026-10-17T21:37:14.925787633+07:00\"}",
+        "created_at": "2026-10-17T14:37:15.080494415Z"
+      },
+      {
+        "sequence": 20,
+        "command": "info",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:37:15.080494415Z"
+      },
+      {
+        "sequence": 21,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_Hr9dhWbQhHPYqhHix8lvfa",
+        "created_at": "2026-10-17T14:37:15.083739826Z"
+      },
+      {
+        "sequence": 22,
+        "command": "validate",
+        "channel": "stdout",
+        "message": "{\"allErrorMessages\":\"\",\"database\":\"fwm_manager_1792247662514139067\",\"errorDetails\":null,\"flywayVersion\":\"13.10.3\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true,\"warnings\":[]}",
+        "created_at": "2026-10-17T14:37:30.606731501Z"
+      },
+      {
+        "sequence": 23,
+        "command": "validate",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:37:30.606731501Z"
+      },
+      {
+        "sequence": 24,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution correlation: fwm_76F8yvNew970W-phGkdWyG",
+        "created_at": "2026-10-17T14:37:30.614372227Z"
+      },
+      {
+        "sequence": 25,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "Picked up JAVA_TOOL_OPTIONS: -Xmx512m",
+        "created_at": "2026-10-17T14:37:56.256099689Z"
+      },
+      {
+        "sequence": 26,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL backend cleanup could not be verified; execution requires review.",
+        "created_at": "2026-10-17T14:37:56.256099689Z"
+      },
+      {
+        "sequence": 27,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL execution lifecycle: {\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"cleanup_verified\":false,\"cli_pid\":652558,\"cli_process_group_id\":652558,\"database\":null}",
+        "created_at": "2026-10-17T14:37:56.256099689Z"
+      },
+      {
+        "sequence": 28,
+        "command": "orchestration",
+        "channel": "event",
+        "message": "NEEDS_REVIEW: PostgreSQL CLI did not produce a confirmed migration result. Database outcome is indeterminate; backend disappearance alone does not establish rollback. Earlier scripts may have committed. Stream held; no Repair or automatic retry.",
+        "created_at": "2026-10-17T14:37:56.259849753Z"
+      },
+      {
+        "sequence": 29,
+        "command": "migrate",
+        "channel": "stderr",
+        "message": "PostgreSQL recovered lifecycle journal: {\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"events\":[{\"event\":\"ready\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"guard_backend_pid\":101511,\"execution_budget_seconds\":12},{\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"at\":\"2026-10-17T14:37:47.053121261Z\",\"cli_pid\":652558,\"cli_process_group_id\":652558,\"event\":\"cli_started\"},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.892157Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.892157Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.021049Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.892157Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.021049Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101623,\"backend_start\":\"2026-10-17T14:37:49.897212Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.948295Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.892157Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.021049Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101623,\"backend_start\":\"2026-10-17T14:37:49.897212Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.948295Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.035173Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"}]},{\"event\":\"observed\",\"application_name\":\"fwm_76F8yvNew970W-phGkdWyG\",\"snapshots\":[{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.706378Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:49.819597Z\",\"query_start\":\"2026-10-17T14:37:49.821467Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.892157Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.021049Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101623,\"backend_start\":\"2026-10-17T14:37:49.897212Z\",\"state\":\"idle\",\"xact_start\":\"\",\"query_start\":\"2026-10-17T14:37:49.948295Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101601,\"backend_start\":\"2026-10-17T14:37:49.270164Z\",\"state\":\"idle in transaction\",\"xact_start\":\"2026-10-17T14:37:50.010707Z\",\"query_start\":\"2026-10-17T14:37:50.035173Z\",\"wait_event_type\":\"Client\",\"wait_event\":\"ClientRead\"},{\"pid\":101623,\"backend_start\":\"2026-10-17T14:37:49.897212Z\",\"state\":\"active\",\"xact_start\":\"2026-10-17T14:37:50.033979Z\",\"query_start\":\"2026-10-17T14:37:50.043644Z\",\"wait_event_type\":\"Timeout\",\"wait_event\":\"PgSleep\"}]}]}",
+        "created_at": "2026-10-17T14:38:02.662201419Z"
+      }
+    ],
+    "run": {
+      "artifact_name": "V1__shutdown.sql",
+      "status_url": "/api/v1/migration-runs/Haiu3056tt-MI6hKbEnFvU",
+      "logs_url": "/api/v1/migration-runs/Haiu3056tt-MI6hKbEnFvU/logs",
+      "id": "Haiu3056tt-MI6hKbEnFvU",
+      "run_id": "Haiu3056tt-MI6hKbEnFvU",
+      "status": "NEEDS_REVIEW",
+      "target_id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+      "schema_id": "Gi3e1cVDpKNC2p1gqhdWRc",
+      "execution_account_id": "I9aqlysBSAE4ACWf9AXuFQ",
+      "artifact_id": "YGkssQ1RQ3eMUXubSAziNr",
+      "context": {},
+      "snapshot_version": 2,
+      "profile": {
+        "auth_kind": "password",
+        "tls_mode": "verify-full",
+        "ca_sha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "revision": 1
+      },
+      "flyway_configuration": {
+        "caSha256": "cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "configurationPolicyVersion": "2",
+        "databaseName": "fwm_manager_1792247662514139067",
+        "engine": "postgresql",
+        "executionLifecyclePolicy": "postgresql17-bounded-session-v1",
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "shutdown",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "shutdown",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:postgresql://localhost:55440/fwm_manager_1792247662514139067?sslmode=verify-full\u0026sslrootcert-sha256=cc2f5ab85c40e3077c959ca00599534623ecb38bc01a043b9599994a9e1f3a37",
+        "flyway.user": "fwm_exec",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "manager.processTimeoutSeconds": "12",
+        "outputType": "json",
+        "postgresql.idleTimeoutMs": "12000",
+        "postgresql.lockTimeoutMs": "5000",
+        "postgresql.observerSHA256": "824368ecf6417f88162fe555dc3ada722908fdd2166bf35f0067a8871285edad",
+        "postgresql.observerSessionSHA256": "76f022d754db51f926581825b57d146eaef11de901d601286953ab40e0345cfa",
+        "postgresql.standardConformingStrings": "on",
+        "postgresql.statementTimeoutMs": "12000",
+        "postgresql.transactionTimeoutMs": "12000",
+        "tlsMode": "verify-full"
+      },
+      "target": {
+        "engine": "postgresql",
+        "database_name": "fwm_manager_1792247662514139067",
+        "profile_revision": 1,
+        "id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+        "name": "Disposable Manager acceptance",
+        "environment": "DEV",
+        "host": "localhost",
+        "port": 55440,
+        "service": "",
+        "transport": "TCPS",
+        "active": true,
+        "created_at": "2026-10-17T14:34:29Z"
+      },
+      "schema": {
+        "id": "Gi3e1cVDpKNC2p1gqhdWRc",
+        "target_id": "connection-l1u-ycQpw3YwVhLOJKyTQF",
+        "name": "shutdown",
+        "history_schema": "shutdown",
+        "history_table": "flyway_schema_history",
+        "default_account_id": "I9aqlysBSAE4ACWf9AXuFQ",
+        "active": true,
+        "created_at": "2026-10-17T14:34:29Z"
+      },
+      "account": {
+        "id": "I9aqlysBSAE4ACWf9AXuFQ",
+        "name": "fwm_exec",
+        "username": "fwm_exec",
+        "credential_version": 1
+      },
+      "actor_id": "tEmAQY8vsjpYIA0hRjwhE6",
+      "actor_kind": "user",
+      "actor_name": "admin",
+      "source": "WEB",
+      "created_at": "2026-10-17T14:36:54Z",
+      "started_at": "2026-10-17T14:36:54Z",
+      "finished_at": "2026-10-17T14:37:56Z",
+      "flyway_version": "13.10.3",
+      "exit_code": -1,
+      "migration_outcome": "FAILED",
+      "repair_outcome": "SKIPPED",
+      "reason": "PostgreSQL CLI did not produce a confirmed migration result. Database outcome is indeterminate; backend disappearance alone does not establish rollback. Earlier scripts may have committed. Stream held; no Repair or automatic retry.",
+      "preflight": {
+        "ready": true,
+        "local_ready": true,
+        "live_status": "VERIFIED",
+        "blockers": [],
+        "warnings": [
+          "Earlier migrations can remain committed if a later script fails. PostgreSQL failures and uncertain outcomes hold the stream for review; no automatic Repair or retry.",
+          "PostgreSQL role privileges govern cross-schema access; schema configuration is not a security boundary."
+        ],
+        "runtime_version": "13.10.3",
+        "files": [
+          {
+            "path": "V1__shutdown.sql",
+            "sha256": "5e89bcd144078771f442960783cf73dd7b6bfeb9d660633462938f812bfe013a",
+            "kind": "versioned",
+            "version": "1",
+            "size": 52
+          }
+        ],
+        "diagnostics": [
+          {
+            "name": "network",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "authentication",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "service",
+            "status": "VERIFIED",
+            "detail": "The PostgreSQL adapter verified TLS, actual database, PostgreSQL 17 and session/effective role before native Flyway inspection."
+          },
+          {
+            "name": "schema_access",
+            "status": "NOT_VERIFIED",
+            "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege."
+          },
+          {
+            "name": "history",
+            "status": "INSPECTED",
+            "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists."
+          },
+          {
+            "name": "migration_privileges",
+            "status": "NOT_VERIFIED",
+            "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation."
+          },
+          {
+            "name": "database_identity",
+            "status": "VERIFIED",
+            "detail": "Actual PostgreSQL database and session/effective role match the declared profile."
+          }
+        ],
+        "info": {
+          "allSchemasEmpty": true,
+          "database": "fwm_manager_1792247662514139067",
+          "exception": null,
+          "flywayVersion": "13.10.3",
+          "licenseFailed": false,
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "shutdown",
+              "executionTime": 0,
+              "filepath": "/tmp/TestPostgreSQLManagerMigrationLive1073769691/001/runtime/flyway-run-3095279380/sql/V1__shutdown.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "rawVersion": "1",
+              "shouldExecuteExpression": null,
+              "state": "Pending",
+              "type": "SQL",
+              "undoFilepath": "",
+              "undoable": "No",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaName": "shutdown",
+          "schemaVersion": null,
+          "timestamp": "2026-10-17T21:37:14.925787633+07:00"
+        },
+        "validation": {
+          "allErrorMessages": "",
+          "database": "fwm_manager_1792247662514139067",
+          "errorDetails": null,
+          "flywayVersion": "13.10.3",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true,
+          "warnings": []
+        }
+      }
+    }
+  },
+  "test_failed": false
+}

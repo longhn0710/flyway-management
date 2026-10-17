@@ -1,5 +1,7 @@
 # PostgreSQL foundation and disposable lab acceptance — 2026-10-17
 
+Historical foundation decision: this document retains the original disabled-policy and failed termination evidence. The subsequent [migration and recovery acceptance](postgresql-migration-acceptance.md) tracks the separate Gate E/F qualification decision. Statements below describe the foundation package before that increment.
+
 The PostgreSQL connection/discovery and native Info foundation is implemented and locally accepted against **PostgreSQL 17.11**, using the existing pinned Flyway **13.10.3** and pgJDBC **42.7.14**. **PostgreSQL migration remains disabled.** The controlled migration stage exposed an unaccepted termination case; Manager queue, restart, hold and recovery acceptance is incomplete. This package does not declare PostgreSQL fully supported.
 
 This is a local implementation and review package. No OCI publication, GitOps/Kubernetes change, push, merge, deployment, live registry upgrade or Oracle connection was performed. The deployed product and existing Oracle lab were not changed. Baseline source was `b588725`, including the merged Phase 6 decision documents. Existing unrelated documentation and evidence stay outside the implementation commits.

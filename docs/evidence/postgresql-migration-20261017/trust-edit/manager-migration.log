@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLManagerMigrationLive
+=== RUN   TestPostgreSQLManagerMigrationLive/queued-trust-profile-change-rejected
+--- PASS: TestPostgreSQLManagerMigrationLive (166.34s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/queued-trust-profile-change-rejected (159.00s)
+PASS
+ok  	flyway-manager/internal/core	166.346s

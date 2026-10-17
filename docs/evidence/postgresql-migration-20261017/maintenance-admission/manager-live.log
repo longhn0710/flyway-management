@@ -1,0 +1,6 @@
+=== RUN   TestPostgreSQLManagerMigrationLive
+=== RUN   TestPostgreSQLManagerMigrationLive/nontransactional-maintenance-admission
+--- PASS: TestPostgreSQLManagerMigrationLive (66.81s)
+    --- PASS: TestPostgreSQLManagerMigrationLive/nontransactional-maintenance-admission (59.18s)
+PASS
+ok  	flyway-manager/internal/core	66.822s

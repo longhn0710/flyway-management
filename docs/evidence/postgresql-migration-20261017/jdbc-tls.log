@@ -1,0 +1,2 @@
+PASS PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2); identity=fwm_test:fwm_exec; app/restricted schemas=1; second=fwm_test_second:fwm_exec; readonly=fwm_test:fwm_readonly; wrong hostname and unknown CA rejected.
+Image ID: sha256:327daa8fae7178d61f93142f146b098467b345e10997b9eb79f63bd58e5c8f3c
