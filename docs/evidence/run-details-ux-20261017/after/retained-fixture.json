@@ -1,0 +1,57 @@
+{
+  "run_id": "DG5lFUs-8nPKq7_Ra8hqNB",
+  "status": "SUCCEEDED",
+  "repair_outcome": "SKIPPED",
+  "runtime": "13.10.3",
+  "info_migrations": 2,
+  "scripts": [
+    {
+      "name": "V1__wizard_acceptance.sql",
+      "sha256": "8f3f2e99750ed719f2b0e0fcef87a3dd27838603e54f90ed7c9291c04659b2c9",
+      "bytes": 435
+    },
+    {
+      "name": "V2__wizard_deployed_acceptance.sql",
+      "sha256": "9ad9600fbb70b23d02b454617f53ec711bd87a6f02f9f2cbd2945fa51bb81dea",
+      "bytes": 363
+    }
+  ],
+  "journey": [
+    "Overview",
+    "Migration Info rows",
+    "Open V1/V2 SQL",
+    "Preview byte equality",
+    "Clipboard byte equality",
+    "Original download byte equality",
+    "SQL search/highlighting/line numbers/full-screen",
+    "Execution Logs search/channel/follow",
+    "direct link and refresh"
+  ],
+  "blocked_mutations": [],
+  "browser_page_errors": 0,
+  "browser_console_errors": 0,
+  "retained_source_sha256": {
+    "database": "f91569988d856a32bde538b0f2c52c906a2e7f3fa9fbd3eeb5343e20d9f85b2c"
+  },
+  "retained_source_unchanged": true,
+  "copied_master_key_sha256_matches_source": true,
+  "screenshot_dir": "docs/evidence/run-details-ux-20261017/after",
+  "screenshots": [
+    "run-details-1440.png",
+    "run-overview-390.png",
+    "migration-info-1440.png",
+    "migration-info-390.png",
+    "sql-reader-1440.png",
+    "sql-reader-390.png",
+    "sql-fullscreen-390.png",
+    "execution-logs-1440.png",
+    "execution-logs-390.png",
+    "execution-logs-768.png"
+  ],
+  "mobile_fullscreen_reader_rect": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 844
+  }
+}

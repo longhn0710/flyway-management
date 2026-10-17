@@ -62,6 +62,20 @@ func (h phase2) registerExecution(r chi.Router) {
 	r.Get("/migration-runs/{id}/artifacts", result(h, func(r *http.Request) ([]core.Artifact, error) {
 		return h.s.RunArtifacts(r.Context(), actor(r), pathID(r))
 	}))
+	r.Get("/migration-runs/{id}/files", result(h, func(r *http.Request) ([]core.RunFile, error) {
+		return h.s.RunFiles(r.Context(), actor(r), pathID(r))
+	}))
+	r.Get("/migration-runs/{id}/files/content", func(w http.ResponseWriter, r *http.Request) {
+		name, content, e := h.s.RunFileBytes(r.Context(), actor(r), pathID(r), r.URL.Query().Get("artifact_id"), r.URL.Query().Get("path"))
+		if e != nil {
+			h.fail(w, r, e)
+			return
+		}
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": path.Base(name)}))
+		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+		_, _ = w.Write(content)
+	})
 	r.Get("/migration-runs/{id}/executions", result(h, func(r *http.Request) ([]core.RunExecution, error) {
 		return h.s.RunExecutions(r.Context(), actor(r), pathID(r))
 	}))

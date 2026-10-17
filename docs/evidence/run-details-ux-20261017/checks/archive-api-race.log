@@ -1,0 +1,4 @@
+=== RUN   TestRunFilesArchiveUploadAndBoundContent
+--- PASS: TestRunFilesArchiveUploadAndBoundContent (1.24s)
+PASS
+ok  	flyway-manager/internal/httpapi	2.292s

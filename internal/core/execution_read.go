@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flyway-manager/internal/flyway"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -201,6 +202,105 @@ func (s *Service) RunArtifacts(ctx context.Context, a Actor, rid string) ([]Arti
 		out = append(out, x)
 	}
 	return out, rows.Err()
+}
+
+// RunFiles returns the frozen effective file set for a run. Artifact metadata
+// comes from immutable manifests while membership comes from migration_run_items.
+func (s *Service) RunFiles(ctx context.Context, a Actor, rid string) ([]RunFile, error) {
+	if _, e := s.Run(ctx, a, rid); e != nil {
+		return nil, e
+	}
+	rows, e := s.db.QueryContext(ctx, `SELECT i.artifact_id,i.path,COALESCE(f.sha256,''),COALESCE(f.kind,''),COALESCE(f.version,''),COALESCE(length(f.content),-1)
+		FROM migration_run_items i LEFT JOIN migration_files f ON f.artifact_id=i.artifact_id AND f.path=i.path
+		WHERE i.run_id=? ORDER BY i.path,i.artifact_id`, rid)
+	if e != nil {
+		return nil, e
+	}
+	defer rows.Close()
+	out := []RunFile{}
+	for rows.Next() {
+		var x RunFile
+		if e = rows.Scan(&x.ArtifactID, &x.Path, &x.SHA256, &x.Kind, &x.Version, &x.Size); e != nil {
+			return nil, e
+		}
+		if x.Size < 0 {
+			return nil, conflict("A file reserved by this run is unavailable.")
+		}
+		out = append(out, x)
+	}
+	if e = rows.Err(); e != nil {
+		rows.Close()
+		return nil, e
+	}
+	if e = rows.Close(); e != nil {
+		return nil, e
+	}
+	manifests := map[string]Artifact{}
+	for _, x := range out {
+		manifest, ok := manifests[x.ArtifactID]
+		if !ok {
+			manifest, e = s.Artifact(ctx, a, x.ArtifactID)
+			if e != nil {
+				return nil, e
+			}
+			manifests[x.ArtifactID] = manifest
+		}
+		found := false
+		for _, mf := range manifest.Files {
+			if mf.Path == x.Path && mf.SHA256 == x.SHA256 && mf.Kind == x.Kind && mf.Version == x.Version && mf.Size == x.Size {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, conflict("A file reserved by this run does not match its immutable manifest.")
+		}
+	}
+	return out, nil
+}
+
+// RunFileBytes binds content reads to both the authorized run and its frozen
+// artifact/path membership, then checks stored bytes against the frozen digest.
+func (s *Service) RunFileBytes(ctx context.Context, a Actor, rid, aid, path string) (string, []byte, error) {
+	if _, e := s.Run(ctx, a, rid); e != nil {
+		return "", nil, e
+	}
+	var stored, payload, frozen string
+	var size int
+	e := s.db.QueryRowContext(ctx, `SELECT COALESCE(f.sha256,''),COALESCE(length(f.content),-1),a.manifest FROM migration_run_items i LEFT JOIN migration_files f ON f.artifact_id=i.artifact_id AND f.path=i.path JOIN artifacts a ON a.id=i.artifact_id WHERE i.run_id=? AND i.artifact_id=? AND i.path=?`, rid, aid, path).Scan(&stored, &size, &payload)
+	if e != nil {
+		return "", nil, translate(e)
+	}
+	if size < 0 {
+		return "", nil, conflict("A file reserved by this run is unavailable.")
+	}
+	if int64(size) > s.artifactLimits().MaxFileBytes {
+		return "", nil, conflict("The reserved file exceeds the configured read limit.")
+	}
+	var manifest Artifact
+	if e = json.Unmarshal([]byte(payload), &manifest); e != nil {
+		return "", nil, e
+	}
+	for _, f := range manifest.Files {
+		if f.Path == path {
+			frozen = f.SHA256
+			if f.Size != size {
+				return "", nil, conflict("A file reserved by this run does not match its immutable manifest.")
+			}
+			break
+		}
+	}
+	if frozen == "" || stored != frozen {
+		return "", nil, conflict("A file reserved by this run does not match its immutable manifest.")
+	}
+	name, content, e := s.ArtifactBytes(ctx, a, aid, path, 0, false)
+	if e != nil {
+		return "", nil, e
+	}
+	if digest(string(content)) != frozen {
+		return "", nil, fmt.Errorf("artifact integrity failure")
+	}
+	return name, content, nil
 }
 func (s *Service) RunExecutions(ctx context.Context, a Actor, rid string) ([]RunExecution, error) {
 	if _, e := s.Run(ctx, a, rid); e != nil {
