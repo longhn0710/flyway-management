@@ -300,13 +300,24 @@ func safeExecutionError(e error) string {
 	return "Execution prerequisites could not be verified."
 }
 func (s *Service) runCommand(processCtx, persistCtx context.Context, rid, command string, plan executionPlan) (flyway.Result, string, error) {
+	return s.runCommandWithPersistence(processCtx, func() (context.Context, context.CancelFunc) {
+		return persistCtx, func() {}
+	}, rid, command, plan)
+}
+
+// Acquire persistence budgets at each database stage so command execution does
+// not consume the time reserved for retaining its completion evidence.
+func (s *Service) runCommandWithPersistence(processCtx context.Context, persistence func() (context.Context, context.CancelFunc), rid, command string, plan executionPlan) (flyway.Result, string, error) {
 	started := utcNow()
 	eid := id()
 	req := requestFor(plan, command)
 	if req.Engine == "postgresql" {
 		req.ExecutionTag = "fwm_" + eid
 		// Commit correlation before launch so abrupt restart retains the lookup.
-		if _, e := s.db.ExecContext(persistCtx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) VALUES(?,?,?,?,?)`, rid, command, "stderr", "PostgreSQL execution correlation: "+req.ExecutionTag, started); e != nil {
+		correlationCtx, cancel := persistence()
+		_, e := s.db.ExecContext(correlationCtx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) VALUES(?,?,?,?,?)`, rid, command, "stderr", "PostgreSQL execution correlation: "+req.ExecutionTag, started)
+		cancel()
+		if e != nil {
 			return flyway.Result{}, "", e
 		}
 	}
@@ -319,6 +330,8 @@ func (s *Service) runCommand(processCtx, persistCtx context.Context, rid, comman
 	if json.Valid(result.JSON) {
 		payload = string(result.JSON)
 	}
+	persistCtx, cancel := persistence()
+	defer cancel()
 	tx, e := s.db.BeginTx(persistCtx, nil)
 	if e != nil {
 		return result, "", e

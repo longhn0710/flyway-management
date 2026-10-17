@@ -346,13 +346,14 @@ func (s *Service) reconcileRecovered(ctx context.Context) {
 				_ = s.Event(ctx, t, "migration.reconciliation", rid, "NOT_VERIFIED")
 				return
 			}
-			durable, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
-			defer cancel()
-			inspected, _, e := s.runCommand(ctx, durable, rid, "info", plan)
+			persistence := func() (context.Context, context.CancelFunc) {
+				return context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+			}
+			inspected, _, e := s.runCommandWithPersistence(ctx, persistence, rid, "info", plan)
 			if e != nil {
 				return
 			}
-			validated, _, e := s.runCommand(ctx, durable, rid, "validate", plan)
+			validated, _, e := s.runCommandWithPersistence(ctx, persistence, rid, "validate", plan)
 			if e != nil {
 				return
 			}
@@ -360,6 +361,8 @@ func (s *Service) reconcileRecovered(ctx context.Context) {
 			if inspected.Success && validated.Success {
 				outcome = "HISTORY_INSPECTED_REVIEW_REQUIRED"
 			}
+			durable, cancel := persistence()
+			defer cancel()
 			_ = s.Event(durable, t, "migration.reconciliation", rid, outcome)
 		}()
 	}
