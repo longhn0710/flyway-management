@@ -2,7 +2,7 @@
 
 The `/api/v2` API lets Jenkins, GitLab, or another authenticated caller submit SQL artifacts through a project and an explicitly configured deployment target. A deployment target binds one project to an existing Manager database target, schema, and execution account. Environment and destination are selected in Manager configuration; clients never send credentials or arbitrary SQL commands.
 
-All JSON success responses use a `data` property. Collection responses also have `page.limit` and may include `page.next_cursor`. Errors use `application/problem+json` with RFC 9457 fields (`type`, `title`, `status`, `detail`, `instance`) and Manager `code` / `field` extensions. JSON request bodies reject unknown properties and are limited to 1 MiB. Collection cursors use immutable IDs in ascending order and bounded SQL batches. Cursors are signed, caller and exact resource bound; use the returned cursor unchanged. Cursors expire on Manager restart; start the collection again. Logs are append-only and use an offset cursor. The first page defaults to 50 rows and `limit` may be 1 through 200.
+JSON API success responses use a `data` property; the execution-record download returns the frozen JSON document directly. Collection responses also have `page.limit` and may include `page.next_cursor`. Errors use `application/problem+json` with RFC 9457 fields (`type`, `title`, `status`, `detail`, `instance`) and Manager `code` / `field` extensions. JSON request bodies reject unknown properties and are limited to 1 MiB. Collection cursors use immutable IDs in ascending order and bounded SQL batches. Cursors are signed, caller and exact resource bound; use the returned cursor unchanged. Cursors expire on Manager restart; start the collection again. Logs are append-only and use an offset cursor. The first page defaults to 50 rows and `limit` may be 1 through 200.
 
 ## Routes
 
@@ -12,7 +12,7 @@ All JSON success responses use a `data` property. Collection responses also have
 | `GET /projects/{projectID}/deployment-targets` and `GET .../{deploymentTargetID}` | Read project deployment mappings. |
 | `GET .../{deploymentTargetID}/grants` | Administrator reads configured grants. |
 | `POST /projects/{projectID}/deployment-targets` | Administrator creates a mapping. |
-| `PATCH /projects/{projectID}/deployment-targets/{deploymentTargetID}` | Administrator changes its name, active state, or revision using `If-Match: "<revision>"`. Project and destination identity are immutable. Missing preconditions return `428`; stale ones return `412`. |
+| `PATCH /projects/{projectID}/deployment-targets/{deploymentTargetID}` | Administrator changes its name or active state and advances the revision using `If-Match: "<revision>"`. Project and destination identity are immutable. Missing preconditions return `428`; stale ones return `412`. |
 | `PUT /projects/{projectID}/deployment-targets/{deploymentTargetID}/grants` | Administrator sets the specified user/service principal's project-target actions. |
 | `POST /projects/{projectID}/deployment-targets/{deploymentTargetID}/artifacts` | Upload exactly one ZIP with `files`, `deployment_target_revision`, `input_sha256`, optional JSON `external_source`; requires `Idempotency-Key`. |
 | `GET /projects/{projectID}/artifacts/{artifactID}` | Read project-bound artifact metadata. |
