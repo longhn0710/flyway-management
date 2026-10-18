@@ -82,7 +82,7 @@ async function createFakeRuntime(scenario: "success" | "repair") {
   const infoFailed = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Failed","installedOn":"","installedBy":"BROWSER_DEPLOY","installedRank":1}],"flywayVersion":"${version}"}'`;
   const validateFailed = `printf '%s\\n' '{"operation":"validate","validationSuccessful":false,"invalidMigrations":[{"version":"1","filepath":"V1__browser.sql","errorDetails":{"errorCode":"FAILED_VERSIONED_MIGRATION"}}],"validateCount":1,"flywayVersion":"${version}"}'`;
   const validateSuccess = `printf '%s\\n' '{"operation":"validate","validationSuccessful":true,"invalidMigrations":[],"validateCount":1,"flywayVersion":"${version}"}'`;
-  const migrateFailure = `printf '%s\\n' '{"operation":"migrate","migrationsExecuted":0,"migrations":[],"errorDetails":{"message":"deterministic fake migration failure"},"flywayVersion":"${version}"}'; exit 1`;
+  const migrateFailure = `printf '%s\\n' '{"operation":"migrate","migrationsExecuted":0,"migrations":[],"success":false,"error":{"errorCode":"FAILED_VERSIONED_MIGRATION","path":"V1__browser.sql","message":"deterministic fake migration failure"},"flywayVersion":"${version}"}'; exit 1`;
   const migrateSuccess = `printf '%s\\n' '{"operation":"migrate","migrationsExecuted":1,"migrations":[{"version":"1","script":"V1__browser.sql"}],"flywayVersion":"${version}"}'`;
   const repairSuccess = `printf '%s\\n' '{"operation":"repair","repairActions":["Removed failed migration"],"migrationsRemoved":[{"version":"1"}],"migrationsDeleted":[],"migrationsAligned":[],"flywayVersion":"${version}"}'`;
   const script =
@@ -535,6 +535,9 @@ test("controlled fake Flyway keeps a failed migration failed after one safe repa
     await expect(page.getByText("FAILED", { exact: true }).first()).toBeVisible(
       { timeout: 20_000 },
     );
+    await expect(page.getByText("Original migration failure", { exact: true })).toBeVisible();
+    await expect(page.getByText("FAILED_VERSIONED_MIGRATION", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("V1__browser.sql", { exact: true }).first()).toBeVisible();
     await expect(
       page.getByText("Repair completed; migration remains failed"),
     ).toBeVisible({ timeout: 15_000 });

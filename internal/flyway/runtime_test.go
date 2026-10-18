@@ -173,6 +173,70 @@ func TestMutatingCommandWithUnverifiedOutputIsAmbiguous(t *testing.T) {
 	}
 }
 
+func TestOracleRuntimeFailureNeverInvokesRecoveryOrReplay(t *testing.T) {
+	for _, output := range []string{
+		`{"operation":"migrate","error":{"message":"ORA-00955: object already exists"},"flywayVersion":"10.0.0"}`,
+		`{"truncated":`,
+	} {
+		t.Run(output, func(t *testing.T) {
+			marker := filepath.Join(t.TempDir(), "commands")
+			quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'" }
+			body := "printf '%s\\n' \"$1\" >> " + quote(marker) + "\nprintf '%s' " + quote(output) + "\nprintf '%s' 'original Oracle diagnostic' >&2\nexit 7"
+			r, _ := fakeRuntime(t, body, 3)
+			result := r.Execute(context.Background(), testRequest("migrate"))
+			expected := output
+			if json.Valid([]byte(output)) {
+				var payload any
+				_ = json.Unmarshal([]byte(output), &payload)
+				canonical, _ := json.Marshal(payload)
+				expected = string(canonical)
+			}
+			if result.Success || result.ExitCode != 7 || result.Stdout != expected || result.Stderr != "original Oracle diagnostic" {
+				t.Fatalf("original failure evidence lost: %+v", result)
+			}
+			calls, err := os.ReadFile(marker)
+			if err != nil || string(calls) != "migrate\n" {
+				t.Fatalf("runtime invoked recovery or replay: %q, %v", calls, err)
+			}
+		})
+	}
+}
+
+func TestRuntimeRejectsCleanBaselineAndUndo(t *testing.T) {
+	for _, command := range []string{"clean", "baseline", "undo"} {
+		result := New(Config{}, t.TempDir()).Execute(context.Background(), testRequest(command))
+		if result.Success || result.Stderr != "unsupported Flyway command" {
+			t.Fatalf("unsafe command %s accepted: %+v", command, result)
+		}
+	}
+}
+
+func TestOracleRuntimeDistinguishesConfirmedFailureFromAmbiguousCLI(t *testing.T) {
+	// Shape of the pinned runtime's MigrateErrorResult and native migration error
+	// converter. This fixture is offline; it does not claim a live Oracle failure.
+	payload := `{"operation":"migrate","flywayVersion":"10.0.0","success":false,"migrationsExecuted":0,"migrations":[],"error":{"errorCode":"FAILED_VERSIONED_MIGRATION","sqlState":"42000","sqlErrorCode":942,"message":"ORA-00942: table or view does not exist","path":"V1__fail.sql"}}`
+	for _, tc := range []struct {
+		name, output, exit string
+		ambiguous          bool
+	}{
+		{"confirmed", payload, "1", false},
+		{"signal", payload, "143", true},
+		{"generic-cli-error", `{"error":{"errorCode":"ERROR","message":"Invalid flag"}}`, "1", true},
+		{"wrong-version", strings.ReplaceAll(payload, "10.0.0", "99.0.0"), "1", true},
+		{"missing-success", strings.ReplaceAll(payload, `"success":false,`, ""), "1", true},
+		{"malformed", `{"operation":"migrate",`, "1", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := "printf '%s' '" + tc.output + "'; exit " + tc.exit
+			runtime, _ := fakeRuntime(t, body, 3)
+			result := runtime.Execute(context.Background(), testRequest("migrate"))
+			if result.Success || result.Ambiguous != tc.ambiguous {
+				t.Fatalf("wrong native failure classification: %+v", result)
+			}
+		})
+	}
+}
+
 func TestInstallCopiesVerifiedDistributionAndPreservesExistingPin(t *testing.T) {
 	sourceRuntime, source := fakeRuntime(t, `printf '{"operation":"info","schemaVersion":null,"migrations":[],"flywayVersion":"10.0.0"}'`, 3)
 	dataDir := filepath.Join(t.TempDir(), "application-data")

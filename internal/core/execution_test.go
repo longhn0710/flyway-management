@@ -112,7 +112,10 @@ func (f *fakeEngine) Execute(ctx context.Context, r flyway.Request) flyway.Resul
 			f.failed[r.Schema] = failed
 			success = false
 			code = 1
-			obj["error"] = map[string]any{"errorCode": "FAULT", "message": "fixture failure"}
+			obj["success"] = false
+			obj["migrations"] = []any{}
+			obj["migrationsExecuted"] = 0
+			obj["error"] = map[string]any{"errorCode": "FAULT", "message": "fixture failure", "path": failed}
 		} else {
 			for _, p := range fileNames {
 				f.applied[r.Schema][p] = true

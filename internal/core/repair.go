@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"flyway-manager/internal/flyway"
+	"path"
 	"reflect"
 	"strings"
 )
@@ -83,6 +84,9 @@ func repairEligibility(before, after, validation flyway.Result) string {
 	invalid := v.InvalidMigrations[0]
 	if invalid.ErrorDetails.Code != "FAILED_VERSIONED_MIGRATION" || invalid.Version != *failed[0].Version {
 		return "Flyway reported unrelated validation changes; repair could realign or delete history."
+	}
+	if invalid.Filepath != "" && path.Base(strings.ReplaceAll(invalid.Filepath, "\\", "/")) != failed[0].Script {
+		return "Flyway validation and failed history report different SQL files; repair is unsafe."
 	}
 	return ""
 }

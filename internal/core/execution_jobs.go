@@ -166,7 +166,12 @@ func (s *Service) recoverExecution(ctx context.Context) error {
 		return e
 	}
 	// FAILED with claimed=1 covers a crash between persisting the original failure and repair.
-	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='NEEDS_REVIEW',reason=?,finished_at=? WHERE status IN ('PREFLIGHT','RUNNING','REPAIRING') OR (status='FAILED' AND id IN(SELECT run_id FROM jobs WHERE claimed=1))`, reason, now()); e != nil {
+	// Close interrupted Oracle repair assessment independently from the original
+	// migration failure. A restart must never leave it looking pending or rerun it.
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET repair_outcome=CASE WHEN status='REPAIRING' THEN 'FAILED' ELSE 'UNSAFE' END WHERE migration_outcome='FAILED' AND repair_outcome='PENDING' AND target_id IN(SELECT id FROM database_targets WHERE engine='oracle') AND (status IN ('RUNNING','REPAIRING') OR (status='FAILED' AND id IN(SELECT run_id FROM jobs WHERE claimed=1)))`); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='NEEDS_REVIEW',reason=CASE WHEN migration_outcome='FAILED' AND target_id IN(SELECT id FROM database_targets WHERE engine='oracle') THEN reason || ' ' || ? ELSE ? END,finished_at=? WHERE status IN ('PREFLIGHT','RUNNING','REPAIRING') OR (status='FAILED' AND id IN(SELECT run_id FROM jobs WHERE claimed=1))`, reason, reason, now()); e != nil {
 		return e
 	}
 	if _, e = tx.ExecContext(ctx, `UPDATE jobs SET claimed=0 WHERE run_id IN(SELECT id FROM migration_runs WHERE status='NEEDS_REVIEW')`); e != nil {
@@ -294,7 +299,18 @@ func (s *Service) CancelRun(ctx context.Context, t Trace, rid string) error {
 func (s *Service) workerFailure(rid string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = s.changeRun(ctx, rid, "NEEDS_REVIEW", "Execution evidence could not be persisted or operation was interrupted; reconcile the database before further migration.", "", "", nil, true, true)
+	reason := "Execution evidence could not be persisted or operation was interrupted; reconcile the database before further migration."
+	repair := ""
+	if run, err := runScan(s.db.QueryRowContext(ctx, "SELECT "+runColumns+" FROM migration_runs WHERE id=?", rid)); err == nil && run.Target.Engine != "postgresql" && run.MigrationOutcome == "FAILED" {
+		reason = run.Reason + " " + reason
+		if run.RepairOutcome == "PENDING" {
+			repair = "UNSAFE"
+			if run.Status == "REPAIRING" {
+				repair = "FAILED"
+			}
+		}
+	}
+	_ = s.changeRun(ctx, rid, "NEEDS_REVIEW", reason, "", repair, nil, true, true)
 }
 
 // Startup reconciliation only inspects the database through info/validate. Without

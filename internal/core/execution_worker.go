@@ -122,7 +122,7 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 	}
 	clear(plan.password)
 	plan.password = refreshed.password
-	migrated, _, e := s.runCommand(parent, durable, rid, "migrate", plan)
+	migrated, migrationExecutionID, e := s.runCommand(parent, durable, rid, "migrate", plan)
 	if e != nil {
 		return
 	}
@@ -167,11 +167,13 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
-	// The original failure and diagnostics commit before any automatic repair.
-	if e = s.changeRun(durable, rid, "FAILED", "Flyway migrate failed. Oracle DDL may have partially committed.", "FAILED", "PENDING", &migrated.ExitCode, false, false); e != nil {
+	// Commit the original native failure before eligibility checks or Repair.
+	failure := migrationFailure(migrationExecutionID, migrated, nil)
+	failureReason := failure.reason()
+	if e = s.changeRun(durable, rid, "FAILED", failureReason, "FAILED", "PENDING", &migrated.ExitCode, false, false); e != nil {
 		return
 	}
-	if migrated.TimedOut || parent.Err() != nil || len(migrated.JSON) == 0 || migrated.ExitCode == 0 {
+	if migrated.Ambiguous || migrated.TimedOut || parent.Err() != nil || migrated.ExitCode <= 0 || migrated.ExitCode >= 128 || !flyway.ConfirmedMigrationFailure(migrated.JSON, run.FlywayVersion) {
 		if e = s.finishRepair(durable, rid, "UNSAFE", "Migration outcome is ambiguous; repair was not attempted.", info.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
 			completed = true
 		}
@@ -179,13 +181,22 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 	}
 	after, _, e := s.runCommand(parent, durable, rid, "info", plan)
 	if e != nil {
+		if s.finishRepair(durable, rid, "UNSAFE", "Post-failure history evidence could not be persisted; Repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
 		return
 	}
 	failedValidation, _, e := s.runCommand(parent, durable, rid, "validate", plan)
 	if e != nil {
+		if s.finishRepair(durable, rid, "UNSAFE", "Post-failure validation evidence could not be persisted; Repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
 		return
 	}
 	reason := repairEligibility(info, after, failedValidation)
+	if identity := migrationFailure(migrationExecutionID, migrated, after.JSON); identity.IdentityReason != "" && reason == "" {
+		reason = identity.IdentityReason
+	}
 	if reason != "" {
 		if e = s.finishRepair(durable, rid, "UNSAFE", reason, after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
 			completed = true
@@ -197,25 +208,38 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 	// allowlists must stop it even if the migration already failed.
 	repairPlan, authErr := s.planJob(durable, s.db, t.Actor, run)
 	clear(repairPlan.password)
-	if authErr != nil {
-		if e = s.finishRepair(durable, rid, "UNSAFE", "Current execution authorization or mapping changed; repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+	if authErr != nil || parent.Err() != nil {
+		reason := "Current execution authorization or mapping changed; repair was not attempted."
+		if parent.Err() != nil {
+			reason = "Application stopped before automatic Repair; history outcome requires reconciliation. Repair was not attempted."
+		}
+		if e = s.finishRepair(durable, rid, "UNSAFE", reason, after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
 			completed = true
 		}
 		return
 	}
-	if e = s.changeRun(durable, rid, "REPAIRING", "One eligible failed versioned history row; repairing history once without replaying SQL.", "FAILED", "PENDING", nil, false, false); e != nil {
+	if e = s.changeRun(durable, rid, "REPAIRING", failureReason, "FAILED", "PENDING", nil, false, false); e != nil {
 		return
 	}
 	repaired, executionID, e := s.runCommand(parent, durable, rid, "repair", plan)
 	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Repair execution evidence could not be persisted; history outcome requires reconciliation. SQL was not replayed.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
 		return
 	}
 	post, _, e := s.runCommand(parent, durable, rid, "info", plan)
 	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Post-repair history evidence could not be persisted; Repair could not be verified.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
 		return
 	}
 	validated, _, e := s.runCommand(parent, durable, rid, "validate", plan)
 	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Post-repair validation evidence could not be persisted; Repair could not be verified.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
 		return
 	}
 	safe := repaired.Success && repairResultSafe(repaired.JSON) && removedFailedVersion(repaired.JSON, after.JSON) && post.Success && validated.Success && repairHistoryRestored(info.JSON, post.JSON)
@@ -340,6 +364,14 @@ func (s *Service) runCommandWithPersistence(processCtx context.Context, persiste
 	if _, e = tx.ExecContext(persistCtx, `INSERT INTO run_executions VALUES(?,?,?,?,?,?,?,?,?,?,?)`, eid, rid, command, result.Success, result.ExitCode, result.Stdout, result.Stderr, payload, started, finished, result.Ambiguous); e != nil {
 		return result, "", e
 	}
+	if command == "migrate" && req.Engine != "postgresql" && !result.Success {
+		// Close the crash window between retaining the native failure and the
+		// worker's FAILED state transition. Recovery must keep both outcomes and
+		// the original exit/error even if the process stops at that exact point.
+		if _, e = tx.ExecContext(persistCtx, `UPDATE migration_runs SET migration_outcome='FAILED',repair_outcome='PENDING',exit_code=?,reason=? WHERE id=? AND status='RUNNING'`, result.ExitCode, migrationFailure(eid, result, nil).reason(), rid); e != nil {
+			return result, "", e
+		}
+	}
 	var logBytes int64
 	var logCount int
 	if e = tx.QueryRowContext(persistCtx, `SELECT COALESCE(SUM(length(CAST(message AS BLOB))),0),count(*) FROM migration_logs WHERE run_id=?`, rid).Scan(&logBytes, &logCount); e != nil {
@@ -380,7 +412,7 @@ func (s *Service) finishRepair(ctx context.Context, rid, outcome, reason string,
 	if _, e = tx.ExecContext(ctx, `INSERT INTO repair_operations VALUES(?,?,?,?,?,?)`, rid, outcome, reason, rawOrNull(before), rawOrNull(after), executionID); e != nil {
 		return e
 	}
-	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status=?,repair_outcome=?,reason=?,finished_at=? WHERE id=?`, state, outcome, reason, now(), rid); e != nil {
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status=?,repair_outcome=?,finished_at=? WHERE id=?`, state, outcome, now(), rid); e != nil {
 		return e
 	}
 	if hold {

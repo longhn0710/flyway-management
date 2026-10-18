@@ -3531,7 +3531,22 @@ components:
         repair_outcome: {type: string}
         reason: {type: string}
         preflight: {$ref: '#/components/schemas/Preflight'}
+        failure:
+          $ref: '#/components/schemas/MigrationFailure'
       required: [id, run_id, status_url, logs_url, status, target_id, schema_id, execution_account_id, artifact_id, context, target, schema, account, actor_id, actor_kind, actor_name, source, created_at, started_at, finished_at, flyway_version, exit_code, migration_outcome, repair_outcome, reason]
+    MigrationFailure:
+      type: object
+      description: Optional detail on run and record reads, derived from retained original migrate execution and first subsequent history evidence. Repair never replaces this error. No filename/version is inferred from uploaded SQL; empty identity fields include an explicit reason.
+      properties:
+        execution_id: {type: string}
+        script: {type: string}
+        version: {type: string}
+        error_code: {type: string, description: Native Flyway errorCode; empty when not reported.}
+        message: {type: string}
+        exit_code: {type: integer}
+        identity_source: {type: string}
+        identity_reason: {type: string}
+      required: [execution_id, script, version, error_code, message, exit_code, identity_source, identity_reason]
     RunLog:
       type: object
       properties:
