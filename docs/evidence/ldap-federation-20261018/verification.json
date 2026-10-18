@@ -28,5 +28,19 @@
   ],
   "shared_configuration_changed": false,
   "secret_api_values_read_or_decoded": false,
-  "ci_live_lab_case": "opt-in skipped; no cluster credentials in CI"
+  "ci_live_lab_case": "opt-in skipped; no cluster credentials in CI",
+  "supplementary_failure_regressions": {
+    "tests": [
+      "TestLDAPRejectsExpiredTrustedCertificate/ldaps",
+      "TestLDAPRejectsExpiredTrustedCertificate/ldap",
+      "TestLDAPDirectoryOutageDoesNotReuseAuthenticatedIdentity"
+    ],
+    "commands": [
+      "go test ./internal/identityprovider -run TestLDAP -count=1",
+      "go test -race ./internal/identityprovider -count=1"
+    ],
+    "exit_code": 0,
+    "scope": "private TLS/protocol fixtures; supplements the existing real-cluster directory/browser proof",
+    "production_changes": false
+  }
 }

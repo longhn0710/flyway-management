@@ -81,3 +81,8 @@ Existing Manager authentication settings, client registration, trust mounts and 
 - [Keycloak truststore guide](https://www.keycloak.org/server/keycloak-truststore): `KC_TRUSTSTORE_PATHS` and strict hostname handling for LDAP.
 - [Keycloak vault guide](https://www.keycloak.org/server/vault): file-vault support for LDAP bind credentials, realm-prefixed Secret filenames, and build-time enablement.
 - [Kubernetes NetworkPolicy API](https://kubernetes.io/docs/reference/kubernetes-api/networking/network-policy-v1/): namespace and pod selector semantics used by the proposed ingress rules.
+
+
+## Supplementary failure regressions
+
+The completion audit added direct adapter regressions for an explicitly trusted but expired certificate under both LDAPS and StartTLS, plus an outage after a successful bind. `TestLDAPRejectsExpiredTrustedCertificate` returns a sanitized failure/empty identity for both transports; `TestLDAPDirectoryOutageDoesNotReuseAuthenticatedIdentity` stops the previously working listener and proves no cached identity is returned. All LDAP tests and the full adapter race suite passed. These are private TLS/protocol fixtures, supplementing the retained real-directory federation proof; they do not claim a cluster certificate replacement, directory shutdown or shared-deployment acceptance. Production provider and execution code are unchanged.
