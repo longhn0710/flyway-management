@@ -543,7 +543,7 @@ test("controlled fake Flyway holds an Oracle failure without Repair or SQL retry
     ).toBeVisible({ timeout: 15_000 });
     await expect(
       page
-        .getByText("No automatic Repair or SQL retry is performed.", { exact: false })
+        .getByText("Stream held for review; no automatic Repair or SQL retry.", { exact: false })
         .first(),
     ).toBeVisible();
     await expect
@@ -553,7 +553,7 @@ test("controlled fake Flyway holds an Oracle failure without Repair or SQL retry
       ]);
     await expect(
       page
-        .getByText("Oracle DDL may have partially committed", { exact: false })
+        .getByText("DDL may have partially committed", { exact: false })
         .first(),
     ).toBeVisible();
   } finally {

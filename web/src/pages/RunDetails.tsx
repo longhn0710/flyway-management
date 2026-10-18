@@ -223,7 +223,7 @@ export default function RunDetails() {
                 {row.reason || "Flyway reported a failed migration."}{" "}
                 {row.target?.engine === "postgresql"
                   ? "The run remains held for operator review. Earlier scripts may already be committed. No automatic PostgreSQL retry or Repair is performed."
-                  : "Oracle DDL may have partially committed; failed or uncertain runs hold the stream for review. No automatic Repair or SQL retry is performed."}
+                  : "Oracle DDL may have partially committed; this run remains failed regardless of repair outcome."}
               </Notice>
             )}
             {row.status === "NEEDS_REVIEW" ||
