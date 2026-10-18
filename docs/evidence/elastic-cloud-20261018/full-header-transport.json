@@ -1,0 +1,29 @@
+{
+  "source": "isolated current-source Manager via actual HTTP bootstrap/project APIs; no SQL execution",
+  "binary_sha256": "187a374b03951d2639037d7ffe50c54e30d41f9413b12b6e7e80517ecfc78ab6",
+  "collector_pod": "flyway-manager-observability-5845b585b9-ct7xx",
+  "collector_pod_uid": "86b037fd-a280-44ca-8398-d22a0f89a96f",
+  "source_specific_transport_receipt": "NOT_VERIFIED; aggregate counters do not identify records",
+  "source_installation_id": "bc667034cdbcbb3341ac414340f249c4",
+  "source_audit_id": 2,
+  "source_timestamp_unix": 1792291844,
+  "project_id": "Jvg0_24osljTDb029KgAeS",
+  "correlation_id": "worker-local-lab/tnmeD0Tg9w-000004",
+  "event_id": "7ee63cc1059dab6fc2240809f1ee80797afce98714ab50b596a6e7acfca00589",
+  "local_audit_rows": 2,
+  "collector_counters_before": {
+    "receiver_accepted_log_records": 0,
+    "exporter_sent_log_records": 0,
+    "exporter_send_failed_log_records": 0
+  },
+  "collector_counters_after": {
+    "receiver_accepted_log_records": 2.0,
+    "exporter_sent_log_records": 2.0,
+    "exporter_send_failed_log_records": 0
+  },
+  "aggregate_receiver_acceptance": true,
+  "aggregate_exporter_transport_completion": true,
+  "indexed_search": "NOT_VERIFIED; requires separate read-only query access",
+  "dashboard": "NOT_VERIFIED",
+  "kubernetes_secret_values_read_or_decoded": false
+}

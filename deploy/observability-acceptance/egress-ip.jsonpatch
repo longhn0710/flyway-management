@@ -1,0 +1,6 @@
+[
+  {"op":"add","path":"/spec/egress/-","value":{
+    "toCIDRSet":[{"cidr":"34.143.234.157/32"}],
+    "toPorts":[{"ports":[{"port":"443","protocol":"TCP"}]}]
+  }}
+]

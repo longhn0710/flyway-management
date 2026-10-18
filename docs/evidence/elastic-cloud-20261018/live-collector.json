@@ -1,0 +1,37 @@
+{
+  "namespace": "flyway-manager",
+  "pod": "flyway-manager-observability-5845b585b9-ct7xx",
+  "uid": "86b037fd-a280-44ca-8398-d22a0f89a96f",
+  "node": "oci-arm-lab",
+  "images": [
+    {
+      "name": "collector",
+      "image": "sha256:cdb37aa4b4e934e32bb7020995286a7ab44a75e8fae32af73f1456444c3b611c",
+      "imageID": "docker.io/otel/opentelemetry-collector-contrib@sha256:1175b03003053962012f5a231f5567f66a3e8fdb960c7835c0e48f7aa1555806",
+      "restartCount": 0,
+      "ready": true
+    },
+    {
+      "name": "prepare-otlp-auth",
+      "image": "sha256:da841a7026abc0089180121604f6d0ba4324998e2d133eccae13f22707055dc1",
+      "imageID": "docker.io/library/python@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641",
+      "restartCount": 0,
+      "ready": true
+    }
+  ],
+  "auth_format_validation": "OTLP_AUTH_HEADER_FORMAT_VALID",
+  "secret_reference": {
+    "name": "flyway-manager-elastic-api-key",
+    "key": "OTEL_EXPORTER_OTLP_HEADERS",
+    "value_disclosed": false
+  },
+  "endpoint": "https://my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud:443",
+  "resource_attributes": {
+    "service.name": "flyway-manager",
+    "deployment.environment": "homelab"
+  },
+  "acceptance_ip_pin": "34.143.234.157/32",
+  "normal_fqdn_policy": "DNS proxy timed out on both tested nodes; not qualified for unattended rollout",
+  "indexed_search": "NOT_VERIFIED",
+  "dashboard": "NOT_VERIFIED"
+}
