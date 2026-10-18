@@ -1,0 +1,21 @@
+# Strategic merge proposal for the EXISTING Manager; not part of collector apply.
+# Render through the established GitOps chart only after explicit approval.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flyway-manager
+  namespace: flyway-manager
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          volumeMounts:
+            - name: observability-client
+              mountPath: /run/observability-client
+              readOnly: true
+      volumes:
+        - name: observability-client
+          secret:
+            secretName: flyway-manager-observability-client-tls
+            defaultMode: 0440

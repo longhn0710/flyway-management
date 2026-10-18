@@ -19,6 +19,7 @@ import (
 	"flyway-manager/internal/core"
 	"flyway-manager/internal/database"
 	"flyway-manager/internal/httpapi"
+	"flyway-manager/internal/observability"
 	"flyway-manager/web"
 )
 
@@ -61,6 +62,13 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	// Optional telemetry observes committed records independently of execution.
+	// Neither network outages nor export configuration can block server startup.
+	telemetry, exportErr := observability.Start(ctx, cfg.Observability, cfg.DataDir, db.InstallationID, logger)
+	if exportErr != nil {
+		logger.Warn("observability unavailable; local execution and audit remain enabled")
+	}
+	defer telemetry.Close()
 	service, err := core.NewWithMasterKeyFile(ctx, db, cfg.DataDir, cfg.PublicURL, cfg.MasterKeyFile)
 	if err != nil {
 		return err

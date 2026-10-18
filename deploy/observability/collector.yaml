@@ -1,0 +1,76 @@
+# Proposal only; no automatic application/GitOps change.
+receivers:
+  otlp/manager:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 262144
+        tls:
+          cert_file: /run/collector-tls/tls.crt
+          key_file: /run/collector-tls/tls.key
+          client_ca_file: /run/collector-tls/ca.crt
+          min_version: "1.2"
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 192
+    spike_limit_mib: 32
+  filter/manager:
+    error_mode: propagate
+    logs:
+      log_record:
+        - 'resource.attributes["service.name"] != "flyway-manager"'
+        - 'resource.attributes["deployment.environment"] != "homelab"'
+        - 'attributes["schema_version"] != 1'
+  transform/allowlist:
+    error_mode: propagate
+    log_statements:
+      - context: log
+        statements:
+          - 'keep_keys(attributes, ["schema_version", "event_id", "timestamp", "event_type", "severity", "project_id", "instance_id", "engine", "database", "schema", "run_id", "correlation_id", "actor_id", "authentication_provider", "action", "outcome", "duration_ms"])'
+          - 'set(body, "flyway-manager.event.v1")'
+          - 'keep_keys(resource.attributes, ["service.name", "deployment.environment", "service.instance.id", "data_stream.dataset", "data_stream.namespace"])'
+          - 'set(resource.attributes["data_stream.dataset"], "flyway_manager.events")'
+          - 'set(resource.attributes["data_stream.namespace"], "homelab")'
+  batch:
+    timeout: 1s
+    send_batch_size: 64
+    send_batch_max_size: 64
+exporters:
+  otlp_http/elastic:
+    endpoint: https://my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud:443
+    headers: ${file:/run/collector-auth/headers.json}
+    timeout: 10s
+    tls:
+      insecure: false
+      insecure_skip_verify: false
+      min_version: "1.2"
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 60s
+    sending_queue:
+      enabled: true
+      sizer: bytes
+      queue_size: 8388608
+      num_consumers: 1
+      block_on_overflow: false
+service:
+  telemetry:
+    logs:
+      level: warn
+      encoding: json
+    metrics:
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
+  pipelines:
+    logs/manager:
+      receivers: [otlp/manager]
+      processors: [memory_limiter, filter/manager, transform/allowlist, batch]
+      exporters: [otlp_http/elastic]

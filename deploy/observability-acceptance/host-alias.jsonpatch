@@ -1,0 +1,5 @@
+[
+  {"op":"add","path":"/spec/template/spec/hostAliases","value":[
+    {"ip":"34.143.234.157","hostnames":["my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud"]}
+  ]}
+]

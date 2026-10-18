@@ -1,0 +1,14 @@
+# Bounded non-production acceptance only; verify the DNS address before use.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../observability
+patches:
+  - target:
+      kind: Deployment
+      name: flyway-manager-observability
+    path: host-alias.jsonpatch
+  - target:
+      kind: CiliumNetworkPolicy
+      name: flyway-manager-observability-cloud
+    path: egress-ip.jsonpatch
