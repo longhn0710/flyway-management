@@ -36,6 +36,9 @@ type Artifact struct {
 }
 
 func (s *Service) UploadArtifact(ctx context.Context, t Trace, target, schema string, inputs []artifact.Input) (Artifact, error) {
+	return s.uploadArtifact(ctx, t, target, schema, inputs, nil)
+}
+func (s *Service) uploadArtifact(ctx context.Context, t Trace, target, schema string, inputs []artifact.Input, admission *artifactAdmission) (Artifact, error) {
 	if schema == "" {
 		return Artifact{}, invalid("schema_id", "A target schema is required.")
 	}
@@ -58,6 +61,31 @@ func (s *Service) UploadArtifact(ctx context.Context, t Trace, target, schema st
 	}
 	payload, _ := json.Marshal(out)
 	e = s.mutation(ctx, t, "artifact.upload", out.ID, func(tx *sql.Tx) error {
+		if admission == nil {
+			if e := legacyStreamAllowed(ctx, tx, target, schema); e != nil {
+				return e
+			}
+		} else {
+			dest, e := s.deploymentAccess(ctx, tx, t.Actor, admission.Project, admission.Deployment, "upload")
+			if e != nil {
+				return e
+			}
+			if dest.Revision != admission.Revision {
+				return conflict("Deployment Target revision is stale.")
+			}
+			var aid, hash string
+			e = tx.QueryRowContext(ctx, `SELECT artifact_id,request_hash FROM project_artifacts WHERE actor_kind=? AND actor_id=? AND project_id=? AND deployment_target_id=? AND idempotency_key=?`, t.Actor.Kind, t.Actor.ID, admission.Project, admission.Deployment, admission.Key).Scan(&aid, &hash)
+			if e == nil {
+				if hash != admission.RequestHash {
+					return conflict("Idempotency key was already used with a different upload.")
+				}
+				out.ID = aid
+				return nil
+			}
+			if e != sql.ErrNoRows {
+				return e
+			}
+		}
 		if e := s.authorizeExecution(ctx, tx, t.Actor, target, schema); e != nil {
 			return e
 		}
@@ -74,6 +102,9 @@ func (s *Service) UploadArtifact(ctx context.Context, t Trace, target, schema st
 				return e
 			}
 		}
+		if admission != nil {
+			return s.persistArtifactAdmission(ctx, tx, t, out.ID, admission)
+		}
 		return nil
 	})
 	return out, e
@@ -86,6 +117,9 @@ func (s *Service) artifactLimits() artifact.Limits {
 }
 
 func (s *Service) Artifact(ctx context.Context, a Actor, aid string) (Artifact, error) {
+	if e := s.externalArtifactAccess(ctx, s.db, a, aid); e != nil {
+		return Artifact{}, e
+	}
 	var payload string
 	e := s.db.QueryRowContext(ctx, "SELECT manifest FROM artifacts WHERE id=?", aid).Scan(&payload)
 	if e != nil {

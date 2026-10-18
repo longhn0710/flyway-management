@@ -127,9 +127,12 @@ func migrationFailure(executionID string, result flyway.Result, failedInfo json.
 // never a repair error or the repaired resolver view. Both are durable before
 // the worker is allowed to invoke Repair; legacy records need no schema upgrade.
 func (s *Service) runMigrationFailure(ctx context.Context, rid, pin string) (*MigrationFailure, error) {
+	return runMigrationFailureFrom(ctx, s.db, rid, pin)
+}
+func runMigrationFailureFrom(ctx context.Context, q queryer, rid, pin string) (*MigrationFailure, error) {
 	var executionID, payload string
 	var result flyway.Result
-	err := s.db.QueryRowContext(ctx, `SELECT id,result,stdout,stderr,exit_code,ambiguous FROM run_executions WHERE run_id=? AND command='migrate' AND success=0 ORDER BY rowid LIMIT 1`, rid).Scan(&executionID, &payload, &result.Stdout, &result.Stderr, &result.ExitCode, &result.Ambiguous)
+	err := q.QueryRowContext(ctx, `SELECT id,result,stdout,stderr,exit_code,ambiguous FROM run_executions WHERE run_id=? AND command='migrate' AND success=0 ORDER BY rowid LIMIT 1`, rid).Scan(&executionID, &payload, &result.Stdout, &result.Stderr, &result.ExitCode, &result.Ambiguous)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -144,12 +147,12 @@ func (s *Service) runMigrationFailure(ctx context.Context, rid, pin string) (*Mi
 		return migrationFailure(executionID, result, nil), nil
 	}
 	var after string
-	err = s.db.QueryRowContext(ctx, `SELECT before_history FROM repair_operations WHERE run_id=?`, rid).Scan(&after)
+	err = q.QueryRowContext(ctx, `SELECT before_history FROM repair_operations WHERE run_id=?`, rid).Scan(&after)
 	if errors.Is(err, sql.ErrNoRows) {
 		// During assessment there is no completed repair record yet. Use native
 		// insertion order, independent of wall-clock corrections, and never use
 		// the repaired resolver view to identify the original failed script.
-		err = s.db.QueryRowContext(ctx, `SELECT result FROM run_executions WHERE run_id=? AND command='info' AND success=1 AND rowid>(SELECT rowid FROM run_executions WHERE id=?) AND rowid<COALESCE((SELECT min(rowid) FROM run_executions WHERE run_id=? AND command='repair'),9223372036854775807) ORDER BY rowid LIMIT 1`, rid, executionID, rid).Scan(&after)
+		err = q.QueryRowContext(ctx, `SELECT result FROM run_executions WHERE run_id=? AND command='info' AND success=1 AND rowid>(SELECT rowid FROM run_executions WHERE id=?) AND rowid<COALESCE((SELECT min(rowid) FROM run_executions WHERE run_id=? AND command='repair'),9223372036854775807) ORDER BY rowid LIMIT 1`, rid, executionID, rid).Scan(&after)
 	}
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err

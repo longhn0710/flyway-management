@@ -31,6 +31,15 @@ func (s *Service) projectVisible(ctx context.Context, a Actor, id string) (bool,
 	if a.Admin() {
 		return true, nil
 	}
+	// Identity membership and a readable deployment also make a project visible
+	// in the existing browser registry. Legacy resource grouping remains supported.
+	if targets, _, e := s.DeploymentTargetsPage(ctx, a, id, "", 1); e == nil && len(targets) > 0 {
+		return true, nil
+	} else if e != nil {
+		if ce, ok := e.(*Error); !ok || ce.Status != 404 {
+			return false, e
+		}
+	}
 	gs, e := s.Grants(ctx, a.Kind, a.ID)
 	if e != nil {
 		return false, e

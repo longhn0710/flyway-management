@@ -56,6 +56,9 @@ func (s *Service) StopExecution() {
 }
 
 func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key string) (Run, error) {
+	if e := s.checkAdmission(ctx, s.db, t.Actor, in, "read"); e != nil {
+		return Run{}, e
+	}
 	if !validText(key, 200) {
 		return Run{}, invalid("Idempotency-Key", "A nonempty Idempotency-Key of at most 200 bytes is required.")
 	}
@@ -67,6 +70,9 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 	}
 	request, _ := json.Marshal(in)
 	requestHash := digest(string(request))
+	if in.external != nil {
+		requestHash = in.external.RequestHash
+	}
 	var existing, hash string
 	e := s.db.QueryRowContext(ctx, `SELECT run_id,request_hash FROM idempotency_records WHERE actor_kind=? AND actor_id=? AND key=?`, t.Actor.Kind, t.Actor.ID, key).Scan(&existing, &hash)
 	if e == nil {
@@ -109,6 +115,12 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 		if e != sql.ErrNoRows {
 			return e
 		}
+		if e := s.checkAdmission(ctx, tx, t.Actor, in, "execute"); e != nil {
+			return e
+		}
+		if e := s.validateExternalPreflight(ctx, tx, t.Actor, in); e != nil {
+			return e
+		}
 		// Discard unused reservations of cancelled/blocked runs; accepted bytes remain immutable.
 		if _, e = tx.ExecContext(ctx, `DELETE FROM stream_files WHERE target_id=? AND schema_id=? AND NOT EXISTS(SELECT 1 FROM migration_run_items i JOIN migration_runs r ON r.id=i.run_id WHERE i.artifact_id=stream_files.artifact_id AND i.path=stream_files.path AND r.status NOT IN ('CANCELLED','BLOCKED'))`, in.TargetID, in.SchemaID); e != nil {
 			return e
@@ -138,6 +150,9 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 			if _, e = tx.ExecContext(ctx, `INSERT INTO stream_files VALUES(?,?,?,?,?) ON CONFLICT(target_id,schema_id,migration_key) DO UPDATE SET artifact_id=excluded.artifact_id,path=excluded.path`, in.TargetID, in.SchemaID, migrationKey(f.File), f.ArtifactID, f.Path); e != nil {
 				return e
 			}
+		}
+		if e = s.persistRunAdmission(ctx, tx, rid, in); e != nil {
+			return e
 		}
 		if _, e = tx.ExecContext(ctx, `INSERT INTO jobs(run_id) VALUES(?)`, rid); e != nil {
 			return e
@@ -180,6 +195,9 @@ func (s *Service) recoverExecution(ctx context.Context) error {
 	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason=?,finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1)`, reason, now()); e != nil {
 		return e
 	}
+	if e = s.freezeCompletedRecords(ctx, tx); e != nil {
+		return e
+	}
 	return tx.Commit()
 }
 func (s *Service) claim(ctx context.Context) (string, error) {
@@ -189,6 +207,9 @@ func (s *Service) claim(ctx context.Context) (string, error) {
 	}
 	defer tx.Rollback()
 	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason='Stream is held for database reconciliation.',finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1)`, now()); e != nil {
+		return "", e
+	}
+	if e = s.freezeCompletedRecords(ctx, tx); e != nil {
 		return "", e
 	}
 	var rid string
@@ -271,6 +292,11 @@ func (s *Service) changeRun(ctx context.Context, rid, state, reason, migration, 
 	if _, e = tx.ExecContext(ctx, `INSERT INTO migration_logs(run_id,command,channel,message,created_at) VALUES(?,'orchestration','event',?,?)`, rid, state+": "+reason, utcNow()); e != nil {
 		return e
 	}
+	if release {
+		if e = s.freezeCompletedRecords(ctx, tx); e != nil {
+			return e
+		}
+	}
 	return tx.Commit()
 }
 func (s *Service) CancelRun(ctx context.Context, t Trace, rid string) error {
@@ -279,6 +305,11 @@ func (s *Service) CancelRun(ctx context.Context, t Trace, rid string) error {
 		return e
 	}
 	return s.mutation(ctx, t, "migration.cancel", rid, func(tx *sql.Tx) error {
+		if x.ProjectID != "" {
+			if _, e := s.deploymentAccess(ctx, tx, t.Actor, x.ProjectID, x.DeploymentTargetID, "execute"); e != nil {
+				return e
+			}
+		}
 		if e := s.authorizeExecution(ctx, tx, t.Actor, x.TargetID, x.SchemaID); e != nil {
 			return e
 		}
