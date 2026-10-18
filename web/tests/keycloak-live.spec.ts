@@ -94,6 +94,8 @@ test("real Keycloak OIDC browser acceptance and explicit local RBAC", async ({
   page,
 }) => {
   test.skip(!enabled, "set FWM_KEYCLOAK_LIVE=1 to run the isolated Keycloak acceptance");
+  const hostUID = process.getuid?.();
+  if (hostUID === undefined) throw new Error("Keycloak acceptance requires a POSIX host UID");
   test.setTimeout(360_000);
   page.setDefaultTimeout(15_000);
   page.setDefaultNavigationTimeout(15_000);
@@ -259,7 +261,7 @@ test("real Keycloak OIDC browser acceptance and explicit local RBAC", async ({
       // defaults to 1000. Match the runner UID so its private 0700/0600 bind
       // mounts stay private and readable. The pinned image's /opt/keycloak
       // data and config directories are group-0 writable, so retain that GID.
-      "--user", `${process.getuid()}:0`,
+      "--user", `${hostUID}:0`,
       "--label", "flyway-manager.acceptance=keycloak",
       "--tmpfs", "/tmp:rw,nosuid,nodev,size=128m", "--tmpfs", "/opt/keycloak/data:rw,nosuid,nodev,size=512m",
       "--publish", `127.0.0.1:${keycloakPort}:8443`,
