@@ -1,0 +1,1382 @@
+{
+  "acceptance": "real Manager HTTP process, isolated SQLite, native subprocess Flyway fixture",
+  "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+  "artifact_sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+  "client_lost_response_replay": "PASS",
+  "concurrent_submit_single_run": true,
+  "concurrent_upload_single_artifact": true,
+  "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+  "flyway_runtime": "SIMULATED_FIXTURE",
+  "migrate_invocations": 1,
+  "negative_statuses": {
+    "cross_project": 404,
+    "cross_project_artifact": 404,
+    "cross_project_target_list": 404,
+    "legacy_token_adopted_stream_bypass": 409,
+    "missing_token": 401,
+    "revoked_token": 401,
+    "scoped_token_v1_bypass": 403,
+    "stale_revision": 409,
+    "token_without_execute": 403,
+    "wrong_checksum": 422,
+    "wrong_project_target": 404
+  },
+  "no_credentials_exposed": true,
+  "preflight_id": "RcvTaSxwxAjWqoWlg-o_FI",
+  "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+  "real_http_api": "PASS",
+  "real_oracle_execution": "NOT_RUN",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/v2/projects",
+      "response": {
+        "data": [
+          {
+            "id": "e0mRvhtT1no9hnFbr3y6pk",
+            "name": "external-main",
+            "description": "",
+            "status": "active",
+            "created_at": "2026-10-18T15:43:02Z",
+            "updated_at": "2026-10-18T15:43:02Z",
+            "members": []
+          }
+        ],
+        "page": {
+          "limit": 50
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk",
+      "response": {
+        "data": {
+          "id": "e0mRvhtT1no9hnFbr3y6pk",
+          "name": "external-main",
+          "description": "",
+          "status": "active",
+          "created_at": "2026-10-18T15:43:02Z",
+          "updated_at": "2026-10-18T15:43:02Z",
+          "members": []
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/deployment-targets",
+      "response": {
+        "data": [
+          {
+            "id": "KcvuBswYwnib7S15KXtIxa",
+            "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+            "name": "uat",
+            "environment": "UAT",
+            "target_id": "external-native-target",
+            "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+            "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+            "active": true,
+            "revision": 1,
+            "database_name": "External native Oracle",
+            "schema_name": "EXTERNAL_APP",
+            "account_name": "external-deployer",
+            "can_read": true,
+            "can_upload": true,
+            "can_preflight": true,
+            "can_execute": true
+          }
+        ],
+        "page": {
+          "limit": 50
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/deployment-targets/KcvuBswYwnib7S15KXtIxa",
+      "response": {
+        "data": {
+          "id": "KcvuBswYwnib7S15KXtIxa",
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "name": "uat",
+          "environment": "UAT",
+          "target_id": "external-native-target",
+          "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+          "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+          "active": true,
+          "revision": 1,
+          "database_name": "External native Oracle",
+          "schema_name": "EXTERNAL_APP",
+          "account_name": "external-deployer",
+          "can_read": true,
+          "can_upload": true,
+          "can_preflight": true,
+          "can_execute": true
+        }
+      },
+      "status": 200
+    },
+    {
+      "content_type": "multipart/form-data",
+      "method": "POST",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/deployment-targets/KcvuBswYwnib7S15KXtIxa/artifacts",
+      "response": {
+        "data": {
+          "created_at": "2026-10-18T15:43:02Z",
+          "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+          "deployment_target_revision": 1,
+          "external_source": {
+            "system": "acceptance",
+            "execution_id": "native-1",
+            "revision": "abc123"
+          },
+          "files": [
+            {
+              "path": "V1__native.sql",
+              "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+              "kind": "versioned",
+              "version": "1",
+              "size": 45
+            }
+          ],
+          "id": "Fc4RztiMaOuTr05qwsOQlA",
+          "input_sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+          "inputs": [
+            {
+              "name": "release.zip",
+              "sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+              "size": 193
+            }
+          ],
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "sha256": "4295d96eb0bcf33893fa4dd7720f56e317ccbc1e1c02df7a8bdad9f01f4e069e",
+          "total_bytes": 45,
+          "uploader_id": "fdaTOsihW924NQBdUOVKvF",
+          "uploader_kind": "service",
+          "uploader_name": "external-ci"
+        }
+      },
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/deployment-targets/KcvuBswYwnib7S15KXtIxa/preflights",
+      "request": {
+        "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+        "deployment_target_revision": 1,
+        "external_source": {
+          "system": "acceptance",
+          "execution_id": "native-1",
+          "revision": "abc123"
+        }
+      },
+      "response": {
+        "data": {
+          "actor": {
+            "id": "fdaTOsihW924NQBdUOVKvF",
+            "kind": "service",
+            "name": "external-ci"
+          },
+          "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+          "assessment": {
+            "blockers": [],
+            "diagnostics": [
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "network",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "authentication",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "service",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege.",
+                "name": "schema_access",
+                "status": "NOT_VERIFIED"
+              },
+              {
+                "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists.",
+                "name": "history",
+                "status": "INSPECTED"
+              },
+              {
+                "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation.",
+                "name": "migration_privileges",
+                "status": "NOT_VERIFIED"
+              },
+              {
+                "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab.",
+                "name": "database_identity",
+                "status": "NOT_VERIFIED"
+              }
+            ],
+            "files": [
+              {
+                "kind": "versioned",
+                "path": "V1__native.sql",
+                "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+                "size": 45,
+                "version": "1"
+              }
+            ],
+            "info": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "category": "Versioned",
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "installedBy": "",
+                  "installedOnUTC": "",
+                  "installedRank": 0,
+                  "state": "Pending",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "operation": "info",
+              "schemaVersion": null
+            },
+            "live_status": "VERIFIED",
+            "local_ready": true,
+            "ready": true,
+            "runtime_version": "11.20.0",
+            "validation": {
+              "flywayVersion": "11.20.0",
+              "invalidMigrations": [],
+              "operation": "validate",
+              "validateCount": 1,
+              "validationSuccessful": true
+            },
+            "warnings": [
+              "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+              "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+            ]
+          },
+          "blockers": [],
+          "created_at": "2026-10-18T15:43:02Z",
+          "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+          "deployment_target_revision": 1,
+          "destination": {
+            "account_name": "external-deployer",
+            "active": true,
+            "can_execute": true,
+            "can_preflight": true,
+            "can_read": true,
+            "can_upload": true,
+            "database_name": "External native Oracle",
+            "environment": "UAT",
+            "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+            "id": "KcvuBswYwnib7S15KXtIxa",
+            "name": "uat",
+            "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+            "revision": 1,
+            "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+            "schema_name": "EXTERNAL_APP",
+            "target_id": "external-native-target"
+          },
+          "expires_at": "2026-10-18T15:53:02Z",
+          "external_source": {
+            "execution_id": "native-1",
+            "revision": "abc123",
+            "system": "acceptance"
+          },
+          "id": "RcvTaSxwxAjWqoWlg-o_FI",
+          "live_status": "VERIFIED",
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "ready": true,
+          "warnings": [
+            "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+            "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+          ]
+        }
+      },
+      "status": 200
+    },
+    {
+      "location": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+      "method": "POST",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/deployment-targets/KcvuBswYwnib7S15KXtIxa/migration-runs",
+      "request": {
+        "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+        "deployment_target_revision": 1,
+        "external_source": {
+          "system": "acceptance",
+          "execution_id": "native-1",
+          "revision": "abc123"
+        },
+        "preflight_id": "RcvTaSxwxAjWqoWlg-o_FI"
+      },
+      "response": {
+        "data": {
+          "account": {
+            "credential_version": 1,
+            "id": "iNUWs0THnbycuQj6LcpY6T",
+            "name": "external-deployer",
+            "username": "DEPLOY_ADMIN"
+          },
+          "actor_id": "fdaTOsihW924NQBdUOVKvF",
+          "actor_kind": "service",
+          "actor_name": "external-ci",
+          "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+          "artifact_name": "release.zip",
+          "completed": false,
+          "context": {},
+          "created_at": "2026-10-18T15:43:02Z",
+          "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+          "deployment_target_revision": 1,
+          "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+          "exit_code": null,
+          "external_source": {
+            "execution_id": "native-1",
+            "revision": "abc123",
+            "system": "acceptance"
+          },
+          "finished_at": "",
+          "flyway_configuration": {
+            "flyway.baselineOnMigrate": "false",
+            "flyway.callbacks": "",
+            "flyway.cleanDisabled": "true",
+            "flyway.createSchemas": "false",
+            "flyway.defaultSchema": "EXTERNAL_APP",
+            "flyway.ignoreMigrationPatterns": "*:pending",
+            "flyway.oracle.sqlplus": "false",
+            "flyway.outOfOrder": "false",
+            "flyway.placeholderReplacement": "false",
+            "flyway.schemas": "EXTERNAL_APP",
+            "flyway.table": "flyway_schema_history",
+            "flyway.url": "jdbc:oracle:thin:@//native.example:1521/APP",
+            "flyway.user": "DEPLOY_ADMIN",
+            "flyway.validateMigrationNaming": "true",
+            "flyway.validateOnMigrate": "true",
+            "locations": "immutable-run-snapshot",
+            "outputType": "json"
+          },
+          "flyway_version": "11.20.0",
+          "id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "logs_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/logs",
+          "migration_outcome": "",
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "reason": "",
+          "record_available": false,
+          "record_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/record",
+          "repair_outcome": "SKIPPED",
+          "run_id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "schema": {
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z",
+            "default_account_id": "",
+            "history_schema": "EXTERNAL_APP",
+            "history_table": "flyway_schema_history",
+            "id": "ohpdpDFUXDdlRvgsQih1BU",
+            "name": "EXTERNAL_APP",
+            "target_id": "external-native-target"
+          },
+          "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+          "source": "API",
+          "started_at": "",
+          "status": "QUEUED",
+          "status_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+          "target": {
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z",
+            "environment": "UAT",
+            "host": "native.example",
+            "id": "external-native-target",
+            "name": "External native Oracle",
+            "port": 1521,
+            "service": "APP",
+            "transport": "TCP"
+          },
+          "target_id": "external-native-target"
+        }
+      },
+      "retry_after": "2",
+      "status": 202
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+      "response": {
+        "data": {
+          "account": {
+            "credential_version": 1,
+            "id": "iNUWs0THnbycuQj6LcpY6T",
+            "name": "external-deployer",
+            "username": "DEPLOY_ADMIN"
+          },
+          "actor_id": "fdaTOsihW924NQBdUOVKvF",
+          "actor_kind": "service",
+          "actor_name": "external-ci",
+          "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+          "artifact_name": "release.zip",
+          "completed": true,
+          "context": {},
+          "created_at": "2026-10-18T15:43:02Z",
+          "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+          "deployment_target_revision": 1,
+          "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+          "exit_code": 0,
+          "external_source": {
+            "execution_id": "native-1",
+            "revision": "abc123",
+            "system": "acceptance"
+          },
+          "finished_at": "2026-10-18T15:43:02Z",
+          "flyway_configuration": {
+            "flyway.baselineOnMigrate": "false",
+            "flyway.callbacks": "",
+            "flyway.cleanDisabled": "true",
+            "flyway.createSchemas": "false",
+            "flyway.defaultSchema": "EXTERNAL_APP",
+            "flyway.ignoreMigrationPatterns": "*:pending",
+            "flyway.oracle.sqlplus": "false",
+            "flyway.outOfOrder": "false",
+            "flyway.placeholderReplacement": "false",
+            "flyway.schemas": "EXTERNAL_APP",
+            "flyway.table": "flyway_schema_history",
+            "flyway.url": "jdbc:oracle:thin:@//native.example:1521/APP",
+            "flyway.user": "DEPLOY_ADMIN",
+            "flyway.validateMigrationNaming": "true",
+            "flyway.validateOnMigrate": "true",
+            "locations": "immutable-run-snapshot",
+            "outputType": "json"
+          },
+          "flyway_version": "11.20.0",
+          "id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "logs_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/logs",
+          "migration_outcome": "SUCCEEDED",
+          "preflight": {
+            "blockers": [],
+            "diagnostics": [
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "network",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "authentication",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+                "name": "service",
+                "status": "VERIFIED"
+              },
+              {
+                "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege.",
+                "name": "schema_access",
+                "status": "NOT_VERIFIED"
+              },
+              {
+                "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists.",
+                "name": "history",
+                "status": "INSPECTED"
+              },
+              {
+                "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation.",
+                "name": "migration_privileges",
+                "status": "NOT_VERIFIED"
+              },
+              {
+                "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab.",
+                "name": "database_identity",
+                "status": "NOT_VERIFIED"
+              }
+            ],
+            "files": [
+              {
+                "kind": "versioned",
+                "path": "V1__native.sql",
+                "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+                "size": 45,
+                "version": "1"
+              }
+            ],
+            "info": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "category": "Versioned",
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "installedBy": "",
+                  "installedOnUTC": "",
+                  "installedRank": 0,
+                  "state": "Pending",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "operation": "info",
+              "schemaVersion": null
+            },
+            "live_status": "VERIFIED",
+            "local_ready": true,
+            "ready": true,
+            "runtime_version": "11.20.0",
+            "validation": {
+              "flywayVersion": "11.20.0",
+              "invalidMigrations": [],
+              "operation": "validate",
+              "validateCount": 1,
+              "validationSuccessful": true
+            },
+            "warnings": [
+              "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+              "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+            ]
+          },
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "reason": "Flyway migrate and post-migration history validation succeeded.",
+          "record_available": true,
+          "record_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/record",
+          "repair_outcome": "SKIPPED",
+          "run_id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "schema": {
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z",
+            "default_account_id": "",
+            "history_schema": "EXTERNAL_APP",
+            "history_table": "flyway_schema_history",
+            "id": "ohpdpDFUXDdlRvgsQih1BU",
+            "name": "EXTERNAL_APP",
+            "target_id": "external-native-target"
+          },
+          "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+          "source": "API",
+          "started_at": "2026-10-18T15:43:02Z",
+          "status": "SUCCEEDED",
+          "status_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+          "target": {
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z",
+            "environment": "UAT",
+            "host": "native.example",
+            "id": "external-native-target",
+            "name": "External native Oracle",
+            "port": 1521,
+            "service": "APP",
+            "transport": "TCP"
+          },
+          "target_id": "external-native-target"
+        }
+      },
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/logs?limit=1",
+      "response": {
+        "data": [
+          {
+            "sequence": 1,
+            "command": "info",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"category\":\"Versioned\",\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"installedRank\":0,\"state\":\"Pending\",\"type\":\"SQL\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaVersion\":null}",
+            "created_at": "2026-10-18T15:43:02.61145263Z"
+          }
+        ],
+        "page": {
+          "limit": 1,
+          "next_cursor": "eyJTY29wZSI6Ii9hcGkvdjIvcHJvamVjdHMvZTBtUnZodFQxbm85aG5GYnIzeTZway9taWdyYXRpb24tcnVucy9wWHFBU2dBaEJEN2ZNdi1aeERtbHlZL2xvZ3MiLCJBY3RvciI6InNlcnZpY2U6ZmRhVE9zaWhXOTI0TlFCZFVPVkt2RiIsIk9mZnNldCI6MSwiQWZ0ZXIiOiIifQ.JYN0beF79nwShNdTdv1qnQwHwecNuZhUpiDCeJBpnwc"
+        }
+      },
+      "status": 200
+    },
+    {
+      "etag": "\"7aa404a1b9a49a9bdcc274cc0a84e981db08ce2fadd9ff4c9cfa3f82b246be96\"",
+      "method": "GET",
+      "path": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/record",
+      "response": {
+        "artifacts": [
+          {
+            "id": "Fc4RztiMaOuTr05qwsOQlA",
+            "target_id": "external-native-target",
+            "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+            "uploader_id": "fdaTOsihW924NQBdUOVKvF",
+            "uploader_kind": "service",
+            "uploader_name": "external-ci",
+            "created_at": "2026-10-18T15:43:02Z",
+            "sha256": "4295d96eb0bcf33893fa4dd7720f56e317ccbc1e1c02df7a8bdad9f01f4e069e",
+            "total_bytes": 45,
+            "files": [
+              {
+                "path": "V1__native.sql",
+                "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+                "kind": "versioned",
+                "version": "1",
+                "size": 45
+              }
+            ],
+            "inputs": [
+              {
+                "name": "release.zip",
+                "sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+                "size": 193
+              }
+            ]
+          }
+        ],
+        "audit": [
+          {
+            "action": "migration.submit",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 42,
+            "outcome": "success",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "flyway.info",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 48,
+            "outcome": "exit=0 success=true",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "flyway.validate",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 49,
+            "outcome": "exit=0 success=true",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "migration.running",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 50,
+            "outcome": "RUNNING",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "flyway.migrate",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 51,
+            "outcome": "exit=0 success=true",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "flyway.info",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 52,
+            "outcome": "exit=0 success=true",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "flyway.validate",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 53,
+            "outcome": "exit=0 success=true",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          },
+          {
+            "action": "migration.state",
+            "actor_id": "fdaTOsihW924NQBdUOVKvF",
+            "actor_kind": "service",
+            "actor_name": "external-ci",
+            "id": 54,
+            "outcome": "SUCCEEDED",
+            "request_id": "worker-local-lab/bepjpTVVNW-000033",
+            "timestamp": "2026-10-18T15:43:02Z"
+          }
+        ],
+        "executions": [
+          {
+            "id": "b9RzpO4ioaFoN8aV17Cxpt",
+            "command": "info",
+            "success": true,
+            "exit_code": 0,
+            "stdout": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"category\":\"Versioned\",\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"installedRank\":0,\"state\":\"Pending\",\"type\":\"SQL\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaVersion\":null}",
+            "stderr": "",
+            "json": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "category": "Versioned",
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "installedBy": "",
+                  "installedOnUTC": "",
+                  "installedRank": 0,
+                  "state": "Pending",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "operation": "info",
+              "schemaVersion": null
+            },
+            "started_at": "2026-10-18T15:43:02.608005652Z",
+            "finished_at": "2026-10-18T15:43:02.61145263Z",
+            "ambiguous": false
+          },
+          {
+            "id": "wwij3lHZSIpV0czjOc7WfD",
+            "command": "validate",
+            "success": true,
+            "exit_code": 0,
+            "stdout": "{\"flywayVersion\":\"11.20.0\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true}",
+            "stderr": "",
+            "json": {
+              "flywayVersion": "11.20.0",
+              "invalidMigrations": [],
+              "operation": "validate",
+              "validateCount": 1,
+              "validationSuccessful": true
+            },
+            "started_at": "2026-10-18T15:43:02.612889958Z",
+            "finished_at": "2026-10-18T15:43:02.616238176Z",
+            "ambiguous": false
+          },
+          {
+            "id": "8ghnPvn-6QKYeS-WlzLIVd",
+            "command": "migrate",
+            "success": true,
+            "exit_code": 0,
+            "stdout": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"type\":\"SQL\",\"version\":\"1\"}],\"migrationsExecuted\":1,\"operation\":\"migrate\"}",
+            "stderr": "",
+            "json": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "migrationsExecuted": 1,
+              "operation": "migrate"
+            },
+            "started_at": "2026-10-18T15:43:02.621491132Z",
+            "finished_at": "2026-10-18T15:43:02.625035582Z",
+            "ambiguous": false
+          },
+          {
+            "id": "jjratW8swS1fI2haKTtQXP",
+            "command": "info",
+            "success": true,
+            "exit_code": 0,
+            "stdout": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"category\":\"Versioned\",\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"installedBy\":\"DEPLOY_ADMIN\",\"installedOnUTC\":\"2026-10-16T00:00:00Z\",\"installedRank\":1,\"state\":\"Success\",\"type\":\"SQL\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaVersion\":null}",
+            "stderr": "",
+            "json": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "category": "Versioned",
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "installedBy": "DEPLOY_ADMIN",
+                  "installedOnUTC": "2026-10-16T00:00:00Z",
+                  "installedRank": 1,
+                  "state": "Success",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "operation": "info",
+              "schemaVersion": null
+            },
+            "started_at": "2026-10-18T15:43:02.62654053Z",
+            "finished_at": "2026-10-18T15:43:02.629935604Z",
+            "ambiguous": false
+          },
+          {
+            "id": "C3hb01kDr0s89Ji2zCaquY",
+            "command": "validate",
+            "success": true,
+            "exit_code": 0,
+            "stdout": "{\"flywayVersion\":\"11.20.0\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true}",
+            "stderr": "",
+            "json": {
+              "flywayVersion": "11.20.0",
+              "invalidMigrations": [],
+              "operation": "validate",
+              "validateCount": 1,
+              "validationSuccessful": true
+            },
+            "started_at": "2026-10-18T15:43:02.63143608Z",
+            "finished_at": "2026-10-18T15:43:02.635176283Z",
+            "ambiguous": false
+          }
+        ],
+        "finalized_at": "2026-10-18T15:43:02Z",
+        "logs": [
+          {
+            "sequence": 1,
+            "command": "info",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"category\":\"Versioned\",\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"installedBy\":\"\",\"installedOnUTC\":\"\",\"installedRank\":0,\"state\":\"Pending\",\"type\":\"SQL\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaVersion\":null}",
+            "created_at": "2026-10-18T15:43:02.61145263Z"
+          },
+          {
+            "sequence": 2,
+            "command": "validate",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true}",
+            "created_at": "2026-10-18T15:43:02.616238176Z"
+          },
+          {
+            "sequence": 3,
+            "command": "migrate",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"type\":\"SQL\",\"version\":\"1\"}],\"migrationsExecuted\":1,\"operation\":\"migrate\"}",
+            "created_at": "2026-10-18T15:43:02.625035582Z"
+          },
+          {
+            "sequence": 4,
+            "command": "info",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"migrations\":[{\"category\":\"Versioned\",\"description\":\"native\",\"filepath\":\"/tmp/flyway-run/sql/V1__native.sql\",\"installedBy\":\"DEPLOY_ADMIN\",\"installedOnUTC\":\"2026-10-16T00:00:00Z\",\"installedRank\":1,\"state\":\"Success\",\"type\":\"SQL\",\"version\":\"1\"}],\"operation\":\"info\",\"schemaVersion\":null}",
+            "created_at": "2026-10-18T15:43:02.629935604Z"
+          },
+          {
+            "sequence": 5,
+            "command": "validate",
+            "channel": "stdout",
+            "message": "{\"flywayVersion\":\"11.20.0\",\"invalidMigrations\":[],\"operation\":\"validate\",\"validateCount\":1,\"validationSuccessful\":true}",
+            "created_at": "2026-10-18T15:43:02.635176283Z"
+          },
+          {
+            "sequence": 6,
+            "command": "orchestration",
+            "channel": "event",
+            "message": "SUCCEEDED: Flyway migrate and post-migration history validation succeeded.",
+            "created_at": "2026-10-18T15:43:02.637115825Z"
+          }
+        ],
+        "record_version": 1,
+        "repair": {
+          "outcome": "SKIPPED",
+          "reason": "No completed Repair operation.",
+          "before": null,
+          "after": null,
+          "execution_id": ""
+        },
+        "run": {
+          "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+          "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+          "deployment_target_revision": 1,
+          "external_source": {
+            "system": "acceptance",
+            "execution_id": "native-1",
+            "revision": "abc123"
+          },
+          "completed": true,
+          "record_available": true,
+          "artifact_name": "release.zip",
+          "status_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+          "logs_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/logs",
+          "id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "run_id": "pXqASgAhBD7fMv-ZxDmlyY",
+          "status": "SUCCEEDED",
+          "target_id": "external-native-target",
+          "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+          "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+          "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+          "context": {},
+          "flyway_configuration": {
+            "flyway.baselineOnMigrate": "false",
+            "flyway.callbacks": "",
+            "flyway.cleanDisabled": "true",
+            "flyway.createSchemas": "false",
+            "flyway.defaultSchema": "EXTERNAL_APP",
+            "flyway.ignoreMigrationPatterns": "*:pending",
+            "flyway.oracle.sqlplus": "false",
+            "flyway.outOfOrder": "false",
+            "flyway.placeholderReplacement": "false",
+            "flyway.schemas": "EXTERNAL_APP",
+            "flyway.table": "flyway_schema_history",
+            "flyway.url": "jdbc:oracle:thin:@//native.example:1521/APP",
+            "flyway.user": "DEPLOY_ADMIN",
+            "flyway.validateMigrationNaming": "true",
+            "flyway.validateOnMigrate": "true",
+            "locations": "immutable-run-snapshot",
+            "outputType": "json"
+          },
+          "target": {
+            "id": "external-native-target",
+            "name": "External native Oracle",
+            "environment": "UAT",
+            "host": "native.example",
+            "port": 1521,
+            "service": "APP",
+            "transport": "TCP",
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z"
+          },
+          "schema": {
+            "id": "ohpdpDFUXDdlRvgsQih1BU",
+            "target_id": "external-native-target",
+            "name": "EXTERNAL_APP",
+            "history_schema": "EXTERNAL_APP",
+            "history_table": "flyway_schema_history",
+            "default_account_id": "",
+            "active": true,
+            "created_at": "2026-10-18T15:43:02Z"
+          },
+          "account": {
+            "id": "iNUWs0THnbycuQj6LcpY6T",
+            "name": "external-deployer",
+            "username": "DEPLOY_ADMIN",
+            "credential_version": 1
+          },
+          "actor_id": "fdaTOsihW924NQBdUOVKvF",
+          "actor_kind": "service",
+          "actor_name": "external-ci",
+          "source": "API",
+          "created_at": "2026-10-18T15:43:02Z",
+          "started_at": "2026-10-18T15:43:02Z",
+          "finished_at": "2026-10-18T15:43:02Z",
+          "flyway_version": "11.20.0",
+          "exit_code": 0,
+          "migration_outcome": "SUCCEEDED",
+          "repair_outcome": "SKIPPED",
+          "reason": "Flyway migrate and post-migration history validation succeeded.",
+          "preflight": {
+            "ready": true,
+            "local_ready": true,
+            "live_status": "VERIFIED",
+            "blockers": [],
+            "warnings": [
+              "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+              "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+            ],
+            "runtime_version": "11.20.0",
+            "files": [
+              {
+                "path": "V1__native.sql",
+                "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+                "kind": "versioned",
+                "version": "1",
+                "size": 45
+              }
+            ],
+            "diagnostics": [
+              {
+                "name": "network",
+                "status": "VERIFIED",
+                "detail": "Flyway info contacted the configured Oracle service using the selected account."
+              },
+              {
+                "name": "authentication",
+                "status": "VERIFIED",
+                "detail": "Flyway info contacted the configured Oracle service using the selected account."
+              },
+              {
+                "name": "service",
+                "status": "VERIFIED",
+                "detail": "Flyway info contacted the configured Oracle service using the selected account."
+              },
+              {
+                "name": "schema_access",
+                "status": "NOT_VERIFIED",
+                "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege."
+              },
+              {
+                "name": "history",
+                "status": "INSPECTED",
+                "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists."
+              },
+              {
+                "name": "migration_privileges",
+                "status": "NOT_VERIFIED",
+                "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation."
+              },
+              {
+                "name": "database_identity",
+                "status": "NOT_VERIFIED",
+                "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab."
+              }
+            ],
+            "info": {
+              "flywayVersion": "11.20.0",
+              "migrations": [
+                {
+                  "category": "Versioned",
+                  "description": "native",
+                  "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+                  "installedBy": "",
+                  "installedOnUTC": "",
+                  "installedRank": 0,
+                  "state": "Pending",
+                  "type": "SQL",
+                  "version": "1"
+                }
+              ],
+              "operation": "info",
+              "schemaVersion": null
+            },
+            "validation": {
+              "flywayVersion": "11.20.0",
+              "invalidMigrations": [],
+              "operation": "validate",
+              "validateCount": 1,
+              "validationSuccessful": true
+            }
+          }
+        }
+      },
+      "status": 200
+    }
+  ],
+  "restart": {
+    "artifact": {
+      "created_at": "2026-10-18T15:43:02Z",
+      "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+      "deployment_target_revision": 1,
+      "external_source": {
+        "system": "acceptance",
+        "execution_id": "native-1",
+        "revision": "abc123"
+      },
+      "files": [
+        {
+          "path": "V1__native.sql",
+          "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+          "kind": "versioned",
+          "version": "1",
+          "size": 45
+        }
+      ],
+      "id": "Fc4RztiMaOuTr05qwsOQlA",
+      "input_sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+      "inputs": [
+        {
+          "name": "release.zip",
+          "sha256": "250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c",
+          "size": 193
+        }
+      ],
+      "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+      "sha256": "4295d96eb0bcf33893fa4dd7720f56e317ccbc1e1c02df7a8bdad9f01f4e069e",
+      "total_bytes": 45,
+      "uploader_id": "fdaTOsihW924NQBdUOVKvF",
+      "uploader_kind": "service",
+      "uploader_name": "external-ci"
+    },
+    "preflight": {
+      "actor": {
+        "id": "fdaTOsihW924NQBdUOVKvF",
+        "kind": "service",
+        "name": "external-ci"
+      },
+      "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+      "assessment": {
+        "blockers": [],
+        "diagnostics": [
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "network",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "authentication",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "service",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege.",
+            "name": "schema_access",
+            "status": "NOT_VERIFIED"
+          },
+          {
+            "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists.",
+            "name": "history",
+            "status": "INSPECTED"
+          },
+          {
+            "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation.",
+            "name": "migration_privileges",
+            "status": "NOT_VERIFIED"
+          },
+          {
+            "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab.",
+            "name": "database_identity",
+            "status": "NOT_VERIFIED"
+          }
+        ],
+        "files": [
+          {
+            "kind": "versioned",
+            "path": "V1__native.sql",
+            "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+            "size": 45,
+            "version": "1"
+          }
+        ],
+        "info": {
+          "flywayVersion": "11.20.0",
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "native",
+              "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "installedRank": 0,
+              "state": "Pending",
+              "type": "SQL",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaVersion": null
+        },
+        "live_status": "VERIFIED",
+        "local_ready": true,
+        "ready": true,
+        "runtime_version": "11.20.0",
+        "validation": {
+          "flywayVersion": "11.20.0",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true
+        },
+        "warnings": [
+          "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+          "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+        ]
+      },
+      "blockers": [],
+      "created_at": "2026-10-18T15:43:02Z",
+      "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+      "deployment_target_revision": 1,
+      "destination": {
+        "account_name": "external-deployer",
+        "active": true,
+        "can_execute": true,
+        "can_preflight": true,
+        "can_read": true,
+        "can_upload": true,
+        "database_name": "External native Oracle",
+        "environment": "UAT",
+        "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+        "id": "KcvuBswYwnib7S15KXtIxa",
+        "name": "uat",
+        "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+        "revision": 1,
+        "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+        "schema_name": "EXTERNAL_APP",
+        "target_id": "external-native-target"
+      },
+      "expires_at": "2026-10-18T15:53:02Z",
+      "external_source": {
+        "execution_id": "native-1",
+        "revision": "abc123",
+        "system": "acceptance"
+      },
+      "id": "RcvTaSxwxAjWqoWlg-o_FI",
+      "live_status": "VERIFIED",
+      "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+      "ready": true,
+      "warnings": [
+        "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+        "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+      ]
+    },
+    "record_bytes_unchanged": true,
+    "run": {
+      "account": {
+        "credential_version": 1,
+        "id": "iNUWs0THnbycuQj6LcpY6T",
+        "name": "external-deployer",
+        "username": "DEPLOY_ADMIN"
+      },
+      "actor_id": "fdaTOsihW924NQBdUOVKvF",
+      "actor_kind": "service",
+      "actor_name": "external-ci",
+      "artifact_id": "Fc4RztiMaOuTr05qwsOQlA",
+      "artifact_name": "release.zip",
+      "completed": true,
+      "context": {},
+      "created_at": "2026-10-18T15:43:02Z",
+      "deployment_target_id": "KcvuBswYwnib7S15KXtIxa",
+      "deployment_target_revision": 1,
+      "execution_account_id": "iNUWs0THnbycuQj6LcpY6T",
+      "exit_code": 0,
+      "external_source": {
+        "execution_id": "native-1",
+        "revision": "abc123",
+        "system": "acceptance"
+      },
+      "finished_at": "2026-10-18T15:43:02Z",
+      "flyway_configuration": {
+        "flyway.baselineOnMigrate": "false",
+        "flyway.callbacks": "",
+        "flyway.cleanDisabled": "true",
+        "flyway.createSchemas": "false",
+        "flyway.defaultSchema": "EXTERNAL_APP",
+        "flyway.ignoreMigrationPatterns": "*:pending",
+        "flyway.oracle.sqlplus": "false",
+        "flyway.outOfOrder": "false",
+        "flyway.placeholderReplacement": "false",
+        "flyway.schemas": "EXTERNAL_APP",
+        "flyway.table": "flyway_schema_history",
+        "flyway.url": "jdbc:oracle:thin:@//native.example:1521/APP",
+        "flyway.user": "DEPLOY_ADMIN",
+        "flyway.validateMigrationNaming": "true",
+        "flyway.validateOnMigrate": "true",
+        "locations": "immutable-run-snapshot",
+        "outputType": "json"
+      },
+      "flyway_version": "11.20.0",
+      "id": "pXqASgAhBD7fMv-ZxDmlyY",
+      "logs_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/logs",
+      "migration_outcome": "SUCCEEDED",
+      "preflight": {
+        "blockers": [],
+        "diagnostics": [
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "network",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "authentication",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info contacted the configured Oracle service using the selected account.",
+            "name": "service",
+            "status": "VERIFIED"
+          },
+          {
+            "detail": "Flyway info/validate inspect the configured stream; read-only inspection cannot prove every schema DDL privilege.",
+            "name": "schema_access",
+            "status": "NOT_VERIFIED"
+          },
+          {
+            "detail": "Flyway inspected schema history. An empty history does not prove the physical history table already exists.",
+            "name": "history",
+            "status": "INSPECTED"
+          },
+          {
+            "detail": "Read-only validation cannot prove all DDL privileges or cross-schema isolation.",
+            "name": "migration_privileges",
+            "status": "NOT_VERIFIED"
+          },
+          {
+            "detail": "The configured service was contacted; database DBID and actual service identity require an approved Oracle diagnostic adapter/lab.",
+            "name": "database_identity",
+            "status": "NOT_VERIFIED"
+          }
+        ],
+        "files": [
+          {
+            "kind": "versioned",
+            "path": "V1__native.sql",
+            "sha256": "c7e960dff8f81bcc3569ca3ea1c1fbcee396b2d1da14a61fc1f53dc10c39280d",
+            "size": 45,
+            "version": "1"
+          }
+        ],
+        "info": {
+          "flywayVersion": "11.20.0",
+          "migrations": [
+            {
+              "category": "Versioned",
+              "description": "native",
+              "filepath": "/tmp/flyway-run/sql/V1__native.sql",
+              "installedBy": "",
+              "installedOnUTC": "",
+              "installedRank": 0,
+              "state": "Pending",
+              "type": "SQL",
+              "version": "1"
+            }
+          ],
+          "operation": "info",
+          "schemaVersion": null
+        },
+        "live_status": "VERIFIED",
+        "local_ready": true,
+        "ready": true,
+        "runtime_version": "11.20.0",
+        "validation": {
+          "flywayVersion": "11.20.0",
+          "invalidMigrations": [],
+          "operation": "validate",
+          "validateCount": 1,
+          "validationSuccessful": true
+        },
+        "warnings": [
+          "Oracle DDL can commit partially. Flyway repair changes history and never rolls back SQL.",
+          "Oracle privileges govern cross-schema access; schema configuration is not a security boundary."
+        ]
+      },
+      "project_id": "e0mRvhtT1no9hnFbr3y6pk",
+      "reason": "Flyway migrate and post-migration history validation succeeded.",
+      "record_available": true,
+      "record_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY/record",
+      "repair_outcome": "SKIPPED",
+      "run_id": "pXqASgAhBD7fMv-ZxDmlyY",
+      "schema": {
+        "active": true,
+        "created_at": "2026-10-18T15:43:02Z",
+        "default_account_id": "",
+        "history_schema": "EXTERNAL_APP",
+        "history_table": "flyway_schema_history",
+        "id": "ohpdpDFUXDdlRvgsQih1BU",
+        "name": "EXTERNAL_APP",
+        "target_id": "external-native-target"
+      },
+      "schema_id": "ohpdpDFUXDdlRvgsQih1BU",
+      "source": "API",
+      "started_at": "2026-10-18T15:43:02Z",
+      "status": "SUCCEEDED",
+      "status_url": "/api/v2/projects/e0mRvhtT1no9hnFbr3y6pk/migration-runs/pXqASgAhBD7fMv-ZxDmlyY",
+      "target": {
+        "active": true,
+        "created_at": "2026-10-18T15:43:02Z",
+        "environment": "UAT",
+        "host": "native.example",
+        "id": "external-native-target",
+        "name": "External native Oracle",
+        "port": 1521,
+        "service": "APP",
+        "transport": "TCP"
+      },
+      "target_id": "external-native-target"
+    }
+  },
+  "run_id": "pXqASgAhBD7fMv-ZxDmlyY"
+}

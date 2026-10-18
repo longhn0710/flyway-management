@@ -9,3 +9,6 @@
 *.db-shm
 *.db-wal
 *.tsbuildinfo
+
+/.venv/
+/.fm-external-*.json
