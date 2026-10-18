@@ -1,7 +1,7 @@
 {
   "provider": "Keycloak 26.7.0 isolated local fixture",
   "protocol": "Authorization Code with PKCE S256",
-  "issuer": "https://127.0.0.1:40065/realms/flyway-acceptance",
+  "issuer": "https://127.0.0.1:34019/realms/flyway-acceptance",
   "roles": {
     "admin": "Admin",
     "kc-viewer": "Viewer",

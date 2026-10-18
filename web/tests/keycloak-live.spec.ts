@@ -255,6 +255,11 @@ test("real Keycloak OIDC browser acceptance and explicit local RBAC", async ({
     );
 
     await run("docker", ["run", "--detach", "--name", dockerName,
+      // GitHub-hosted runners commonly use UID 1001 while the Keycloak image
+      // defaults to 1000. Match the runner UID so its private 0700/0600 bind
+      // mounts stay private and readable. The pinned image's /opt/keycloak
+      // data and config directories are group-0 writable, so retain that GID.
+      "--user", `${process.getuid()}:0`,
       "--label", "flyway-manager.acceptance=keycloak",
       "--tmpfs", "/tmp:rw,nosuid,nodev,size=128m", "--tmpfs", "/opt/keycloak/data:rw,nosuid,nodev,size=512m",
       "--publish", `127.0.0.1:${keycloakPort}:8443`,
