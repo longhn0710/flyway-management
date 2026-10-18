@@ -18,6 +18,10 @@ func (h phase2) registerProjects(r chi.Router) {
 	}))
 	r.Group(func(r chi.Router) {
 		r.Use(h.admin)
+		r.Delete("/projects/{id}", bodyResult(h, 200, func(r *http.Request, in core.ProjectDeleteInput) (map[string]bool, error) {
+			err := h.s.DeleteProject(r.Context(), trace(r), pathID(r), in)
+			return map[string]bool{"deleted": true}, err
+		}))
 		r.Post("/projects", bodyResult(h, 201, func(r *http.Request, in core.ProjectInput) (core.Project, error) {
 			return h.s.SaveProject(r.Context(), trace(r), "", in)
 		}))
