@@ -1,0 +1,17 @@
+{
+  "provider": "Keycloak 26.7.0 isolated local fixture",
+  "protocol": "Authorization Code with PKCE S256",
+  "issuer": "https://127.0.0.1:40065/realms/flyway-acceptance",
+  "roles": {
+    "admin": "Admin",
+    "kc-viewer": "Viewer",
+    "kc-operator": "Operator"
+  },
+  "untrustedAdminClaimDidNotEscalateViewer": true,
+  "savedUserAndServiceScopesUnchanged": true,
+  "prodGrantsRemainExplicitlyFalse": true,
+  "inactiveUserRejected": true,
+  "localLogoutRevokedManagerSession": true,
+  "localAdminFallbackDuringProviderOutage": true,
+  "upstreamLogout": "not implemented; Manager logout ends the local Manager session only"
+}
