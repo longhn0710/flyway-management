@@ -114,5 +114,6 @@
   },
   "localAdminFallback": true,
   "grantsAndProdPreserved": true,
-  "localRegistrySchema": 8
+  "localRegistrySchema": 8,
+  "federatedRelogin": "prompt=login; cached upstream SSO revocation is not verified"
 }

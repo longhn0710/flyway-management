@@ -68,7 +68,8 @@ test("real OpenLDAP direct bind, Keycloak federation, signed groups and deprovis
   let tempCreated = false, tempDeleted = false;
   const evidence: Record<string, unknown> = { directory: "approved real OpenLDAP lab", keycloakImage: image,
     sharedManagerOrKeycloakChanged: false, sqlExecuted: false, kubernetesSecretValuesReadOrDecoded: false,
-    upstreamLogout: "Manager session only; upstream SSO session is separate" };
+    upstreamLogout: "Manager session only; upstream SSO session is separate",
+    federatedRelogin: "prompt=login; cached upstream SSO revocation is not verified" };
   const ldap = async (operation: string, username = retireUID, passwordFile = retireFile, extra: string[] = []) => {
     const result = parse(await run("go", ["run", "../scripts/identity/ldap-lab", "--operator-directory", operator,
       "--operation", operation, "--uid", username, "--password-file", passwordFile, ...extra]));
