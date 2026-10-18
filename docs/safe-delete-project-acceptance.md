@@ -1,6 +1,6 @@
 # Safe Delete Project — local acceptance, 2026-10-18
 
-The Phase 9 Delete Project slice is implemented on `feat/safe-delete-project`, based on accepted source `f507dcaa543f10cddf2805f06b8169d83fd980d7`. Local acceptance passed. PR CI remains an independent release gate; this report does not authorize merge or deployment. The existing Manager and its data were not changed.
+The Phase 9 Delete Project slice is implemented on `feat/safe-delete-project`, based on accepted source `f507dcaa543f10cddf2805f06b8169d83fd980d7`. Local acceptance and implementation-head [CI 39083672453](https://github.com/longhn0710/flyway-management/actions/runs/39083672453) passed in [PR #6](https://github.com/longhn0710/flyway-management/pull/6). Current-head PR CI remains an independent release gate; this report does not authorize merge or deployment. The existing Manager and its data were not changed.
 
 ## Contract and preservation
 
