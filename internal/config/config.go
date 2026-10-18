@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flyway-manager/internal/artifact"
 	"flyway-manager/internal/flyway"
+	"flyway-manager/internal/observability"
 	"fmt"
 	"io"
 	"net"
@@ -16,13 +17,14 @@ import (
 
 // Config contains native server settings; authentication providers are managed in SQLite.
 type Config struct {
-	ListenAddress  string          `json:"listen_address"`
-	DataDir        string          `json:"data_dir"`
-	MasterKeyFile  string          `json:"master_key_file,omitempty"`
-	LogLevel       string          `json:"log_level"`
-	PublicURL      string          `json:"public_url"`
-	Flyway         flyway.Config   `json:"flyway"`
-	ArtifactLimits artifact.Limits `json:"artifact_limits"`
+	ListenAddress  string               `json:"listen_address"`
+	DataDir        string               `json:"data_dir"`
+	MasterKeyFile  string               `json:"master_key_file,omitempty"`
+	LogLevel       string               `json:"log_level"`
+	PublicURL      string               `json:"public_url"`
+	Flyway         flyway.Config        `json:"flyway"`
+	ArtifactLimits artifact.Limits      `json:"artifact_limits"`
+	Observability  observability.Config `json:"observability"`
 }
 
 func Load() (Config, error) {

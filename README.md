@@ -30,6 +30,8 @@ make dev-web  # 127.0.0.1:5173, /api proxied to Go
 
 Configuration loads defaults, then an optional JSON file selected by `FLYWAY_MANAGER_CONFIG`, then environment overrides. See [config.example.json](config.example.json).
 
+Optional [structured event export](docs/elastic-cloud-integration.md) is disabled by default. Its scoped Collector proposal uses mutual TLS and bounded queues; SQLite remains authoritative and external outages do not block execution. Elastic ingestion and deployment require separate acceptance and authorization.
+
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `FLYWAY_MANAGER_CONFIG` | unset | JSON configuration path |

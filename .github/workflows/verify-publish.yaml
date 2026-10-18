@@ -22,6 +22,12 @@ jobs:
       - run: npm --prefix web ci
       - run: npx --prefix web playwright install --with-deps chromium
       - run: make check test-race test-e2e security
+      - name: Verify pinned Collector mTLS and independent event allowlist
+        env:
+          FWM_TEST_COLLECTOR_IMAGE: otel/opentelemetry-collector-contrib@sha256:1175b03003053962012f5a231f5567f66a3e8fdb960c7835c0e48f7aa1555806
+        run: |
+          docker pull "$FWM_TEST_COLLECTOR_IMAGE"
+          go test ./internal/observability -run TestCollectorLive -count=1
   publish:
     if: github.event_name != 'pull_request'
     needs: verify

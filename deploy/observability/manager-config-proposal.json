@@ -1,0 +1,9 @@
+{
+  "observability": {
+    "enabled": false,
+    "collector_endpoint": "https://flyway-manager-observability.flyway-manager.svc.cluster.local:4318",
+    "ca_file": "/run/observability-client/ca.crt",
+    "client_certificate_file": "/run/observability-client/tls.crt",
+    "client_key_file": "/run/observability-client/tls.key"
+  }
+}
