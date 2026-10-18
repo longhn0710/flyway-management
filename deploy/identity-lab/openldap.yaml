@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap
+  namespace: flyway-manager-identity-lab
+  labels:
+    app.kubernetes.io/name: openldap
+    app.kubernetes.io/part-of: flyway-manager-phase9
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: openldap
+  ports:
+    - name: ldaps
+      port: 636
+      protocol: TCP
+      targetPort: ldaps
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openldap
+  namespace: flyway-manager-identity-lab
+  labels:
+    app.kubernetes.io/name: openldap
+    app.kubernetes.io/part-of: flyway-manager-phase9
+spec:
+  serviceName: openldap
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openldap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openldap
+        app.kubernetes.io/part-of: flyway-manager-phase9
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 911
+        runAsGroup: 911
+        fsGroup: 911
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: openldap
+          image: docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OPENLDAP_BOOTSTRAP_ORGANIZATION
+              value: Flyway Manager Identity Acceptance
+            - name: OPENLDAP_BOOTSTRAP_SUFFIX
+              value: dc=flyway,dc=lab
+            - name: OPENLDAP_BOOTSTRAP_TLS
+              value: "true"
+            - name: OPENLDAP_BOOTSTRAP_TLS_REQUIRED
+              value: "true"
+            - name: OPENLDAP_BOOTSTRAP_TLS_VERIFY_CLIENT
+              value: never
+            - name: OPENLDAP_BOOTSTRAP_TLS_CERT
+              value: /container/services/openldap/assets/certs/tls.crt
+            - name: OPENLDAP_BOOTSTRAP_TLS_CERT_KEY
+              value: /container/services/openldap/assets/certs/tls.key
+            - name: OPENLDAP_BOOTSTRAP_TLS_CA_CERT
+              value: /container/services/openldap/assets/certs/ca.crt
+            - name: OPENLDAP_BOOTSTRAP_DATA_READONLY
+              value: "true"
+            - name: OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED
+              valueFrom:
+                secretKeyRef:
+                  name: openldap-bootstrap-credentials
+                  key: data-root-password-hashed
+            - name: OPENLDAP_BOOTSTRAP_CONFIG_ROOT_PASSWORD_HASHED
+              valueFrom:
+                secretKeyRef:
+                  name: openldap-bootstrap-credentials
+                  key: config-root-password-hashed
+            - name: OPENLDAP_BOOTSTRAP_DATA_READONLY_PASSWORD_HASHED
+              valueFrom:
+                secretKeyRef:
+                  name: openldap-bootstrap-credentials
+                  key: readonly-password-hashed
+          ports:
+            - name: ldaps
+              containerPort: 6360
+              protocol: TCP
+            - name: ldap-internal
+              containerPort: 3890
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: ldaps
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 36
+          readinessProbe:
+            tcpSocket:
+              port: ldaps
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: ldaps
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/openldap
+            - name: data
+              mountPath: /etc/openldap/slapd.d
+              subPath: config
+            - name: server-tls
+              mountPath: /container/services/openldap/assets/certs
+              readOnly: true
+            - name: runtime
+              mountPath: /run
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: server-tls
+          secret:
+            secretName: openldap-server-tls
+            defaultMode: 0440
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+              - key: ca.crt
+                path: ca.crt
+        - name: runtime
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app.kubernetes.io/name: openldap
+          app.kubernetes.io/part-of: flyway-manager-phase9
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn-workers
+        resources:
+          requests:
+            storage: 1Gi
