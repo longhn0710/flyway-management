@@ -1,0 +1,10 @@
+{
+  "client_id": "flyway-manager",
+  "credential_source": "existing workload runtime environment; values never returned",
+  "http_status": 0,
+  "realm": "kubernetes",
+  "realm_or_client_changed": false,
+  "secret_api_values_read_or_decoded": false,
+  "stage": "admin_authentication",
+  "status": "NOT_VERIFIED"
+}

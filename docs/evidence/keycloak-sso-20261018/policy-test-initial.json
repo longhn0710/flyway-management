@@ -1,0 +1,134 @@
+{
+  "policy_sha256": "9f709cd01eed18510d43ce5274eec8feceb0501e8826b3ed21d6b7c0fc68a99d",
+  "authorization": "user approved this exact policy test",
+  "started_utc": "2026-10-18T03:45:08.607116+00:00",
+  "manager_before": {
+    "uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+    "node": "k8s-worker2",
+    "ip": "10.244.1.229",
+    "image": "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5",
+    "restarts": 0,
+    "ready": true
+  },
+  "realm_client_or_authentication_settings_changed": false,
+  "image_changed": false,
+  "sql_executed": false,
+  "kubernetes_secret_values_read_or_decoded": false,
+  "policy_before": {
+    "state": "ready",
+    "desired_revision": 181,
+    "realized_revision": 181,
+    "proxy_revision": 181,
+    "candidate_rules": [],
+    "proxy_statistics": []
+  },
+  "operator_controls": [
+    {
+      "mode": "discovery",
+      "http_status": 200,
+      "issuer_exact": true,
+      "pkce_s256": true,
+      "bounded_body": true
+    },
+    {
+      "mode": "alternate-sni",
+      "tls_accepted": true,
+      "server_certificate_seen": true
+    },
+    {
+      "mode": "no-sni",
+      "tls_accepted": true,
+      "server_certificate_seen": true
+    }
+  ],
+  "baseline_discovery": {
+    "mode": "discovery",
+    "exception": "SocketTimeoutException"
+  },
+  "created_policy_uid": "d7cb27e8-5fd2-4b8b-889e-2c9b94c52e57",
+  "policy_during": {
+    "state": "ready",
+    "desired_revision": 182,
+    "realized_revision": 182,
+    "proxy_revision": 182,
+    "candidate_rules": [
+      {
+        "derived-from-rules": [
+          [
+            "k8s:io.cilium.k8s.policy.derived-from=CiliumNetworkPolicy",
+            "k8s:io.cilium.k8s.policy.name=flyway-manager-keycloak-https",
+            "k8s:io.cilium.k8s.policy.namespace=flyway-manager",
+            "k8s:io.cilium.k8s.policy.uid=d7cb27e8-5fd2-4b8b-889e-2c9b94c52e57"
+          ]
+        ],
+        "rule": "{\"port\":443,\"protocol\":\"TCP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{reserved.remote-node: ,},MatchExpressions:[]LabelSelectorRequirement{},}\":{\"listenerPriority\":116,\"serverNames\":{\"auth.apps.drgdevlab.com\":{}}}}]}"
+      }
+    ],
+    "proxy_statistics": [
+      {
+        "allocated-proxy-port": 10592,
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "manager_probes": [
+    {
+      "mode": "discovery",
+      "exception": "SocketTimeoutException"
+    },
+    {
+      "mode": "alternate-sni",
+      "tls_accepted": false,
+      "server_certificate_seen": false,
+      "exception": "SocketTimeoutException"
+    },
+    {
+      "mode": "no-sni",
+      "tls_accepted": false,
+      "server_certificate_seen": false,
+      "exception": "SocketTimeoutException"
+    }
+  ],
+  "status": "FAIL",
+  "failure_type": "AssertionError",
+  "candidate_removed": true,
+  "policy_final": {
+    "state": "ready",
+    "desired_revision": 183,
+    "realized_revision": 183,
+    "proxy_revision": 183,
+    "candidate_rules": [],
+    "proxy_statistics": [
+      {
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "other_egress_preserved": true,
+  "restored_discovery": {
+    "mode": "discovery",
+    "exception": "SocketTimeoutException"
+  },
+  "manager_after": {
+    "uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+    "node": "k8s-worker2",
+    "ip": "10.244.1.229",
+    "image": "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5",
+    "restarts": 0,
+    "ready": true
+  },
+  "manager_identity_preserved": true,
+  "finished_utc": "2026-10-18T03:45:39.644873+00:00"
+}

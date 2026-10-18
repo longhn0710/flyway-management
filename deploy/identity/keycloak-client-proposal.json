@@ -1,6 +1,6 @@
 {
   "clientId": "flyway-manager",
-  "enabled": true,
+  "enabled": false,
   "protocol": "openid-connect",
   "clientAuthenticatorType": "client-secret",
   "publicClient": false,

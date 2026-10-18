@@ -1,0 +1,194 @@
+{
+  "policy_sha256": "9f709cd01eed18510d43ce5274eec8feceb0501e8826b3ed21d6b7c0fc68a99d",
+  "authorization": "user approved this exact policy test",
+  "started_utc": "2026-10-18T03:49:12.205144+00:00",
+  "manager_before": {
+    "uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+    "node": "k8s-worker2",
+    "ip": "10.244.1.229",
+    "image": "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5",
+    "restarts": 0,
+    "ready": true
+  },
+  "realm_client_or_authentication_settings_changed": false,
+  "image_changed": false,
+  "sql_executed": false,
+  "kubernetes_secret_values_read_or_decoded": false,
+  "policy_before": {
+    "state": "ready",
+    "desired_revision": 183,
+    "realized_revision": 183,
+    "proxy_revision": 183,
+    "candidate_rules": [],
+    "proxy_statistics": [
+      {
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "operator_controls": [
+    {
+      "mode": "discovery",
+      "http_status": 200,
+      "issuer_exact": true,
+      "pkce_s256": true,
+      "bounded_body": true
+    },
+    {
+      "mode": "alternate-sni",
+      "tls_accepted": true,
+      "server_certificate_seen": true
+    },
+    {
+      "mode": "no-sni",
+      "tls_accepted": true,
+      "server_certificate_seen": true
+    }
+  ],
+  "manager_addresses": {
+    "mode": "addresses",
+    "resolved": [
+      "100.125.138.71"
+    ],
+    "proxy": "DIRECT"
+  },
+  "baseline_discovery": {
+    "mode": "discovery",
+    "exception": "SocketTimeoutException"
+  },
+  "created_policy_uid": "2ea6c642-25e4-4316-a2aa-0e1aeaabf848",
+  "policy_during": {
+    "state": "ready",
+    "desired_revision": 184,
+    "realized_revision": 184,
+    "proxy_revision": 184,
+    "candidate_rules": [
+      {
+        "derived-from-rules": [
+          [
+            "k8s:io.cilium.k8s.policy.derived-from=CiliumNetworkPolicy",
+            "k8s:io.cilium.k8s.policy.name=flyway-manager-keycloak-https",
+            "k8s:io.cilium.k8s.policy.namespace=flyway-manager",
+            "k8s:io.cilium.k8s.policy.uid=2ea6c642-25e4-4316-a2aa-0e1aeaabf848"
+          ]
+        ],
+        "rule": "{\"port\":443,\"protocol\":\"TCP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{reserved.remote-node: ,},MatchExpressions:[]LabelSelectorRequirement{},}\":{\"listenerPriority\":116,\"serverNames\":{\"auth.apps.drgdevlab.com\":{}}}}]}"
+      }
+    ],
+    "proxy_statistics": [
+      {
+        "allocated-proxy-port": 10592,
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "manager_probes": [
+    {
+      "mode": "discovery",
+      "exception": "SocketTimeoutException"
+    },
+    {
+      "mode": "alternate-sni",
+      "tls_accepted": false,
+      "server_certificate_seen": false,
+      "exception": "SocketTimeoutException"
+    },
+    {
+      "mode": "no-sni",
+      "tls_accepted": false,
+      "server_certificate_seen": false,
+      "exception": "SocketTimeoutException"
+    }
+  ],
+  "policy_after_probes": {
+    "state": "ready",
+    "desired_revision": 184,
+    "realized_revision": 184,
+    "proxy_revision": 184,
+    "candidate_rules": [
+      {
+        "derived-from-rules": [
+          [
+            "k8s:io.cilium.k8s.policy.derived-from=CiliumNetworkPolicy",
+            "k8s:io.cilium.k8s.policy.name=flyway-manager-keycloak-https",
+            "k8s:io.cilium.k8s.policy.namespace=flyway-manager",
+            "k8s:io.cilium.k8s.policy.uid=2ea6c642-25e4-4316-a2aa-0e1aeaabf848"
+          ]
+        ],
+        "rule": "{\"port\":443,\"protocol\":\"TCP\",\"l7-rules\":[{\"\\u0026LabelSelector{MatchLabels:map[string]string{reserved.remote-node: ,},MatchExpressions:[]LabelSelectorRequirement{},}\":{\"listenerPriority\":116,\"serverNames\":{\"auth.apps.drgdevlab.com\":{}}}}]}"
+      }
+    ],
+    "proxy_statistics": [
+      {
+        "allocated-proxy-port": 10592,
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "status": "FAIL",
+  "failure_type": "AssertionError",
+  "endpoint_443_monitor": [
+    "Policy verdict log: flow 0xd6107883 local EP ID 3154, remote ID kube-apiserver, proto 6, egress, action redirect, auth: disabled, match L3-L4, 10.244.1.229:34722 -> 100.125.138.71:443 tcp SYN",
+    "-> proxy port 10592 flow 0xd6107883 , identity 2038->unknown state new ifindex 0 orig-ip 0.0.0.0: 10.244.1.229:34722 -> 100.125.138.71:443 tcp SYN",
+    "Policy verdict log: flow 0x5b278722 local EP ID 3154, remote ID kube-apiserver, proto 6, egress, action redirect, auth: disabled, match L3-L4, 10.244.1.229:34732 -> 100.125.138.71:443 tcp SYN",
+    "-> proxy port 10592 flow 0x5b278722 , identity 2038->unknown state new ifindex 0 orig-ip 0.0.0.0: 10.244.1.229:34732 -> 100.125.138.71:443 tcp SYN",
+    "Policy verdict log: flow 0xf903e1a6 local EP ID 3154, remote ID kube-apiserver, proto 6, egress, action redirect, auth: disabled, match L3-L4, 10.244.1.229:37058 -> 100.125.138.71:443 tcp SYN",
+    "-> proxy port 10592 flow 0xf903e1a6 , identity 2038->unknown state new ifindex 0 orig-ip 0.0.0.0: 10.244.1.229:37058 -> 100.125.138.71:443 tcp SYN"
+  ],
+  "candidate_removed": true,
+  "policy_final": {
+    "state": "ready",
+    "desired_revision": 185,
+    "realized_revision": 185,
+    "proxy_revision": 185,
+    "candidate_rules": [],
+    "proxy_statistics": [
+      {
+        "location": "egress",
+        "port": 443,
+        "protocol": "tls",
+        "statistics": {
+          "requests": {},
+          "responses": {}
+        }
+      }
+    ]
+  },
+  "other_egress_preserved": true,
+  "restored_discovery": {
+    "mode": "discovery",
+    "exception": "SocketTimeoutException"
+  },
+  "manager_after": {
+    "uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+    "node": "k8s-worker2",
+    "ip": "10.244.1.229",
+    "image": "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5",
+    "restarts": 0,
+    "ready": true
+  },
+  "manager_identity_preserved": true,
+  "finished_utc": "2026-10-18T03:49:45.102287+00:00",
+  "active_bpf_443_rows": [
+    "Allow    Egress      reserved:remote-node                                                                           443/TCP      10592        disabled    -         -         24       0",
+    "Allow    Egress      reserved:kube-apiserver                                                                        443/TCP      10592        disabled    666       9         24       0"
+  ]
+}
