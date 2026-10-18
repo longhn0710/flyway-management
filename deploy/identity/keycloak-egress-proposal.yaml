@@ -1,0 +1,21 @@
+# Review artifact only. Excluded from all apply sets; requires explicit approval.
+# SNI matching filters ClientHello; TLS stays end-to-end with the canonical issuer.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: flyway-manager-keycloak-https
+  namespace: flyway-manager
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: flyway-manager
+      app.kubernetes.io/name: flyway-manager
+  egress:
+    - toEntities:
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+          serverNames:
+            - auth.apps.drgdevlab.com

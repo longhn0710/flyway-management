@@ -1,0 +1,23 @@
+{
+  "private_material_directory": "/home/longhn0710/.local/share/flyway-manager/phase9-keycloak-registration-20261018T040826Z",
+  "secret_reference": "flyway-manager/flyway-manager-keycloak-oidc",
+  "secret_data_key": "client-secret",
+  "secret_values_printed_or_decoded": false,
+  "manager_settings_changed": false,
+  "keycloak": {
+    "client_create_attempts": 0,
+    "client_id": "flyway-manager",
+    "client_uuid": "d78f7e46-864b-4fe7-bfdd-a8a5a74da322",
+    "kubernetes_secret_values_read_or_decoded": false,
+    "mismatched_fields": [
+      "attributes"
+    ],
+    "own_admin_session_logged_out": true,
+    "realm": "kubernetes",
+    "stage": "created_configuration_mismatch",
+    "status": "NOT_VERIFIED"
+  },
+  "status": "NOT_VERIFIED",
+  "stage": "disabled_registration_not_verified_no_mutation_retry",
+  "temporary_remote_binary_removed": true
+}

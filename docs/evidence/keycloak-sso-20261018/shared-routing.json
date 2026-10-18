@@ -1,0 +1,25 @@
+{
+  "shared_keycloak": {
+    "namespace": "keycloak",
+    "pod": "keycloak-75996959ff-czsck",
+    "uid": "5a2743d2-f1fa-4d5d-ae9b-ea1c463e4123",
+    "image": "quay.io/keycloak/keycloak:26.7.0",
+    "image_id": "sha256:60e153026e8f53ee2c3877b23aa664a6fb24ea99c57085b40cbb77ca2be01e3d"
+  },
+  "manager": {
+    "pod": "flyway-manager-796467b89c-wsdz6",
+    "uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+    "image": "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5",
+    "restarts": 0
+  },
+  "canonical_issuer": "https://auth.apps.drgdevlab.com/realms/kubernetes",
+  "manager_pod_dns": "100.125.138.71",
+  "destination": "ingress-nginx-controller on k8s-master; hostNetwork TCP443",
+  "read_only_https_probe": "CANONICAL_KEYCLOAK_PROBE_FAILED SocketTimeoutException",
+  "temporary_probe_files_removed": true,
+  "cilium_enable_node_selector_labels": "false",
+  "shared_realm_or_client_changed": false,
+  "manager_authentication_or_network_policy_changed": false,
+  "secret_values_read_or_decoded": false,
+  "conclusion": "shared Manager-to-issuer route NOT_VERIFIED; egress review/authorization required before real shared-realm acceptance"
+}

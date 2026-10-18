@@ -1,0 +1,12 @@
+{
+  "admin_authentication_duration_ms": 2341,
+  "client_id": "flyway-manager",
+  "credential_source": "existing workload runtime environment; values never returned",
+  "matching_clients": [],
+  "matching_count": 0,
+  "own_admin_session_logged_out": true,
+  "realm": "kubernetes",
+  "realm_or_client_changed": false,
+  "secret_api_values_read_or_decoded": false,
+  "status": "OBSERVED"
+}

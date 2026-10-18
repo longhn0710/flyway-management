@@ -1,0 +1,111 @@
+# Keycloak OIDC SSO — Phase 9.2
+
+## Existing integration and safety contract
+
+Flyway Manager already implements OIDC Authorization Code with PKCE S256, browser-bound one-use state and nonce, a confidential client, verified HTTPS discovery/JWKS/token exchange, and explicit `(provider, issuer, subject)` user lookup. The application assigns the role and grants stored on that exact registered user. Provider claims such as `realm_access.roles`, email, and username do not create users or grant authority. Login fails closed for an absent or inactive mapping. Local login is independently configured and remains enabled during this acceptance.
+
+Manager logout revokes its local browser session. The current callback path does not call Keycloak's RP-initiated logout endpoint, so it does not end the user's Keycloak SSO session or revoke other relying-party sessions. A subsequent SSO start may reuse the upstream Keycloak session. Do not describe this as global logout or provider-session revocation. The [Keycloak 26.7 Server Administration Guide](https://www.keycloak.org/docs/26.7.0/server_admin/index.html) documents RP-initiated logout separately and requires a client ID or ID-token hint when a post-logout URI is used; adding that behavior needs a separately reviewed implementation and client configuration.
+
+## Proposed shared homelab client (not registered)
+
+The live realm `kubernetes` and issuer were discovered read-only. No Flyway client was registered or changed by this work. After realm/client-owner approval, register one confidential OpenID Connect web client with this reviewed intent:
+
+```json
+{
+  "clientId": "flyway-manager",
+  "enabled": false,
+  "protocol": "openid-connect",
+  "clientAuthenticatorType": "client-secret",
+  "publicClient": false,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "redirectUris": [
+    "https://flyway-manager.apps.drgdevlab.com/api/v1/auth/oidc/callback"
+  ],
+  "webOrigins": ["https://flyway-manager.apps.drgdevlab.com"],
+  "attributes": {"pkce.code.challenge.method": "S256"}
+}
+```
+
+The proposed shared client is created disabled. Enabling it and changing Manager authentication settings require a separate activation gate after verified routing and preservation checks. No wildcard redirect, password grant, implicit grant, service account, role mapper, or automatic role provisioning is proposed. The callback must be compared byte-for-byte with the live Manager `public_url` before any registration. Expected issuer: `https://auth.apps.drgdevlab.com/realms/kubernetes`.
+
+The client secret is never stored in this branch. The user subsequently approved disabled-client registration and protected Secret creation (see the final registration result below). Protected reference: Kubernetes Secret `flyway-manager-keycloak-oidc`, namespace `flyway-manager`, key `client-secret`. The Secret now exists, but the current Manager does not read this Kubernetes Secret directly. Before rollout, an approved operator must inject the value through the Admin-only Authentication settings API (which seals it using the installation master key) or a separately approved Secret-backed settings integration. Never place the value in a Git file, command argument, issue, log, screenshot, evidence JSON, or ordinary Secret inventory output. Public settings must continue to report only `client_secret_configured`.
+
+## Proposed connectivity review
+
+The Manager pod selector observed read-only is `app.kubernetes.io/instance=flyway-manager,app.kubernetes.io/name=flyway-manager`. The Keycloak Service selects `app=keycloak` and exposes ports 8080/9000; the public HTTPS issuer resolves through Ingress at `auth.apps.drgdevlab.com`. The Manager's current egress policy allows DNS and database destinations, with no Keycloak egress rule. DNS is needed to resolve the canonical issuer and HTTPS on TCP 443 is needed for discovery, JWKS, and token exchange.
+
+Before approval, inspect current CNI and ingress routing to choose the exact Kubernetes egress peer for the canonical HTTPS hostname. Candidate scope is source selector above, destination limited to the verified ingress controller/backend path for `auth.apps.drgdevlab.com`, TCP 443, and existing DNS only. Do not permit broad internet egress, the whole ingress namespace, or Keycloak's plaintext Service port. Confirm the selected destination still presents the issuer hostname's trusted certificate and that public issuer/JWKS URLs remain unchanged. This initial discovery changed no policy, Service, Ingress, realm or client. The later unapplied policy candidate below remains subject to explicit approval.
+
+## Real-provider local acceptance
+
+`web/tests/keycloak-live.spec.ts` provisions an isolated, ephemeral Keycloak 26.7.0 using the pinned image digest, a private generated realm/client/users, a loopback-only HTTPS listener, and a temporary Manager registry. The application trusts the generated local CA explicitly; its OIDC verification remains enabled. Playwright accepts the fixture certificate only in this isolated browser test. The test disables traces and automatic failure screenshots; the only screenshot is taken after successful sign-in and contains no authorization URL, code, token, password, or client secret. Temporary realm, password, certificate, and Manager files are mode 0600 in a mode 0700 directory and deleted during cleanup. Docker cleanup targets only the uniquely named acceptance container.
+
+Run locally after `make build` and Chromium installation:
+
+```sh
+FWM_KEYCLOAK_LIVE=1 npm --prefix web run test:keycloak
+```
+
+The ordinary browser suite skips this live-provider case. CI pulls the same digest and runs it without shared realm credentials or cluster access. Acceptance checks a real browser authorization-code login and callback; S256/state/nonce request parameters; local Viewer/Operator/Admin mappings; an untrusted Keycloak `admin` realm role failing to elevate a locally mapped Viewer; inactive-account rejection; Manager-session revocation on logout; Admin login while the local provider is stopped; unchanged local user and service-account grants; false PROD bits remaining false; and secret omission from the public settings response. The isolated fixture creates only inert target metadata with no database route and executes no SQL.
+
+## Acceptance result
+
+**PASS — isolated real-provider acceptance on 2026-10-18.** The pinned Keycloak 26.7.0 fixture completed a real browser Authorization Code + PKCE S256 flow over fixture HTTPS with explicit application CA trust. It verified Admin, Operator, and Viewer mappings, rejection of an inactive mapping, non-escalation when Keycloak asserted the `admin` realm role for a local Viewer, Manager-local session revocation, and local Admin login while the provider was stopped. Existing user/service scopes and false PROD grant bits remained unchanged; the public settings response omitted the client secret. No SQL ran and no shared cluster/realm resource was touched. Sanitized evidence is in [`keycloak-acceptance.json`](../web/docs/evidence/keycloak-sso-live-20261018/keycloak-acceptance.json); the post-login screenshot is [`keycloak-admin-postlogin.png`](../web/docs/evidence/keycloak-sso-live-20261018/keycloak-admin-postlogin.png).
+
+This proves protocol integration and app-side mapping behavior. It does not prove shared homelab realm client registration, issuer routing from the deployed Manager pod, Kubernetes egress policy, upstream Keycloak SSO logout/revocation, or a deployed rollout. Those remain approval and deployment gates. Manager logout currently revokes only the local Manager session, as described above.
+
+
+## Current shared-deployment gate — 2026-10-18
+
+The initial real-provider proof in PR [#8](https://github.com/longhn0710/flyway-management/pull/8), head `bbf0261`, passed [CI 39090691935](https://github.com/longhn0710/flyway-management/actions/runs/39090691935). Existing protocol/mapping acceptance is complete for the isolated pinned real provider; shared-deployment acceptance remains pending.
+
+The concrete client representation is retained as [`keycloak-client-proposal.json`](../deploy/identity/keycloak-client-proposal.json), with no secret. It was subsequently registered disabled under explicit user authorization, as recorded below. Activation still requires approved routing/settings, secure delivery through the supported settings path and exact subjects for local role/grant mapping. Local Admin must remain enabled; no provider claim grants authority.
+
+A fresh read-only probe from the existing Manager Pod resolved the canonical hostname to `100.125.138.71`, the host-network ingress controller on `k8s-master`. Verified HTTPS discovery using the bundled JRE's normal trust/hostname checks timed out after four seconds. No trust bypass, auth/settings or policy change was made, and temporary probe files were removed. [`shared-routing.json`](evidence/keycloak-sso-20261018/shared-routing.json) records this result and exact workload identities; [`OIDCDiscoveryProbe.java`](../scripts/identity/OIDCDiscoveryProbe.java) is the bounded probe source.
+
+The installed Cilium configuration reports `enable-node-selector-labels=false`; a proposed `toNodes` rule cannot be assumed to work. Do not enable a cluster-wide option or permit all nodes/Internet on 443 merely to pass this test. The platform owner must review a narrow enforceable HTTPS ingress route and its rendered policy before approval. A successful operator-host discovery or local Docker login does not prove that deployed Manager route. After explicit client/network/settings authorization, repeat discovery, real login/logout/identity/RBAC/session-revocation and local Admin fallback on the shared deployment, preserving existing users/grants and original data. No automatic merge, realm edit or Manager rollout is included.
+
+
+The concrete, **unapplied** [`keycloak-egress-proposal.yaml`](../deploy/identity/keycloak-egress-proposal.yaml) selects only Manager Pods and permits remote-node TCP 443 **only with TLS SNI `auth.apps.drgdevlab.com`**. This follows the installed CRD's SNI constraint and avoids changing node-selector flags, adding unrestricted node HTTPS, or permitting Internet egress. Cilium's SNI filter inspects ClientHello; it does not terminate/decrypt TLS or read HTTP tokens. The client must still verify the original hostname/certificate. The rule is hostname-scoped across remote nodes, not pinned to one node; other SNI/no-SNI connections are denied by this rule. Existing independent database/DNS rules remain additive.
+
+Server-side dry-run accepted the proposal; live Cilium enforcement and routing are **NOT_VERIFIED**. It is excluded from apply sets. With explicit authorization, apply only this one policy, check agent realization, repeat the existing bounded Java discovery probe and negative wrong/no-SNI probes, then retain the exact result. If realization/routing fails, remove only this newly introduced policy and report the failure; do not widen it or change cluster flags. Shared realm/client/authentication changes and Manager rollout remain separate gates. [Cilium SNI policy contract](https://docs.cilium.io/en/latest/security/policy/layer4/).
+
+
+## Supplementary failure regressions
+
+The completion audit added `TestOIDCPendingFlowRejectedAfterProviderDisableOrReplacement`: a pending callback cannot switch to a newly configured authority or survive provider disable, restoring settings cannot revive the consumed flow, and no session is created for a rejected callback. A fresh flow maps to the currently approved identity/role, and the original local Admin session remains valid. Both unit and focused race runs passed.
+
+`TestOIDCDiscoveryCancellationDoesNotWaitForUnresponsiveProvider` reaches a trusted local HTTPS provider, cancels the request while the provider is unresponsive, and verifies prompt completion with a preserved cancellation cause and no client-secret disclosure. The full adapter race suite and affected-package vet passed. These private transport/service fixtures supplement the retained real-Keycloak browser proof; they do not establish shared-realm activation. No production provider, session or execution code changed. Current-head CI is tracked on the PR.
+
+
+## Authorized policy test and current registration facts — 2026-10-18
+
+The user explicitly approved the exact SNI policy test. Both bounded runs used manifest SHA-256 `9f709cd01eed18510d43ce5274eec8feceb0501e8826b3ed21d6b7c0fc68a99d`, the same Manager Pod UID/image and source endpoint 3154. Cilium realized the rule and allocated TLS proxy port 10592. Operator-host controls verified canonical discovery (HTTP 200, exact issuer, S256) and successful alternate/no-SNI handshakes. The Manager resolved the canonical hostname to `100.125.138.71` with a DIRECT Java proxy selection, but its canonical, alternate-SNI and no-SNI connections all timed out before a server certificate.
+
+The correlated monitor showed egress verdict **redirect** for the three source TCP SYNs to the control-plane address, identity 7 (`kube-apiserver` plus `remote-node`), and proxy port 10592. Thus policy selection/redirect was realized, but **working TLS routing and SNI rejection enforcement are NOT_VERIFIED**. The timeout is not evidence that the SNI filter rejected the negative controls. A proxy/return-path fault is a source-supported hypothesis, not an established root cause. No allowlist widening or cluster flag change was attempted.
+
+The test policy was removed after each run. Endpoint revisions converged again with no candidate rule; the original non-443 egress rules remained identical. Temporary probe files were removed. Manager image/UID/readiness/restarts, HTTPS health, installation ID and SQLite v8 were preserved. The retained [first result](evidence/keycloak-sso-20261018/policy-test-initial.json) and [correlated diagnostic result](evidence/keycloak-sso-20261018/policy-test-diagnostic.json) establish this **NO_GO for the proposed route**. [`KeycloakConnectivityProbe.java`](../scripts/identity/KeycloakConnectivityProbe.java) preserves normal CA/hostname checks and records only public metadata/fixed outcomes; no auth credential is used by the SNI test.
+
+Independent public discovery from the existing Keycloak workload returned HTTP 200 using normal verified HTTPS. A read-only exact Admin API query, authenticated entirely inside that existing workload with its configured runtime bootstrap reference, then returned **zero `flyway-manager` clients in realm `kubernetes`**. Its own completed admin session was logged out. No runtime credential or token was returned to the operator, logged or committed; authenticated requests used verified HTTPS to the fixed Keycloak origin. No Kubernetes Secret API value was retrieved/decoded, and no realm/client configuration was changed. The earlier five-second attempt timed out before yielding inventory; it remains NOT_VERIFIED rather than an absence result. [Final client inventory](evidence/keycloak-sso-20261018/shared-client-discovery.json) and [public transport](evidence/keycloak-sso-20261018/keycloak-pod-public-transport.json) record the exact observations. The bounded helper is [`keycloak-client-discovery`](../scripts/identity/keycloak-client-discovery/main.go); `--read-client` is explicit, has no realm/client mutation or automatic retry path and closes its own successful auth session. Its standard master-realm `admin-cli` authentication does not enable password grants on the proposed application client. `--transport-only` consumes no credential.
+
+Before registration, metadata-only inspection also found no `flyway-manager/flyway-manager-keycloak-oidc` Secret. The subsequently approved registration action was to create **only the disabled confidential client** from the proposal, generate a separate private client secret, and store it as `flyway-manager/flyway-manager-keycloak-oidc`, key `client-secret`, without printing it, embedding it in argv or committing it. Check absence immediately before creation and never overwrite an existing client or Secret. The user explicitly authorized this registration before execution; the final result below supersedes the earlier absence observation. No user, role, group, realm setting, existing client or Manager setting is part of that action. A supported secure operator procedure must create the Secret from a protected 0600 file using a file path, not a literal value. The existing Manager does not consume this Secret automatically.
+
+Shared activation remains blocked on a working approved Manager-to-issuer route and explicit client/settings/activation authorization. A platform-owned proxy-path investigation is needed; do not work around the failed test by permitting unrestricted HTTPS, bypassing TLS, using a plaintext Keycloak Service or altering global Cilium settings automatically.
+
+
+## Authorized disabled registration — 2026-10-18
+
+The user explicitly approved creating only the disabled confidential client and its Kubernetes Secret. Immediately before registration, the helper confirmed zero matching clients and the operator confirmed the proposed Secret was absent. The live Manager `public_url` was verified as `https://flyway-manager.apps.drgdevlab.com`, matching the exact approved callback. Keycloak returned HTTP **201** for the sole client-create attempt: UUID `d78f7e46-864b-4fe7-bfdd-a8a5a74da322`, realm `kubernetes`, client ID `flyway-manager`.
+
+Read-only reconciliation verified disabled status, the confidential client-secret authenticator, Code + PKCE S256, the exact redirect/origin and disabled implicit/password/service-account grants. The first post-create comparison stopped because Keycloak added three non-secret default attributes: `backchannel.logout.revoke.offline.tokens=false`, `backchannel.logout.session.required=true`, and `realm_client=false`. Subsequent reads accepted only those exact inert defaults in addition to S256. No client update, secret rotation or repeated create was performed. These defaults do not add upstream logout behavior to Manager.
+
+A 32-byte random secret was generated into a new operator directory (0700, files 0600), passed through private stdin to the existing Keycloak workload, and compared in memory against the new client's Admin API credential. The helper used only the workload's existing runtime admin environment for verified HTTPS requests, logged out each completed admin session and removed its temporary executable. Tokens, runtime credentials and client-secret values were never returned, printed or committed. The Kubernetes Secret was created once from the protected file path, without an overwrite or literal credential argument. Only metadata was queried afterward: `flyway-manager/flyway-manager-keycloak-oidc`, type Opaque, sole key `client-secret`, UID `5baa5801-fe7f-447c-a938-261e9a99ad7b`. No Kubernetes Secret value was read or decoded.
+
+[Final registration evidence](evidence/keycloak-sso-20261018/shared-client-registration.json) records the passing checks. [The create result](evidence/keycloak-sso-20261018/shared-client-registration-created.json), [initial read-only preflight failure](evidence/keycloak-sso-20261018/shared-client-registration-preflight.json), and retained attribute diagnostics preserve the incomplete stages. The first preflight failed before any create; it was retried only after establishing zero create attempts. After the HTTP 201, every reconciliation operation used explicit read-only mode. The original pre/post definition-equality check was not completed after the strict attribute mismatch; no equality claim is made for it. The helper has no existing-client, realm, user, group, role or Manager-settings write path.
+
+The bounded [registration helper](../scripts/identity/keycloak-client-registration/main.go) requires an explicit create or verify operation and rejects input outside the exact reviewed disabled proposal plus a 64-character hexadecimal secret. It performs at most one create and never retries a mutation after transport uncertainty. Its regression tests reject enabled clients, wildcard callbacks, missing S256, added mappers/grants, unsafe secrets and unexpected server defaults. Unit/race tests and vet passed. Admin REST paths follow the [official Keycloak API](https://www.keycloak.org/docs-api/latest/rest-api/index.html).
+
+The client is **disabled** and the existing Manager does not consume this Secret automatically. No existing client/user/group/role/realm configuration or Manager settings were written. The failed issuer route remains the activation blocker. Shared activation requires a working approved route, reviewed identity mappings, backup/preservation gates and separate enable/settings/deployment authorization. No PR was merged and no Manager feature was deployed.
