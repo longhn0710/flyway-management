@@ -1,0 +1,38 @@
+{
+  "observed_at": "2026-10-18T04:11:26.347440+00:00",
+  "pod_uid": "5a706ca8-29b8-4473-962f-6f7f52a401f3",
+  "images": [
+    "ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5"
+  ],
+  "ready": [
+    true
+  ],
+  "restarts": [
+    0
+  ],
+  "test_policy_absent": true,
+  "health_http_status": 200,
+  "health": {
+    "data": {
+      "capabilities": {
+        "authentication": true,
+        "migration_execution": true,
+        "registry": true
+      },
+      "database": "ok",
+      "installation_id": "08c3533660b75625462d3ab3dd1f7071",
+      "schema_version": 8,
+      "status": "ok"
+    }
+  },
+  "private_directory_mode": "0o700",
+  "private_file_modes": {
+    "client-secret": "0o600",
+    "registration-input.json": "0o600"
+  },
+  "checks": [
+    "go test -race ./scripts/identity/keycloak-client-registration",
+    "go vet ./scripts/identity/keycloak-client-registration"
+  ],
+  "result": "PASS"
+}
