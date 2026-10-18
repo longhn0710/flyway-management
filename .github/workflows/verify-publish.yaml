@@ -26,6 +26,8 @@ jobs:
         env:
           FWM_TEST_COLLECTOR_IMAGE: otel/opentelemetry-collector-contrib@sha256:1175b03003053962012f5a231f5567f66a3e8fdb960c7835c0e48f7aa1555806
         run: |
+          python3 -m unittest discover -s deploy/observability -p 'test_*.py'
+          docker pull python@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641
           docker pull "$FWM_TEST_COLLECTOR_IMAGE"
           go test ./internal/observability -run TestCollectorLive -count=1
   publish:

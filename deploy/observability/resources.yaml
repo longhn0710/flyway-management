@@ -22,16 +22,34 @@ spec:
         fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: prepare-otlp-auth
+          image: python@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641
+          command: [python3, -B, /etc/otel/prepare-auth.py]
+          env:
+            - name: OTEL_EXPORTER_OTLP_HEADERS
+              valueFrom:
+                secretKeyRef:
+                  name: flyway-manager-elastic-api-key
+                  key: OTEL_EXPORTER_OTLP_HEADERS
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+              readOnly: true
+            - name: auth
+              mountPath: /run/collector-auth
       containers:
         - name: collector
           image: otel/opentelemetry-collector-contrib@sha256:1175b03003053962012f5a231f5567f66a3e8fdb960c7835c0e48f7aa1555806
           args: [--config=/etc/otel/collector.yaml]
-          env:
-            - name: ELASTIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: flyway-manager-elastic-api-key
-                  key: api-key
           ports:
             - name: otlp-https
               containerPort: 4318
@@ -55,10 +73,17 @@ spec:
             - name: config
               mountPath: /etc/otel
               readOnly: true
+            - name: auth
+              mountPath: /run/collector-auth
+              readOnly: true
             - name: tls
               mountPath: /run/collector-tls
               readOnly: true
       volumes:
+        - name: auth
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
         - name: config
           configMap:
             name: flyway-manager-observability

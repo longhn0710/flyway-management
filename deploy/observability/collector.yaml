@@ -39,8 +39,7 @@ processors:
 exporters:
   otlp_http/elastic:
     endpoint: https://my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud:443
-    headers:
-      Authorization: 'ApiKey ${env:ELASTIC_API_KEY}'
+    headers: ${file:/run/collector-auth/headers.json}
     timeout: 10s
     tls:
       insecure: false

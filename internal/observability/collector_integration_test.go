@@ -35,11 +35,12 @@ func TestCollectorLiveMutualTLSAndIndependentAllowlist(t *testing.T) {
 	if image != pinned {
 		t.Fatal("acceptance requires proposal image digest")
 	}
+	const fixtureKey = "isolated-collector-fixture-012345678901234567890123456789"
 	received := make(chan *collectorpb.ExportLogsServiceRequest, 10)
 	template, cfg := mutualTLSFixture(t, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	defer template.Close()
 	downstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/logs" || r.Header.Get("Authorization") != "ApiKey isolated-test-only" {
+		if r.URL.Path != "/v1/logs" || r.Header.Get("Authorization") != "ApiKey "+fixtureKey {
 			t.Error("collector destination/authentication contract mismatch")
 			w.WriteHeader(400)
 			return
@@ -69,6 +70,26 @@ func TestCollectorLiveMutualTLSAndIndependentAllowlist(t *testing.T) {
 	downstream.StartTLS()
 	defer downstream.Close()
 	dir := filepath.Dir(cfg.CAFile)
+	authDir := filepath.Join(dir, "auth")
+	if err := os.Mkdir(authDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	authScript, err := filepath.Abs("../../deploy/observability/prepare-auth.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const authImage = "python@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641"
+	init := exec.Command("docker", "run", "--rm", "--pull=never", "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--memory=32m", "--cpus=0.1", "--user", fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()), "--mount", "type=bind,src="+authScript+",dst=/prepare-auth.py,readonly", "--mount", "type=bind,src="+authDir+",dst=/run/collector-auth", "--env", "OTEL_EXPORTER_OTLP_HEADERS=Authorization=ApiKey%20"+fixtureKey, authImage, "python3", "-B", "/prepare-auth.py")
+	var authOutput bytes.Buffer
+	init.Stdout = &authOutput
+	init.Stderr = io.Discard
+	if err := init.Run(); err != nil || authOutput.String() != "OTLP_AUTH_HEADER_FORMAT_VALID\n" {
+		t.Fatal("pinned auth initializer failed")
+	}
+	info, err := os.Stat(filepath.Join(authDir, "headers.json"))
+	if err != nil || info.Mode().Perm() != 0600 {
+		t.Fatal("auth file is not private")
+	}
 	identity := template.TLS.Certificates[0]
 	private, err := x509.MarshalPKCS8PrivateKey(identity.PrivateKey)
 	if err != nil {
@@ -103,8 +124,8 @@ func TestCollectorLiveMutualTLSAndIndependentAllowlist(t *testing.T) {
 		"/run/collector-tls/tls.key": "/fixture/server.key",
 		"/run/collector-tls/ca.crt":  "/fixture/ca.pem",
 		"https://my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud:443": downstream.URL,
-		"${env:ELASTIC_API_KEY}": "isolated-test-only",
-		"insecure: false":        "ca_file: /fixture/ca.pem\n      insecure: false",
+		"/run/collector-auth/headers.json": "/fixture/auth/headers.json",
+		"insecure: false":                  "ca_file: /fixture/ca.pem\n      insecure: false",
 	}
 	for from, to := range replacements {
 		config = strings.ReplaceAll(config, from, to)

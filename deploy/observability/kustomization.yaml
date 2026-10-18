@@ -7,5 +7,6 @@ configMapGenerator:
     namespace: flyway-manager
     files:
       - collector.yaml
+      - prepare-auth.py
 generatorOptions:
   disableNameSuffixHash: true
