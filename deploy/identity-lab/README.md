@@ -1,8 +1,8 @@
 # Phase 9 isolated LDAP lab proposal
 
-These manifests are review artifacts only. Do not apply them until the user
-approves the exact lab resources, Secret provisioning, Manager egress/trust
-changes, Keycloak trust configuration, and acceptance realm/federation changes.
+The user approved this isolated lab and it was provisioned on 2026-10-18.
+Existing Manager egress/trust and shared Keycloak realm/provider changes remain
+separately gated; approval of the lab does not authorize those changes.
 The `manager-egress-proposal.yaml` file changes the existing application
 namespace and is intentionally outside the isolated Kustomize set.
 
@@ -37,6 +37,11 @@ The namespace applies Pod Security `restricted`, no service-account token,
 nonroot UID/GID 911, dropped capabilities, seccomp RuntimeDefault, bounded CPU
 and memory, and one 1 GiB Longhorn RWO volume.
 
-No live bind, TLS validation, federation login, group mapping, deprovisioning,
-or OIDC acceptance has been run. See `../../docs/ldap-federation-acceptance.md`
-for the proposed acceptance sequence and approval boundary.
+Real direct bind, native Manager LDAP and TLS/network probes have run. Federation
+and deprovisioning results, failures and qualifications are maintained in
+[the acceptance report](../../docs/ldap-federation-acceptance.md). The generated
+ACL ConfigMap contains only public rules, including self entryUUID read and
+password-hash denial. Never put a password/hash in this ConfigMap. The current
+StatefulSet uses worker2, persistent config/data and a mkdir-only init; it never
+resets an existing directory. Hash files used by vendor bootstrap must have no
+terminal newline (LDIF substitution is literal).

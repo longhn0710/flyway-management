@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-18",
+  "full_checks": {
+    "command": "make check test-race test-e2e security",
+    "exit_code": 0,
+    "frontend_tests": 26,
+    "browser_passed": 42,
+    "browser_opt_in_skipped": 2,
+    "go_affecting_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "uncalled_module_advisories": 1
+  },
+  "real_directory_browser": {
+    "command": "FWM_LDAP_LIVE=1 FWM_LDAP_OPERATOR_DIRECTORY=<protected originals> FWM_LDAP_EVIDENCE=<protected evidence> npm --prefix web run test:ldap",
+    "exit_code": 0,
+    "duration": "3.4 minutes",
+    "provider": "real approved cluster OpenLDAP plus pinned local Keycloak26.7.0",
+    "manager_rate_limit_unchanged": true,
+    "no_sql": true
+  },
+  "focused_checks": [
+    "frontend build and lint after test token refresh",
+    "go vet ./scripts/identity/ldap-lab",
+    "real readonly write and userPassword-attribute denial",
+    "Python syntax",
+    "JSON/local links",
+    "known original protected passwords/hashes/private keys absent from publication files"
+  ],
+  "shared_configuration_changed": false,
+  "secret_api_values_read_or_decoded": false,
+  "ci_live_lab_case": "opt-in skipped; no cluster credentials in CI"
+}

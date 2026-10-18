@@ -1,0 +1,31 @@
+# Excluded from Kustomize; temporary acceptance only. Reverify the Service IP.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: phase9-ldap-denied-probe
+  namespace: flyway-manager-identity-lab
+  labels:
+    app.kubernetes.io/name: phase9-ldap-denied-probe
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  activeDeadlineSeconds: 90
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: probe
+      image: curlimages/curl@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40
+      command: [sh, -c]
+      args: ['curl --silent --connect-timeout 3 --max-time 5 telnet://10.104.86.255:636 >/dev/null 2>&1; code=$?; if [ "$code" -eq 28 ]; then echo UNAPPROVED_LABEL_CONNECTION_TIMED_OUT; exit 0; fi; echo UNEXPECTED_CONNECTION_RESULT; exit 1']
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 50m, memory: 32Mi}

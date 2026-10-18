@@ -39,6 +39,8 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker2
       securityContext:
         runAsNonRoot: true
         runAsUser: 911
@@ -53,7 +55,8 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-ec"]
           args:
-            - mkdir -p /state/config /state/openldap-data /state/openldap-backups /state/run
+            - |
+              mkdir -p /state/config /state/openldap-data /state/openldap-backups /state/run
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -76,6 +79,10 @@ spec:
           image: docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d
           imagePullPolicy: IfNotPresent
           env:
+            - name: OPENLDAP_CONF_DIR
+              value: /var/lib/openldap/config
+            - name: OPENLDAP_DATA_DIR
+              value: /var/lib/openldap/openldap-data
             - name: OPENLDAP_BOOTSTRAP_ORGANIZATION
               value: Flyway Manager Identity Acceptance
             - name: OPENLDAP_BOOTSTRAP_SUFFIX
@@ -148,11 +155,12 @@ spec:
             capabilities:
               drop: [ALL]
           volumeMounts:
+            - name: identity-acl
+              mountPath: /container/services/openldap-bootstrap/assets/ldif/config/base/65-database-acl.ldif.template
+              subPath: 65-database-acl.ldif.template
+              readOnly: true
             - name: data
               mountPath: /var/lib/openldap
-            - name: data
-              mountPath: /etc/openldap/slapd.d
-              subPath: config
             - name: server-tls
               mountPath: /container/services/openldap/assets/certs
               readOnly: true
@@ -161,6 +169,9 @@ spec:
             - name: tmp
               mountPath: /tmp
       volumes:
+        - name: identity-acl
+          configMap:
+            name: openldap-identity-acl
         - name: server-tls
           secret:
             secretName: openldap-server-tls

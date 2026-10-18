@@ -1,0 +1,118 @@
+{
+  "directory": "approved real OpenLDAP lab",
+  "keycloakImage": "quay.io/keycloak/keycloak@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13",
+  "sharedManagerOrKeycloakChanged": false,
+  "sqlExecuted": false,
+  "kubernetesSecretValuesReadOrDecoded": false,
+  "upstreamLogout": "Manager session only; upstream SSO session is separate",
+  "initialDirectory": {
+    "entries": [
+      {
+        "dn": "ou=people,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "",
+        "uuid": "da157e5e-685b-418b-ae42-0a24ea9723c3"
+      },
+      {
+        "dn": "ou=groups,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "",
+        "uuid": "e806200f-914a-416c-8248-752b0cf0be69"
+      },
+      {
+        "dn": "uid=phase9-viewer,ou=people,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "phase9-viewer",
+        "uuid": "4ad5f502-8035-41cb-8f68-a1165e9175d9"
+      },
+      {
+        "dn": "uid=phase9-operator,ou=people,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "phase9-operator",
+        "uuid": "e72d45a2-a8f1-4e1e-9dfe-0410fa26ace6"
+      },
+      {
+        "dn": "uid=phase9-admin,ou=people,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "phase9-admin",
+        "uuid": "37c556eb-f67a-439c-9bc8-775705859c26"
+      },
+      {
+        "dn": "cn=flyway-viewer,ou=groups,dc=flyway,dc=lab",
+        "members": [
+          "uid=phase9-viewer,ou=people,dc=flyway,dc=lab",
+          "uid=phase9-retire-21af3804c846,ou=people,dc=flyway,dc=lab"
+        ],
+        "uid": "",
+        "uuid": "122d4d5b-5f6b-418f-85e3-a30e2d0f98ff"
+      },
+      {
+        "dn": "cn=flyway-operator,ou=groups,dc=flyway,dc=lab",
+        "members": [
+          "uid=phase9-operator,ou=people,dc=flyway,dc=lab"
+        ],
+        "uid": "",
+        "uuid": "9729b145-2fd8-427f-b53a-39063c78976f"
+      },
+      {
+        "dn": "cn=flyway-admin,ou=groups,dc=flyway,dc=lab",
+        "members": [
+          "uid=phase9-admin,ou=people,dc=flyway,dc=lab"
+        ],
+        "uid": "",
+        "uuid": "bd50f45b-b081-40cf-bb35-65f620bcdfd9"
+      },
+      {
+        "dn": "uid=phase9-retire-21af3804c846,ou=people,dc=flyway,dc=lab",
+        "members": [],
+        "uid": "phase9-retire-21af3804c846",
+        "uuid": "b43561ff-07f6-464b-a9bd-856ffa130c48"
+      }
+    ],
+    "readonly_bind": true,
+    "status": "PASS",
+    "tls13": true,
+    "verified_service_hostname": true
+  },
+  "nativeLDAP": "PASS: three users, immutable subjects, wrong password, escaped input, CA/hostname rejection, ambiguous search and read-only write denial",
+  "groupSync": {
+    "ignored": false,
+    "added": 3,
+    "updated": 0,
+    "removed": 0,
+    "failed": 0,
+    "status": "3 imported groups, 0 updated groups, 0 removed groups"
+  },
+  "userSync": {
+    "ignored": false,
+    "added": 4,
+    "updated": 0,
+    "removed": 0,
+    "failed": 0,
+    "status": "4 imported users, 0 updated users"
+  },
+  "federation": {
+    "mode": "READ_ONLY",
+    "cache": "NO_CACHE",
+    "immutableLDAPAttribute": "entryUUID",
+    "actualUserGroupMapping": true,
+    "subjects": {
+      "phase9-admin": "3c9bd2db-c6f3-42a4-af68-ddbff09e8b89",
+      "phase9-operator": "66579311-c0c4-492e-a26e-e46164c4718d",
+      "phase9-viewer": "26be661d-a032-4dab-8917-fe70e47dedc8",
+      "phase9-retire-21af3804c846": "1a7f618e-b764-43fd-9d82-15fe2669a11c"
+    }
+  },
+  "explicitRolesAndInactiveDenial": true,
+  "signedOIDCGroupClaimVerified": true,
+  "deprovisioning": {
+    "groupRemovedAfterSync": true,
+    "directoryEntryDeleted": true,
+    "newDirectAndFederatedLoginDenied": true,
+    "existingManagerSessionRequiredExplicitDisable": true,
+    "explicitDisableRevokedSession": true
+  },
+  "localAdminFallback": true,
+  "grantsAndProdPreserved": true,
+  "localRegistrySchema": 8
+}

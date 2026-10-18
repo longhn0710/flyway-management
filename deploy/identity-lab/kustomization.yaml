@@ -4,3 +4,8 @@ resources:
   - namespace.yaml
   - openldap.yaml
   - network-policy.yaml
+configMapGenerator:
+  - name: openldap-identity-acl
+    namespace: flyway-manager-identity-lab
+    files:
+      - 65-database-acl.ldif.template
