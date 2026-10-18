@@ -6,36 +6,64 @@ Manager authentication and metadata GETs, Kubernetes reads, narrow Jenkins XML
 inspection and a controller HTTPS health GET supplied the observations below.
 Credential values were neither printed nor committed.
 
-## Safety change and root cause
+## Mandatory Automatic Oracle Repair
 
-At the reviewed baseline `f507dcaa543f10cddf2805f06b8169d83fd980d7`, the
-Oracle worker persisted a migrate failure as `FAILED/PENDING`, then automatically
-entered `REPAIRING` when all of these checks passed:
+PR #10 has been corrected to retain the pre-PR guarded Automatic Repair workflow.
+Automatic assessment after a failed Oracle migrate is mandatory product behavior;
+there is no Manager enable/disable setting and Jenkins must not require it disabled.
 
-1. Migrate failed with a nonzero exit and parseable JSON, without timeout or
-   cancellation. The worker did **not** honor the runtime's `Ambiguous` flag,
-   which the runtime sets for every unsuccessful mutating command.
-2. Read-only info/validate isolated exactly one newly failed, originally pending
-   versioned migration; unrelated applied history was unchanged, no repeatable or
-   superseded history was involved, and validation reported only its failed-version
-   error.
-3. The original execution authorization, credential/configuration snapshot and
-   account mapping still passed a fresh check.
+The original CLI stdout/stderr/JSON and exit code commit before recovery. The worker
+publishes `migration_outcome=FAILED`, the original root cause and `repair_outcome=PENDING`,
+then assesses Repair. It retains the existing checks: exactly one newly failed,
+originally pending versioned migration; unchanged unrelated applied history; no
+repeatable/superseded history; validation isolating the same failed version; matching validation filepath when supplied; and
+fresh authorization, mapping, credential, snapshot and runtime checks.
 
-This was an orchestration policy, not an implicit CLI feature. Submission authority
-also authorized a history-changing Repair. Even a verified removal cannot establish
-that Oracle partial DDL is safe to replay.
+A complete pinned native `MigrateErrorResult` (operation, version, success=false,
+migrations and error code/message) distinguishes a confirmed migration failure
+from a generic CLI/configuration error. Timeout, cancellation, signal-like exit,
+truncated/malformed/wrong-version output and an explicit ambiguous result stay
+`NEEDS_REVIEW` with Repair `UNSAFE`. Confirmed failure means the CLI failure is
+known, not that Oracle DDL rolled back. The runtime's previous broad ambiguous
+classification is narrowed for confirmed Oracle failure only; PostgreSQL keeps its
+existing lifecycle classification and never enters this Oracle repair branch.
+The native error shape was checked against the actual Flyway 13.10.3 classes
+and an actual CLI SQL failure using its bundled H2 driver in a process-local
+in-memory database. The opt-in TestActualFlywayMigrationFailureEnvelope verifies
+that real stdout, native error code and failed path are recognized. This verifies
+CLI serialization, not Oracle partial-DDL or Repair acceptance. No real Oracle
+failure or Repair was induced for this correction.
 
-The worker now retains the migrate execution first, atomically records
-`NEEDS_REVIEW`, `migration_outcome=FAILED`, `repair_outcome=SKIPPED`, original exit
-code and stream `held=1`, then attempts only info/validate diagnostics. Diagnostic
-failure cannot release the hold or replace the recorded failure. Automatic repair
-eligibility/result writers are removed. Successful Oracle/PostgreSQL execution and
-the PostgreSQL failure path keep their established behavior. Existing legacy repair
-records and interrupted `REPAIRING` recovery remain readable/held. No API or SQLite
-schema change is required. The runtime still supports an explicit internal Repair
-request, but normal jobs have no caller for it and no manual-recovery endpoint is
-introduced. Recovery remains a separately authorized operator/DBA activity.
+Eligible Repair runs once with the same frozen locations. It must remove exactly
+the failed version, align/delete nothing else, pass validate and restore the exact
+prior resolver view. The final states remain independent:
+
+| Migrate | Repair | Run / stream |
+| --- | --- | --- |
+| Success, verified history | Not needed (`SKIPPED`) | `SUCCEEDED` |
+| Failed | `SUCCEEDED` | `FAILED`; no SQL replay |
+| Failed | `FAILED` | `NEEDS_REVIEW`, held |
+| Failed | `UNSAFE` | `NEEDS_REVIEW`, held |
+| Ambiguous | `UNSAFE` | `NEEDS_REVIEW`, held |
+
+Repair no longer overwrites the run's original failure reason. Optional `failure`
+on run/record detail reads exposes the retained migrate execution ID, native
+script/version when known, Flyway error code, message and original exit code.
+Identity comes only from native error path/message or the first retained failed
+history capture; unknown/conflicting identity is explicit. The original JSON and
+immutable SQL remain available. Repair's reason, before/after history and execution
+reference stay on the existing independent repair record. No database schema
+upgrade is introduced. Interrupted pending Oracle assessments close as UNSAFE;
+interrupted Repair closes as FAILED, with a held stream and no repair retry.
+
+Jenkins must fail a migration build even when Repair succeeds. The existing demo
+poll helper already rejects FAILED, NEEDS_REVIEW and REPAIRING; it only accepts
+SUCCEEDED with migration SUCCEEDED and repair SKIPPED. Run the offline regression
+against that actual helper without editing the demo repository:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-oracle-jenkins-contract.py /path/to/demo-flyway-manager
+```
 
 ## Observed infrastructure
 
@@ -47,31 +75,34 @@ introduced. Recovery remains a separately authorized operator/DBA activity.
 | Trusted SCM job | No reference to `devsecopslonghn/demo-flyway-manager` in the 22 inspected stored job configurations. A protected Pipeline-from-SCM job for this source is still required. |
 | Agent | Jenkinsfile requires `oracle-cicd-source`; absent from inspected node/job configuration. Two static nodes have `oracal` labels. Online status could not be established (computer API 403); no separate agent pod was present. |
 | Credentials | Required IDs: `flyway-manager-{develop,sit,uat,staging}-config` (Secret file), `flyway-manager-{develop,sit,uat,staging}-token` (Secret text), and a site-selected SCM read credential. Required Manager IDs were absent from the inspected global store; folder/job scope still requires administrator confirmation. |
-| Manager | `https://flyway-manager.apps.drgdevlab.com`, Ready 1/1. Health reports database OK, SQLite schema 8 and migration execution enabled. API contract is OpenAPI 0.6.0 under `/api/v1`; the safety patch changes no routes or payloads. |
-| Deployed image | `ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5`. Existing deployed-acceptance evidence correlates this digest to source `f507dcaa543f10cddf2805f06b8169d83fd980d7`, GitOps `9289df29f4f21c160d26539a60579b357702bd5a`. Health does not expose a source revision; reconfirm release provenance before execution. This build still contains automatic Oracle Repair. |
+| Manager | `https://flyway-manager.apps.drgdevlab.com`, Ready 1/1. Health reports database OK, SQLite schema 8 and migration execution enabled. API contract is OpenAPI 0.6.0 under `/api/v1`; the correction keeps routes/status semantics and adds optional failure detail. |
+| Deployed image | `ghcr.io/longhn0710/flyway-manager@sha256:1a0c80c1ef869a6f1735cdf7bbae9973ffd607c061a07966f2ee621c2690f8d5`. Existing deployed-acceptance evidence correlates this digest to source `f507dcaa543f10cddf2805f06b8169d83fd980d7`, GitOps `9289df29f4f21c160d26539a60579b357702bd5a`. Health does not expose a source revision; reconfirm release provenance before execution. This build has the original guarded Automatic Repair; the reporting/ambiguity correction in PR #10 is not deployed. |
 | Runtime | Authenticated `GET /api/v1/runtime`: ready, integrity verified, Flyway 13.10.3, bundled Java/Oracle JDBC available, no blockers. Container filename inventory includes `ojdbc11-21.18.0.0.jar` and `flyway-manifest.sha256`. Source manifest pin: `a359f1f0e0a08bd7f5fe3272cc726c3866c0000028fee32a1df56a61f85ecd2c`. Operator approval/provenance of the exact deployed distribution remains a gate. |
 | Oracle candidate | Active DEV target ID `oracle-free-lab`, service `oracle-free.flyway-manager-oracle-lab.svc.cluster.local:1521/FREEPDB1`. Active schema `FWM_WZ260_A`, schema ID `kEgO5_EYblHWxJTS8GmQo6`, history `FWM_WZ260_A.flyway_schema_history`. Default account ID `iwPGnKIas4lDW1-d57HJfj`, username `FWM_WZ260_A`, active, mapped, credential configured and not revoked. Registry metadata confirms a lab candidate, not DBA approval, empty schema, database identity or effective Oracle privileges. |
 | Other Oracle | Separate UAT target `oracle-free-main`, schema `FWM_LAB`, exists. Do not substitute it for the DEV lab. Oracle Free pods run in both lab namespaces. No database probe was executed. |
 | HTTPS | Jenkins controller GET to Manager `/api/v1/health` returned 200 with TLS verification result 0. Actual build-agent connectivity and CA trust remain unverified. |
 
-The demo's `config/manager-policy.json` still has
-`oracle_execution_enabled=false` and reviewed Manager revision `f507dcaa...`.
-Keep this gate closed. A new approved revision and separately reviewed policy
-update are required after the safety fix is deployed; toggling the boolean alone
-is insufficient. No Jenkins/Oracle provisioning is authorized by this report.
+The demo's existing `config/manager-policy.json` still blocks EXECUTE using the
+superseded requirement that Oracle Automatic Repair must be disabled. This report
+does not change the demo repository or bypass its gate. Its policy needs a separate
+review to accept mandatory guarded Automatic Repair and the approved Manager
+revision. Do not add a Manager toggle or require Jenkins to disable Repair. No
+Jenkins/Oracle provisioning is authorized by this report.
 
 ## Exact gated execution checklist
 
 All steps below are future work. Stop on missing approval, failed verification,
-`NEEDS_REVIEW`, held stream, unknown outcome or changed evidence. Never repair,
-clean, baseline, undo, clear a hold or resubmit SQL as an automatic remedy.
+`NEEDS_REVIEW`, held stream, unknown outcome or changed evidence. The Manager
+worker alone performs the guarded Automatic Repair assessment. Jenkins/operators
+must not add repair, clean, baseline, undo, hold-clear or SQL replay steps.
 
 1. Review the focused safety PR and its CI. Obtain separate merge and deployment
    authorization, then use the approved release process. Record merged revision,
    immutable image digest, healthy rollout and pinned runtime/JDBC provenance.
-   Confirm the running image includes this safety change. Re-review the unchanged
-   API contract against the demo client and approve its new policy revision;
-   preserve the original policy until that review is complete.
+   Confirm the running image includes the corrected guarded Repair and failure
+   reporting. Review the additive API field against the demo client and separately
+   align its policy to accept mandatory Automatic Repair. Preserve existing gates
+   until that review is complete.
 2. Jenkins administrator provisions or identifies a protected Pipeline-from-SCM
    job for `https://github.com/devsecopslonghn/demo-flyway-manager`, trusted
    `master` commit, Script Path `Jenkinsfile`. Restrict job configuration, SCM
@@ -133,6 +164,12 @@ clean, baseline, undo, clear a hold or resubmit SQL as an automatic remedy.
     repeatable's real re-execution, a new checksum/history entry and observable
     approved view change; V1/V2/V3 must remain unreplayed. Archive before/after
     history and results.
+
+If a migration fails, Jenkins must report FAILURE even if Repair succeeds. Wait
+for and collect the final independent Repair evidence from Manager; a Jenkins
+failure during PENDING/REPAIRING does not cancel Manager recovery. An unsafe or
+uncertain outcome blocks queued successors and holds the stream. Repair never
+rolls back Oracle DDL or replays SQL.
 
 On uncertain POST transport or polling failure, use archived
 `reports/manager/submission-intent.json` and the original key to reconcile Manager

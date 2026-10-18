@@ -77,19 +77,20 @@ type Run struct {
 	Status       string `json:"status"`
 	RunInput
 	RunSnapshot
-	ActorID          string     `json:"actor_id"`
-	ActorKind        string     `json:"actor_kind"`
-	ActorName        string     `json:"actor_name"`
-	Source           string     `json:"source"`
-	CreatedAt        string     `json:"created_at"`
-	StartedAt        string     `json:"started_at"`
-	FinishedAt       string     `json:"finished_at"`
-	FlywayVersion    string     `json:"flyway_version"`
-	ExitCode         *int       `json:"exit_code"`
-	MigrationOutcome string     `json:"migration_outcome"`
-	RepairOutcome    string     `json:"repair_outcome"`
-	Reason           string     `json:"reason"`
-	Preflight        *Preflight `json:"preflight,omitempty"`
+	ActorID          string            `json:"actor_id"`
+	ActorKind        string            `json:"actor_kind"`
+	ActorName        string            `json:"actor_name"`
+	Source           string            `json:"source"`
+	CreatedAt        string            `json:"created_at"`
+	StartedAt        string            `json:"started_at"`
+	FinishedAt       string            `json:"finished_at"`
+	FlywayVersion    string            `json:"flyway_version"`
+	ExitCode         *int              `json:"exit_code"`
+	MigrationOutcome string            `json:"migration_outcome"`
+	RepairOutcome    string            `json:"repair_outcome"`
+	Reason           string            `json:"reason"`
+	Preflight        *Preflight        `json:"preflight,omitempty"`
+	Failure          *MigrationFailure `json:"failure,omitempty"`
 }
 type Blocker struct {
 	Code    string `json:"code"`

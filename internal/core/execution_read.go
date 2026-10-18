@@ -90,6 +90,12 @@ func (s *Service) Run(ctx context.Context, a Actor, rid string) (Run, error) {
 	if e = s.Authorize(ctx, a, "read", x.TargetID, x.SchemaID); e != nil {
 		return Run{}, e
 	}
+	if x.Target.Engine != "postgresql" && x.MigrationOutcome == "FAILED" {
+		x.Failure, e = s.runMigrationFailure(ctx, rid, x.FlywayVersion)
+		if e != nil {
+			return Run{}, e
+		}
+	}
 	return x, nil
 }
 func (s *Service) Runs(ctx context.Context, a Actor, f RunFilter) ([]Run, error) {
@@ -326,13 +332,17 @@ func (s *Service) RunExecutions(ctx context.Context, a Actor, rid string) ([]Run
 	return out, rows.Err()
 }
 func (s *Service) RunRepair(ctx context.Context, a Actor, rid string) (Repair, error) {
-	if _, e := s.Run(ctx, a, rid); e != nil {
+	run, e := s.Run(ctx, a, rid)
+	if e != nil {
 		return Repair{}, e
 	}
 	var x Repair
 	var before, after string
-	e := s.db.QueryRowContext(ctx, `SELECT outcome,reason,before_history,after_history,execution_id FROM repair_operations WHERE run_id=?`, rid).Scan(&x.Outcome, &x.Reason, &before, &after, &x.ExecutionID)
+	e = s.db.QueryRowContext(ctx, `SELECT outcome,reason,before_history,after_history,execution_id FROM repair_operations WHERE run_id=?`, rid).Scan(&x.Outcome, &x.Reason, &before, &after, &x.ExecutionID)
 	if e == sql.ErrNoRows {
+		if run.Target.Engine != "postgresql" && run.Status == "NEEDS_REVIEW" && (run.RepairOutcome == "UNSAFE" || run.RepairOutcome == "FAILED") {
+			return Repair{Outcome: run.RepairOutcome, Reason: "Automatic Repair could not be safely completed or verified. " + run.Reason, Before: json.RawMessage("null"), After: json.RawMessage("null")}, nil
+		}
 		return Repair{Outcome: "SKIPPED", Reason: "No repair operation has completed.", Before: json.RawMessage("null"), After: json.RawMessage("null")}, nil
 	}
 	if e != nil {

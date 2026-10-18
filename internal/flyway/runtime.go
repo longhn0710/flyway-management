@@ -316,8 +316,14 @@ func (r *Runtime) Execute(ctx context.Context, req Request) Result {
 	}
 	result.Success = err == nil && !result.TimedOut && !out.truncated && !errOut.truncated && parseErr == nil && validSuccess(req.Command, parsed, r.config.Version)
 	if (req.Command == "migrate" || req.Command == "repair") && !result.Success {
-		// A process may have committed Oracle DDL before a later failure.
 		result.Ambiguous = true
+		// A complete Oracle MigrateErrorResult confirms the CLI failed, not that
+		// its DDL rolled back. The worker still requires matching failed history,
+		// isolated validation and unchanged unrelated history before Repair.
+		// Keep PostgreSQL lifecycle classification unchanged.
+		if req.Engine != "postgresql" && req.Command == "migrate" && result.ExitCode > 0 && result.ExitCode < 128 && cmdCtx.Err() == nil && !out.truncated && !errOut.truncated && parseErr == nil && ConfirmedMigrationFailure(parsed, r.config.Version) {
+			result.Ambiguous = false
+		}
 	}
 	if parseErr != nil && result.Stderr == "" {
 		result.Stderr = "Flyway did not return a valid JSON result"
@@ -346,6 +352,26 @@ func (r *Runtime) Execute(ctx context.Context, req Request) Result {
 		}
 	}
 	return result
+}
+
+// ConfirmedMigrationFailure recognizes Flyway's migration-error envelope, not a
+// generic CLI/configuration error. It says nothing about partial committed DDL.
+func ConfirmedMigrationFailure(payload json.RawMessage, pin string) bool {
+	parsed, err := parseJSONOutput(payload)
+	if err != nil {
+		return false
+	}
+	var body struct {
+		Operation     string             `json:"operation"`
+		FlywayVersion string             `json:"flywayVersion"`
+		Success       *bool              `json:"success"`
+		Migrations    *[]json.RawMessage `json:"migrations"`
+		Error         *struct {
+			Code    string `json:"errorCode"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	return json.Unmarshal(parsed, &body) == nil && body.Operation == "migrate" && body.FlywayVersion == pin && body.Success != nil && !*body.Success && body.Migrations != nil && body.Error != nil && body.Error.Code != "" && body.Error.Message != ""
 }
 
 func validCommand(s string) bool {

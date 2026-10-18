@@ -92,6 +92,16 @@ export interface Run {
   migration_outcome: string;
   repair_outcome: string;
   reason: string;
+  failure?: {
+    execution_id: string;
+    script: string;
+    version: string;
+    error_code: string;
+    message: string;
+    exit_code: number;
+    identity_source: string;
+    identity_reason: string;
+  };
   target: DatabaseTarget;
   schema: TargetSchema;
   account: Pick<ExecutionAccount, "id" | "name" | "username">;

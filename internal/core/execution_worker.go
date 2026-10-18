@@ -122,7 +122,7 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 	}
 	clear(plan.password)
 	plan.password = refreshed.password
-	migrated, _, e := s.runCommand(parent, durable, rid, "migrate", plan)
+	migrated, migrationExecutionID, e := s.runCommand(parent, durable, rid, "migrate", plan)
 	if e != nil {
 		return
 	}
@@ -148,7 +148,7 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		return
 	}
 	if plan.snapshot.Target.Engine == "postgresql" {
-		// Keep PostgreSQL lifecycle diagnostics and failure classification. Even a
+		// PostgreSQL never enters Oracle's failed-history repair branch. Even a
 		// proven rollback of the last script cannot undo earlier committed scripts.
 		if parent.Err() == nil {
 			if _, _, e = s.runCommand(parent, durable, rid, "info", plan); e != nil {
@@ -167,23 +167,90 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
-	// A failed Oracle migration can leave committed DDL and failed history. Hold
-	// the stream and preserve the original outcome before read-only diagnostics;
-	// neither parseable failure output nor apparently isolated history authorizes
-	// Repair. Recovery requires separate operator/DBA authorization.
-	reason := "Flyway migrate failed. Oracle DDL may have partially committed. Stream held for review; no automatic Repair or SQL retry."
-	if migrated.Ambiguous || migrated.TimedOut || parent.Err() != nil || len(migrated.JSON) == 0 || migrated.ExitCode == 0 {
-		reason = "Oracle migration outcome is uncertain. DDL may have partially committed. Stream held for review; no automatic Repair or SQL retry."
-	}
-	if e = s.changeRun(durable, rid, "NEEDS_REVIEW", reason, "FAILED", "SKIPPED", &migrated.ExitCode, true, true); e != nil {
+	// Commit the original native failure before eligibility checks or Repair.
+	failure := migrationFailure(migrationExecutionID, migrated, nil)
+	failureReason := failure.reason()
+	if e = s.changeRun(durable, rid, "FAILED", failureReason, "FAILED", "PENDING", &migrated.ExitCode, false, false); e != nil {
 		return
 	}
-	completed = true
-	if parent.Err() == nil {
-		if _, _, e = s.runCommand(parent, durable, rid, "info", plan); e != nil {
-			return
+	if migrated.Ambiguous || migrated.TimedOut || parent.Err() != nil || migrated.ExitCode <= 0 || migrated.ExitCode >= 128 || !flyway.ConfirmedMigrationFailure(migrated.JSON, run.FlywayVersion) {
+		if e = s.finishRepair(durable, rid, "UNSAFE", "Migration outcome is ambiguous; repair was not attempted.", info.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+			completed = true
 		}
-		_, _, _ = s.runCommand(parent, durable, rid, "validate", plan)
+		return
+	}
+	after, _, e := s.runCommand(parent, durable, rid, "info", plan)
+	if e != nil {
+		if s.finishRepair(durable, rid, "UNSAFE", "Post-failure history evidence could not be persisted; Repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
+		return
+	}
+	failedValidation, _, e := s.runCommand(parent, durable, rid, "validate", plan)
+	if e != nil {
+		if s.finishRepair(durable, rid, "UNSAFE", "Post-failure validation evidence could not be persisted; Repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
+		return
+	}
+	reason := repairEligibility(info, after, failedValidation)
+	if identity := migrationFailure(migrationExecutionID, migrated, after.JSON); identity.IdentityReason != "" && reason == "" {
+		reason = identity.IdentityReason
+	}
+	if reason != "" {
+		if e = s.finishRepair(durable, rid, "UNSAFE", reason, after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+			completed = true
+		}
+		return
+	}
+
+	// Repair also mutates Oracle history, so revoked account mappings and
+	// allowlists must stop it even if the migration already failed.
+	repairPlan, authErr := s.planJob(durable, s.db, t.Actor, run)
+	clear(repairPlan.password)
+	if authErr != nil || parent.Err() != nil {
+		reason := "Current execution authorization or mapping changed; repair was not attempted."
+		if parent.Err() != nil {
+			reason = "Application stopped before automatic Repair; history outcome requires reconciliation. Repair was not attempted."
+		}
+		if e = s.finishRepair(durable, rid, "UNSAFE", reason, after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+			completed = true
+		}
+		return
+	}
+	if e = s.changeRun(durable, rid, "REPAIRING", failureReason, "FAILED", "PENDING", nil, false, false); e != nil {
+		return
+	}
+	repaired, executionID, e := s.runCommand(parent, durable, rid, "repair", plan)
+	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Repair execution evidence could not be persisted; history outcome requires reconciliation. SQL was not replayed.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
+		return
+	}
+	post, _, e := s.runCommand(parent, durable, rid, "info", plan)
+	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Post-repair history evidence could not be persisted; Repair could not be verified.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
+		return
+	}
+	validated, _, e := s.runCommand(parent, durable, rid, "validate", plan)
+	if e != nil {
+		if s.finishRepair(durable, rid, "FAILED", "Post-repair validation evidence could not be persisted; Repair could not be verified.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true) == nil {
+			completed = true
+		}
+		return
+	}
+	safe := repaired.Success && repairResultSafe(repaired.JSON) && removedFailedVersion(repaired.JSON, after.JSON) && post.Success && validated.Success && repairHistoryRestored(info.JSON, post.JSON)
+	if !safe {
+		if e = s.finishRepair(durable, rid, "FAILED", "Repair result or unchanged unrelated history could not be verified. Oracle DDL remains unreverted.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true); e == nil {
+			completed = true
+		}
+		return
+	}
+	if e = s.finishRepair(durable, rid, "SUCCEEDED", "Failed history entry removed; migration remains FAILED. No SQL retry or rollback occurred; partial Oracle DDL may remain.", after.JSON, post.JSON, executionID, "FAILED", false); e == nil {
+		completed = true
 	}
 }
 func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allowHeld ...bool) (executionPlan, error) {
@@ -297,6 +364,14 @@ func (s *Service) runCommandWithPersistence(processCtx context.Context, persiste
 	if _, e = tx.ExecContext(persistCtx, `INSERT INTO run_executions VALUES(?,?,?,?,?,?,?,?,?,?,?)`, eid, rid, command, result.Success, result.ExitCode, result.Stdout, result.Stderr, payload, started, finished, result.Ambiguous); e != nil {
 		return result, "", e
 	}
+	if command == "migrate" && req.Engine != "postgresql" && !result.Success {
+		// Close the crash window between retaining the native failure and the
+		// worker's FAILED state transition. Recovery must keep both outcomes and
+		// the original exit/error even if the process stops at that exact point.
+		if _, e = tx.ExecContext(persistCtx, `UPDATE migration_runs SET migration_outcome='FAILED',repair_outcome='PENDING',exit_code=?,reason=? WHERE id=? AND status='RUNNING'`, result.ExitCode, migrationFailure(eid, result, nil).reason(), rid); e != nil {
+			return result, "", e
+		}
+	}
 	var logBytes int64
 	var logCount int
 	if e = tx.QueryRowContext(persistCtx, `SELECT COALESCE(SUM(length(CAST(message AS BLOB))),0),count(*) FROM migration_logs WHERE run_id=?`, rid).Scan(&logBytes, &logCount); e != nil {
@@ -321,4 +396,35 @@ func (s *Service) runCommandWithPersistence(processCtx context.Context, persiste
 		return result, "", e
 	}
 	return result, eid, tx.Commit()
+}
+func rawOrNull(p json.RawMessage) string {
+	if !json.Valid(p) {
+		return "null"
+	}
+	return string(p)
+}
+func (s *Service) finishRepair(ctx context.Context, rid, outcome, reason string, before, after json.RawMessage, executionID, state string, hold bool) error {
+	tx, e := s.db.BeginTx(ctx, nil)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	if _, e = tx.ExecContext(ctx, `INSERT INTO repair_operations VALUES(?,?,?,?,?,?)`, rid, outcome, reason, rawOrNull(before), rawOrNull(after), executionID); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status=?,repair_outcome=?,finished_at=? WHERE id=?`, state, outcome, now(), rid); e != nil {
+		return e
+	}
+	if hold {
+		if _, e = tx.ExecContext(ctx, `UPDATE migration_streams SET held=1,reason=? WHERE (target_id,schema_id)=(SELECT target_id,schema_id FROM migration_runs WHERE id=?)`, reason, rid); e != nil {
+			return e
+		}
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE jobs SET claimed=0 WHERE run_id=?`, rid); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, `INSERT INTO audit_events(actor_id,actor_type,actor_name,action,target,timestamp,outcome,request_id) SELECT actor_id,actor_kind,actor_name,'migration.repair',id,?,?,request_id FROM migration_runs WHERE id=?`, now(), outcome, rid); e != nil {
+		return e
+	}
+	return tx.Commit()
 }

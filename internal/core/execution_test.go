@@ -6,7 +6,6 @@ import (
 	"flyway-manager/internal/artifact"
 	"flyway-manager/internal/flyway"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -113,7 +112,10 @@ func (f *fakeEngine) Execute(ctx context.Context, r flyway.Request) flyway.Resul
 			f.failed[r.Schema] = failed
 			success = false
 			code = 1
-			obj["error"] = map[string]any{"errorCode": "FAULT", "message": "fixture failure"}
+			obj["success"] = false
+			obj["migrations"] = []any{}
+			obj["migrationsExecuted"] = 0
+			obj["error"] = map[string]any{"errorCode": "FAULT", "message": "fixture failure", "path": failed}
 		} else {
 			for _, p := range fileNames {
 				f.applied[r.Schema][p] = true
@@ -378,6 +380,49 @@ func TestDurableRunContinuityIdempotencyAndImmutableEvidence(t *testing.T) {
 		}
 	}
 }
+func TestConditionalRepairNeverRetriesOrSucceedsMigration(t *testing.T) {
+	for _, unsafe := range []bool{false, true} {
+		t.Run(fmt.Sprint(unsafe), func(t *testing.T) {
+			f, engine, target, schema, account := executionFixture(t)
+			engine.unsafe = unsafe
+			in := uploadRun(t, f, target, schema, account, "V1__fail.sql", "CREATE TABLE partial_fixture(id NUMBER); invalid SQL;")
+			r, e := f.s.SubmitRun(testCtx, f.trace(), in, "failure")
+			must(t, e)
+			done := waitRun(t, f, r.ID)
+			if done.MigrationOutcome != "FAILED" || engine.migrateCount(schema.Name) != 1 {
+				t.Fatalf("failed SQL replayed or reclassified %+v", done)
+			}
+			if unsafe {
+				if done.Status != "NEEDS_REVIEW" || done.RepairOutcome != "UNSAFE" {
+					t.Fatalf("unsafe repair %+v", done)
+				}
+				if _, e = f.s.SubmitRun(testCtx, f.trace(), in, "blocked"); e == nil {
+					t.Fatal("held stream accepted")
+				}
+			} else {
+				if done.Status != "FAILED" || done.RepairOutcome != "SUCCEEDED" {
+					t.Fatalf("safe repair %+v", done)
+				}
+			}
+			evidence, e := f.s.RunExecutions(testCtx, f.admin, r.ID)
+			must(t, e)
+			repairs := 0
+			for _, x := range evidence {
+				if x.Command == "repair" {
+					repairs++
+				}
+			}
+			if unsafe && repairs != 0 || !unsafe && repairs != 1 {
+				t.Fatalf("repair count %d", repairs)
+			}
+			repair, e := f.s.RunRepair(testCtx, f.admin, r.ID)
+			must(t, e)
+			if repair.Outcome != done.RepairOutcome {
+				t.Fatal("repair evidence mismatch")
+			}
+		})
+	}
+}
 func TestStreamSerializationAndIndependentStreams(t *testing.T) {
 	f, engine, target, schema, account := executionFixture(t)
 	gate := make(chan struct{})
@@ -522,6 +567,29 @@ func TestCancelledPredecessorCannotBeExecutedByLaterUpload(t *testing.T) {
 		t.Fatalf("unused reservation poisoned stream: %+v", r)
 	}
 }
+func TestRepairedFailureIsNeverAnImplicitSQLRetry(t *testing.T) {
+	f, engine, target, schema, account := executionFixture(t)
+	failed := uploadRun(t, f, target, schema, account, "V1__fail.sql", "PARTIAL DDL")
+	first, e := f.s.SubmitRun(testCtx, f.trace(), failed, "first-failure")
+	must(t, e)
+	if r := waitRun(t, f, first.ID); r.RepairOutcome != "SUCCEEDED" {
+		t.Fatal(r)
+	}
+	next := uploadRun(t, f, target, schema, account, "V2__next.sql", "SELECT 2 FROM dual;")
+	pre, e := f.s.Preflight(testCtx, f.trace(), next)
+	must(t, e)
+	if pre.Ready || !strings.Contains(fmt.Sprint(pre.Blockers), "automatic SQL retry") {
+		t.Fatalf("implicit retry preflight %+v", pre)
+	}
+	second, e := f.s.SubmitRun(testCtx, f.trace(), next, "next-must-not-retry")
+	must(t, e)
+	if r := waitRun(t, f, second.ID); r.Status != "BLOCKED" {
+		t.Fatalf("retried failed history %+v", r)
+	}
+	if engine.migrateCount(schema.Name) != 1 {
+		t.Fatal("migration SQL automatically retried")
+	}
+}
 func TestQueuedUserGrantRevocationBlocksDispatch(t *testing.T) {
 	f, engine, target, schema, account := executionFixture(t)
 	gate := make(chan struct{})
@@ -564,6 +632,23 @@ func TestRunHistoryFiltersCurrentAuthorizationBeforePagination(t *testing.T) {
 	must(t, e)
 	if len(out) != 0 {
 		t.Fatal("inactive resource leaked through history list")
+	}
+}
+
+func TestRepairRequiresCompletePendingAndAppliedHistory(t *testing.T) {
+	before := json.RawMessage(`{"migrations":[{"version":"1","script":"V1__fail.sql","state":"Pending","type":"SQL"},{"version":"0","script":"V0__old.sql","state":"Success","type":"SQL","installedOn":"2026-10-16T00:00:00Z"}]}`)
+	missing := json.RawMessage(`{"migrations":[{"version":"0","script":"V0__old.sql","state":"Success","type":"SQL","installedOn":"2026-10-16T00:00:00Z"}]}`)
+	altered := json.RawMessage(`{"migrations":[{"version":"1","script":"V1__fail.sql","state":"Pending","type":"SQL"},{"version":"0","script":"V0__old.sql","state":"Success","type":"SQL","installedOn":"2026-10-16T00:00:01Z"}]}`)
+	if repairHistoryRestored(before, missing) || repairHistoryRestored(before, altered) {
+		t.Fatal("unsafe post-repair history accepted")
+	}
+	if !repairHistoryRestored(before, before) {
+		t.Fatal("exact restored history rejected")
+	}
+	for _, payload := range []string{`{}`, `{"migrationsRemoved":[{}],"migrationsAligned":[{}],"migrationsDeleted":[]}`, `{"migrationsRemoved":[{}],"migrationsAligned":[],"migrationsDeleted":[{}]}`} {
+		if repairResultSafe(json.RawMessage(payload)) {
+			t.Fatal("unrelated history mutation accepted")
+		}
 	}
 }
 
@@ -640,15 +725,11 @@ func TestDocumentedFlywayInfoFieldsPreserveHistoryIdentity(t *testing.T) {
 	if rows[0].Script != "V1__a.sql" || rows[0].InstalledOn != "2026-10-16T00:00:00Z" {
 		t.Fatalf("documented fields lost %+v", rows)
 	}
-	normalized, e := history(two)
-	must(t, e)
-	if !reflect.DeepEqual(rows, normalized) {
+	if !repairHistoryRestored(one, two) {
 		t.Fatal("ephemeral workspace changed history identity")
 	}
 	changed := json.RawMessage(strings.ReplaceAll(string(two), "2026-10-16T00:00:00Z", "2026-10-16T00:00:01Z"))
-	altered, e := history(changed)
-	must(t, e)
-	if reflect.DeepEqual(rows, altered) {
+	if repairHistoryRestored(one, changed) {
 		t.Fatal("installed UTC evidence ignored")
 	}
 }

@@ -756,7 +756,7 @@ function MigrationPage() {
                     >
                       {target?.engine === "postgresql"
                         ? "A failed or ambiguous run remains held for operator review. Earlier scripts may already be committed. PostgreSQL migrations are never retried or repaired automatically."
-                        : "A failed migration may leave database changes in place. The stream is held for review; no automatic Repair or SQL retry is performed."}
+                        : "A failed migration may leave database changes in place. Automatic repair never reruns migration SQL or turns a failed run into success."}
                     </Notice>
                     <Button
                       variant="primary"
@@ -799,7 +799,7 @@ function MigrationPage() {
           <Notice tone="warning">
             {target?.engine === "postgresql"
               ? "A failed or ambiguous PostgreSQL run remains held for operator review. Earlier scripts may already be committed. No automatic retry or Repair is performed."
-              : "Oracle DDL may partially commit. Failed or uncertain migrations hold the stream for review; no automatic Repair or SQL retry is performed."}
+              : "Oracle DDL may partially commit. A failed migration remains failed even if conditional repair succeeds; SQL is never rerun automatically."}
           </Notice>
           <dl className="key-values">
             <div>

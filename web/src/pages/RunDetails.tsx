@@ -218,6 +218,19 @@ export default function RunDetails() {
                 </span>
               </div>
             </section>
+            {row.failure && (
+              <Notice tone="error" title="Original migration failure">
+                <dl className="key-values">
+                  <div><dt>Failed SQL</dt><dd>{row.failure.script || "Not identified"}</dd></div>
+                  <div><dt>Failed version</dt><dd>{row.failure.version || "Not reported"}</dd></div>
+                  <div><dt>Flyway error code</dt><dd>{row.failure.error_code || "Not reported"}</dd></div>
+                  <div><dt>Original CLI exit code</dt><dd>{row.failure.exit_code}</dd></div>
+                </dl>
+                <div className="code-card"><pre>{row.failure.message}</pre></div>
+                {row.failure.identity_reason && <p>{row.failure.identity_reason}</p>}
+                <p>Repair changes history, does not roll back Oracle DDL, and cannot turn this failed migration into success.</p>
+              </Notice>
+            )}
             {row.status === "FAILED" && (
               <Notice tone="error" title="Migration failed">
                 {row.reason || "Flyway reported a failed migration."}{" "}
