@@ -19,7 +19,7 @@ CREATE TABLE deployment_targets (
  created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
  UNIQUE(project_id,name), UNIQUE(id,project_id),
  FOREIGN KEY(target_id,schema_id,project_id) REFERENCES project_stream_owners(target_id,schema_id,project_id),
- FOREIGN KEY(execution_account_id,schema_id) REFERENCES account_schema_grants(account_id,schema_id)
+ FOREIGN KEY(execution_account_id,target_id) REFERENCES execution_accounts(id,target_id)
 );
 CREATE TRIGGER deployment_identity BEFORE UPDATE ON deployment_targets WHEN NEW.id<>OLD.id OR NEW.project_id<>OLD.project_id OR NEW.target_id<>OLD.target_id OR NEW.schema_id<>OLD.schema_id OR NEW.execution_account_id<>OLD.execution_account_id OR NEW.environment<>OLD.environment BEGIN SELECT RAISE(ABORT,'immutable deployment destination'); END;
 CREATE TABLE deployment_grants (

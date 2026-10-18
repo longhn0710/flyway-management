@@ -115,3 +115,33 @@ func TestExternalRevocationBeforeRepairHoldsFailure(t *testing.T) {
 	}
 	t.Fatal("run did not settle")
 }
+
+func TestExternalDestinationPreservesAccountEditingAndMappingRevocation(t *testing.T) {
+	f, _, d := externalFixture(t)
+	aid := externalUpload(t, f, d, "V1__pending.sql")
+	in := AccountInput{TargetID: d.TargetID, Name: "renamed-deployer", Username: "DEPLOY", Active: true, SchemaIDs: []string{d.SchemaID}}
+	_, e := f.s.SaveAccount(testCtx, f.trace(), d.ExecutionAccountID, in)
+	must(t, e)
+	in.SchemaIDs = []string{}
+	_, e = f.s.SaveAccount(testCtx, f.trace(), d.ExecutionAccountID, in)
+	must(t, e)
+	destination, e := f.s.DeploymentTarget(testCtx, f.admin, d.ProjectID, d.ID, "read")
+	must(t, e)
+	if destination.CanExecute || destination.CanUpload || !destination.CanPreflight {
+		t.Fatalf("revoked mapping permissions: %+v", destination)
+	}
+	assessment, e := f.s.ExternalPreflight(testCtx, f.trace(), d.ProjectID, d.ID, ExternalRunInput{ArtifactID: aid, DeploymentTargetRevision: d.Revision})
+	must(t, e)
+	if assessment["ready"] != false || assessment["live_status"] != "NOT_VERIFIED" {
+		t.Fatalf("unmapped destination was verified: %+v", assessment)
+	}
+	if _, e = f.s.GetExternalPreflight(testCtx, f.admin, d.ProjectID, assessment["id"].(string)); e != nil {
+		t.Fatal(e)
+	}
+	_, e = f.s.SaveDeploymentTarget(testCtx, f.trace(), d.ProjectID, "", DeploymentTargetInput{Name: "unmapped", Environment: d.Environment, TargetID: d.TargetID, SchemaID: d.SchemaID, ExecutionAccountID: d.ExecutionAccountID, Active: true})
+	status(t, e, 409)
+	in.SchemaIDs = []string{d.SchemaID}
+	_, e = f.s.SaveAccount(testCtx, f.trace(), d.ExecutionAccountID, in)
+	must(t, e)
+	externalAssess(t, f, f.trace(), d, aid)
+}

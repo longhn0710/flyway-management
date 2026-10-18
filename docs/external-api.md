@@ -53,7 +53,7 @@ After adoption, v1 upload/preflight/submit writes to that stream return `409 PRO
 
 Migration `009_project_deployments.sql` is additive; migrations 001–008 retain their checksums. Project ownership, artifact/run attribution, preflights and finalized records cannot be deleted through this API. Foreign keys restrict deleting a referenced Project or destination. Archive or retire it to preserve evidence. Back up SQLite and the original encryption master key together before a future rollout; an older binary must not open schema 9.
 
-Preflights expire after ten minutes and bind the actor, artifact, revision, effective configuration and stream inventory. Live checks still run in the existing worker. A preflight never reserves execution authority. Changed/revoked permissions or credentials can block the worker. No target password or service token is included in returned artifacts, runs, logs or records.
+Preflights expire after ten minutes and bind the actor, artifact, revision, effective configuration and stream inventory. Live checks still run in the existing worker. A preflight never reserves execution authority. Changed/revoked permissions, account mappings or credentials can block the worker. Account administration retains its existing update behavior; removing a mapping disables upload/execution while read-only preflight can persist a blocked assessment. No target password or service token is included in returned artifacts, runs, logs or records.
 
 ## Verification
 

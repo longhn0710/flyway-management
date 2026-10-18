@@ -175,14 +175,19 @@ func (s *Service) ExternalPreflight(ctx context.Context, t Trace, p, d string, i
 	if _, e = s.artifactForDeployment(ctx, s.db, t.Actor, p, d, in.ArtifactID); e != nil {
 		return nil, e
 	}
-	fingerprint, e := s.externalFingerprint(ctx, s.db, dest, in.ArtifactID)
-	if e != nil {
-		return nil, e
-	}
+	fingerprint, snapshotErr := s.externalFingerprint(ctx, s.db, dest, in.ArtifactID)
 	adm := externalAdmission{Project: p, Deployment: d, Revision: dest.Revision}
-	assessment, e := s.Preflight(ctx, t, adm.runInput(dest, in.ArtifactID))
-	if e != nil {
-		return nil, e
+	assessment := preflightBase()
+	if snapshotErr != nil {
+		if ce, ok := snapshotErr.(*Error); !ok || (ce.Status != 400 && ce.Status != 403 && ce.Status != 409) {
+			return nil, snapshotErr
+		}
+		assessment.block("MAPPING_UNAVAILABLE", safeExecutionError(snapshotErr))
+	} else {
+		assessment, e = s.Preflight(ctx, t, adm.runInput(dest, in.ArtifactID))
+		if e != nil {
+			return nil, e
+		}
 	}
 	fid := id()
 	created := now()
@@ -197,11 +202,18 @@ func (s *Service) ExternalPreflight(ctx context.Context, t Trace, p, d string, i
 			return conflict("Deployment Target changed during preflight.")
 		}
 		f, e := s.externalFingerprint(ctx, tx, current, in.ArtifactID)
-		if e != nil {
-			return e
-		}
-		if f != fingerprint {
-			return conflict("Destination or stream changed during preflight; assess again.")
+		if assessment.Ready {
+			if e != nil {
+				return e
+			}
+			if f != fingerprint {
+				return conflict("Destination or stream changed during preflight; assess again.")
+			}
+		} else if e != nil {
+			if ce, ok := e.(*Error); !ok || (ce.Status != 400 && ce.Status != 403 && ce.Status != 409) {
+				return e
+			}
+			f = ""
 		}
 		_, e = tx.ExecContext(ctx, `INSERT INTO migration_preflights VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, fid, p, d, in.ArtifactID, dest.Revision, t.Actor.Kind, t.Actor.ID, fingerprint, assessment.Ready, created, created+600, string(payload))
 		return e

@@ -166,7 +166,8 @@ func (s *Service) deploymentAccess(ctx context.Context, q queryer, a Actor, p, d
 	operate := Allowed(a, "operate", x.TargetID, x.SchemaID, env, gs) && env == x.Environment && active && sactive && x.Active && status == "active" && mapped == 1
 	x.CanRead = x.CanRead && Allowed(a, "read", x.TargetID, x.SchemaID, env, gs)
 	x.CanUpload = x.CanUpload && operate
-	x.CanPreflight = x.CanPreflight && operate
+	// Read-only assessment remains available when a credential or mapping is unavailable.
+	x.CanPreflight = x.CanPreflight && Allowed(a, "operate", x.TargetID, x.SchemaID, env, gs) && env == x.Environment && active && sactive && x.Active && status == "active"
 	x.CanExecute = x.CanExecute && operate
 	if !x.CanRead {
 		return DeploymentTarget{}, missing()
@@ -225,6 +226,17 @@ func (s *Service) SaveDeploymentTarget(ctx context.Context, t Trace, p, d string
 			if e := connectionAccountAllowed(ctx, tx, in.TargetID, in.SchemaID, in.ExecutionAccountID); e != nil {
 				return e
 			}
+			if e := connectionSchemaAllowed(ctx, tx, in.TargetID, in.SchemaID); e != nil {
+				return e
+			}
+			var mapped int
+			if e := tx.QueryRowContext(ctx, `SELECT count(*) FROM account_schema_grants g JOIN execution_accounts a ON a.id=g.account_id WHERE g.target_id=? AND g.schema_id=? AND g.account_id=? AND a.active=1`, in.TargetID, in.SchemaID, in.ExecutionAccountID).Scan(&mapped); e != nil {
+				return e
+			}
+			if mapped != 1 {
+				return conflict("An active execution account mapped to this schema is required.")
+			}
+
 			if e := tx.QueryRowContext(ctx, `SELECT environment FROM database_targets WHERE id=?`, in.TargetID).Scan(&env); e != nil {
 				return e
 			}

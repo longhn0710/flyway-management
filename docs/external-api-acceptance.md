@@ -12,12 +12,12 @@ These IDs belong to the isolated acceptance installation, which is removed after
 
 | Field | Actual value |
 |---|---|
-| Project ID | `e0mRvhtT1no9hnFbr3y6pk` |
-| Deployment Target ID | `KcvuBswYwnib7S15KXtIxa` |
-| Artifact ID | `Fc4RztiMaOuTr05qwsOQlA` |
+| Project ID | `urneUU5UKth7wK82nYVzRY` |
+| Deployment Target ID | `_ktsQyZ8GndKOPnRLwvwN1` |
+| Artifact ID | `RhEaB9VBzKT4tDYq751OmL` |
 | Original ZIP SHA-256 | `250e5fe1be05c0e1e947c6ba59ae1680360d603ca5774adf4411347d6b2f783c` |
-| Preflight ID | `RcvTaSxwxAjWqoWlg-o_FI` |
-| Run ID | `pXqASgAhBD7fMv-ZxDmlyY` |
+| Preflight ID | `YGKz_-gWrdpzLbc35YjeNG` |
+| Run ID | `PPeH_rEZcAIGymNilsU7jv` |
 | Preflight result | `ready: true`, `live_status: VERIFIED` under the subprocess fixture |
 | Terminal result | `SUCCEEDED`, `completed: true`, `record_available: true` |
 
@@ -50,7 +50,7 @@ Core tests additionally exercise explicit PROD authority, principal membership a
 
 ## Persistence and execution compatibility
 
-Migration 009 adds nine focused tables plus indexes, composite foreign keys and immutability triggers. Migrations 001–008 are unchanged. The v8→v9 test preserves legacy run snapshots, credential ciphertext bytes, original artifact BLOB bytes and audit identity, checks `PRAGMA integrity_check` and `foreign_key_check`, rejects a second Project owner, enforces destination immutability and rejects mismatched artifact/preflight attribution and revision. New attribution is not guessed for historical data.
+Migration 009 adds nine focused tables plus indexes, composite foreign keys and immutability triggers. Migrations 001–008 are unchanged. The v8→v9 test preserves legacy run snapshots, credential ciphertext bytes, original artifact BLOB bytes and audit identity, checks `PRAGMA integrity_check` and `foreign_key_check`, rejects a second Project owner, enforces destination immutability and rejects mismatched artifact/preflight attribution and revision. New attribution is not guessed for historical data. Account rename/update continues to work after adoption; removing its schema mapping disables writes and yields a durable `NOT_VERIFIED` assessment. Restoring the mapping restores readiness. The regression passes under the race detector, and independent review verified the stable account foreign key and live mapping checks.
 
 Unadopted streams retain v1 behavior. Adoption waits for earlier jobs to settle. Adopted streams require the Project Deployment Target API for upload/preflight/submission. Reads of new attributed artifacts/runs enforce Project/target/token policy through both API versions. Retiring or archiving preserves ownership and history; foreign keys prevent deleting referenced Projects or destinations.
 
