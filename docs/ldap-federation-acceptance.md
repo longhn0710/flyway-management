@@ -42,8 +42,9 @@ observed node and storage figures support preparing this small request; they do
 not reserve capacity or guarantee scheduling at a later time. Existing
 Keycloak is on `k8s-worker1`; the Manager pod selector is
 `app.kubernetes.io/instance=flyway-manager,app.kubernetes.io/name=flyway-manager`.
-The current Manager egress policy permits DNS and Oracle only, so an explicit
-Manager-to-LDAP rule and CA mount are required. Those changes are not included
+The current Manager egress policy set permits DNS, Oracle TCP 1521, and the
+designated Phase 8 PostgreSQL lab TCP 5432. It has no LDAP egress, so an explicit
+Manager-to-LDAPS rule and CA mount are required. Those changes are not included
 in the isolated namespace apply set and need separate authorization. Keycloak
 has no ordinary NetworkPolicy in its namespace; LDAP-side ingress remains
 restricted to the observed Keycloak and Manager pod selectors.
@@ -67,9 +68,19 @@ The selected image is pinned to the current multi-architecture manifest digest
 and arm64 child digest
 `sha256:c1c949e326cf388613d4e49b47299b6222aa3fc155af33b7c47948eb07b0360a`.
 The pinned image configuration declares user `ldap`; its published amd64 image
-filesystem was inspected read-only and maps `ldap` to UID/GID 911. This is a
-pre-release v2 image, so its image maturity and acceptance suitability must be
-reviewed before approval. The image is not used by the live cluster.
+filesystem was inspected read-only and maps `ldap` to UID/GID 911. The proposed
+StatefulSet uses a nonroot init container to create the four data/config paths
+before mounting the persistent volume, avoiding missing `subPath` directory
+startup failures. `OPENLDAP_URLS` disables the network-cleartext LDAP listener
+while retaining the local LDAPI socket used by bootstrap tools. The image's
+startup scripts copy modules and schemas into image filesystem paths, so
+`readOnlyRootFilesystem` is intentionally not enabled; `/run` and `/tmp` remain
+bounded memory-backed mounts. A current alternative, `vegardit/openldap`, was
+reviewed from its pinned image and entry script: startup performs `usermod`,
+`groupmod`, and recursive `chown`, which is incompatible with the restricted
+nonroot pod context. The osixia image is therefore the available pinned choice
+that matches the tested restricted UID model, with its beta status retained as
+an approval risk. No container was started.
 
 The lab uses `dc=flyway,dc=lab`, `ou=people`, and `ou=groups`. It has no public
 Ingress, NodePort, LoadBalancer, host networking, or service-account token.
@@ -195,7 +206,8 @@ shared realm changes. The exact concrete review set is:
 
 - the Namespace, StatefulSet, Service, PVC template and NetworkPolicies in
   `deploy/identity-lab/`;
-- the image choice (including its pre-release status), all CPU/memory/storage
+- the image choice (including its pre-release status and writable image
+  filesystem requirement), all CPU/memory/storage
   bounds, TLS and credential Secret names/keys, and operator-only Secret
   creation procedures;
 - the Manager egress policy, CA Secret mount and direct-LDAP settings;
@@ -208,7 +220,8 @@ executed.
 
 ## Primary documentation references
 
-- [OpenLDAP v2 container documentation](https://github.com/osixia/container-openldap/blob/develop/README.md) and [registry tag/digest metadata](https://hub.docker.com/r/osixia/openldap/tags): listener ports, bootstrap variables, TLS-required option and current image digest. The pinned tag is a beta proposed only for disposable acceptance.
+- [OpenLDAP v2 container documentation](https://github.com/osixia/container-openldap/blob/develop/README.md) and [registry tag/digest metadata](https://hub.docker.com/r/osixia/openldap/tags): listener ports, bootstrap variables, TLS-required option and current image digest. The pinned tag is a beta proposed only for disposable acceptance. Its pinned amd64 filesystem and startup scripts were extracted locally without starting a container to verify UID 911, persistent paths, listener defaults, module/schema writes, and Secret-backed bootstrap environment names.
+- [vegardit OpenLDAP image documentation](https://github.com/vegardit/docker-openldap/blob/main/README.md) and [pinned startup script source](https://github.com/vegardit/docker-openldap/blob/8331dc4/image/run.sh): current supported volumes, secret-file inputs, TLS settings, and its root-level UID/GID and ownership operations. Its image was inspected but never started.
 - [Keycloak 26.7 LDAP federation guide](https://www.keycloak.org/docs/26.7.0/server_admin/index.html): LDAPS trust, LDAP import/sync, federation, and mapper behavior.
 - [Keycloak truststore guide](https://www.keycloak.org/server/keycloak-truststore): `KC_TRUSTSTORE_PATHS` and strict hostname handling for LDAP.
 - [Keycloak vault guide](https://www.keycloak.org/server/vault): file-vault support for LDAP bind credentials, realm-prefixed Secret filenames, and build-time enablement.

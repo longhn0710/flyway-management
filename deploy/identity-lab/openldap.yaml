@@ -47,6 +47,30 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: prepare-persistent-directories
+          image: docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - mkdir -p /state/config /state/openldap-data /state/openldap-backups /state/run
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 911
+            runAsGroup: 911
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: data
+              mountPath: /state
       containers:
         - name: openldap
           image: docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d
@@ -56,6 +80,8 @@ spec:
               value: Flyway Manager Identity Acceptance
             - name: OPENLDAP_BOOTSTRAP_SUFFIX
               value: dc=flyway,dc=lab
+            - name: OPENLDAP_URLS
+              value: "ldaps://:6360 ldapi:///"
             - name: OPENLDAP_BOOTSTRAP_TLS
               value: "true"
             - name: OPENLDAP_BOOTSTRAP_TLS_REQUIRED
@@ -119,7 +145,6 @@ spec:
               memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
           volumeMounts:
