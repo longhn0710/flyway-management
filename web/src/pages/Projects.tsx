@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   api,
+  apiV2List,
   apiList,
   type DatabaseTarget,
   type TargetSchema,
@@ -15,6 +16,7 @@ import {
 import { infoHref } from "../lib/flyway-info";
 import { schemaHref } from "../lib/navigation";
 import { canRun } from "../lib/permissions";
+import type { Run } from "../lib/execution";
 import { useIdentity } from "../lib/identity-context";
 import {
   Badge,
@@ -28,6 +30,7 @@ import {
   SearchBox,
 } from "../components/ui";
 import History from "./History";
+import DeploymentTargets from "./DeploymentTargets";
 
 type Resource = { target: DatabaseTarget; schema: TargetSchema };
 function useResources() {
@@ -170,7 +173,7 @@ function ProjectDetails({ id }: { id: string }) {
         (!m.schema_id || m.schema_id === r.schema.id),
     ),
   );
-  const history = params.get("tab") === "history";
+  const currentTab = params.get("tab") || "resources";
   return (
     <>
       <PageHeading
@@ -213,37 +216,45 @@ function ProjectDetails({ id }: { id: string }) {
             </Notice>
           )}
           <div className="tabs" role="tablist" aria-label="Project sections">
-            {["resources", "history"].map((tab) => (
+            {(
+              ["resources", "targets", "history", "legacy-history"] as const
+            ).map((tab) => (
               <button
                 key={tab}
                 role="tab"
-                aria-selected={
-                  history ? tab === "history" : tab === "resources"
-                }
-                className={
-                  (history ? tab === "history" : tab === "resources")
-                    ? "active"
-                    : ""
-                }
+                aria-selected={currentTab === tab}
+                className={currentTab === tab ? "active" : ""}
                 onClick={() => {
                   const next = new URLSearchParams();
-                  if (tab === "history") next.set("tab", tab);
+                  if (tab !== "resources") next.set("tab", tab);
                   setParams(next);
                 }}
               >
-                {tab === "resources"
-                  ? "Databases / Schemas"
-                  : "Migration history"}
+                {
+                  {
+                    resources: "Databases / Schemas",
+                    targets: "Deployment Targets",
+                    history: "Project history",
+                    "legacy-history": "Legacy history",
+                  }[tab]
+                }
               </button>
             ))}
           </div>
-          {history ? (
+          {currentTab === "targets" ? (
+            <DeploymentTargets
+              projectID={id}
+              projectActive={project.data.status === "active"}
+            />
+          ) : currentTab === "history" ? (
+            <ProjectAttributedHistory projectID={id} />
+          ) : currentTab === "legacy-history" ? (
             <>
               <Notice>
-                History uses current project membership and your current read
-                permissions. Adding a scope includes its prior runs; removing it
-                removes those runs from this view. Original execution snapshots
-                and actor attribution stay unchanged.
+                Legacy history is grouped using current project membership.
+                Adding a scope includes prior runs; removing it removes them
+                from this view. These runs do not carry immutable project
+                attribution.
               </Notice>
               <History projectID={id} />
             </>
@@ -557,5 +568,117 @@ function ProjectEditor({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function ProjectAttributedHistory({ projectID }: { projectID: string }) {
+  const query = useQuery({
+    queryKey: ["project-attributed-runs", projectID],
+    queryFn: () =>
+      apiV2List<Run>(
+        `/projects/${encodeURIComponent(projectID)}/migration-runs`,
+      ),
+    refetchInterval: (q) =>
+      q.state.data?.some(
+        (r) =>
+          ["QUEUED", "PREFLIGHT", "RUNNING", "REPAIRING"].includes(r.status) ||
+          (r.status === "FAILED" &&
+            (!r.repair_outcome || r.repair_outcome === "PENDING")),
+      )
+        ? 2000
+        : false,
+  });
+  const rows = query.data ?? [];
+  return (
+    <section>
+      <h2>Project attributed history</h2>
+      <p className="small muted">
+        Runs in this view carry immutable project and deployment target
+        attribution.
+      </p>
+      {query.isPending ? (
+        <div className="skeleton" role="status" />
+      ) : query.isError ? (
+        <Notice tone="error">
+          {query.error.message}{" "}
+          <Button onClick={() => void query.refetch()}>Retry</Button>
+        </Notice>
+      ) : (
+        <DataTable
+          data={rows}
+          empty="No project attributed runs yet."
+          columns={[
+            {
+              header: "Run",
+              id: "run",
+              cell: ({ row }) => (
+                <Link
+                  to={`/runs/${encodeURIComponent(row.original.run_id || row.original.id)}`}
+                >
+                  {row.original.run_id || row.original.id}
+                </Link>
+              ),
+            },
+            {
+              header: "Status",
+              accessorKey: "status",
+              cell: ({ row }) => <Badge>{row.original.status}</Badge>,
+            },
+            {
+              header: "Deployment target",
+              id: "dt",
+              cell: ({ row }) => (
+                <code>
+                  {(row.original as Run & { deployment_target_id?: string })
+                    .deployment_target_id || "—"}
+                </code>
+              ),
+            },
+            {
+              header: "Destination",
+              id: "dest",
+              cell: ({ row }) => (
+                <>
+                  {row.original.target?.name || row.original.target_id} /{" "}
+                  {row.original.schema?.name || row.original.schema_id}
+                </>
+              ),
+            },
+            {
+              header: "External source",
+              id: "source",
+              cell: ({ row }) => {
+                const source = (
+                  row.original as Run & { external_source?: unknown }
+                ).external_source;
+                return source === undefined || source === null ? (
+                  "—"
+                ) : (
+                  <pre className="small code-card">
+                    {JSON.stringify(source, null, 2)}
+                  </pre>
+                );
+              },
+            },
+            {
+              header: "Requested",
+              accessorKey: "created_at",
+              cell: ({ row }) =>
+                row.original.created_at
+                  ? new Date(row.original.created_at).toLocaleString()
+                  : "—",
+            },
+            {
+              header: "Completion",
+              id: "completion",
+              cell: ({ row }) =>
+                (row.original as Run & { completed?: boolean }).completed
+                  ? "Completed"
+                  : row.original.status,
+            },
+          ]}
+        />
+      )}
+    </section>
   );
 }

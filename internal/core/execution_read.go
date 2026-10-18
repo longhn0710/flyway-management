@@ -90,6 +90,9 @@ func (s *Service) Run(ctx context.Context, a Actor, rid string) (Run, error) {
 	if e = s.Authorize(ctx, a, "read", x.TargetID, x.SchemaID); e != nil {
 		return Run{}, e
 	}
+	if e = s.runProjectAccess(ctx, s.db, a, rid, &x); e != nil {
+		return Run{}, e
+	}
 	if x.Target.Engine != "postgresql" && x.MigrationOutcome == "FAILED" {
 		x.Failure, e = s.runMigrationFailure(ctx, rid, x.FlywayVersion)
 		if e != nil {
@@ -147,7 +150,7 @@ func (s *Service) Runs(ctx context.Context, a Actor, f RunFilter) ([]Run, error)
 		return nil, e
 	}
 	defer rows.Close()
-	out := []Run{}
+	candidates := []Run{}
 	l, o := f.bounds()
 	seen := 0
 	for rows.Next() {
@@ -159,12 +162,26 @@ func (s *Service) Runs(ctx context.Context, a Actor, f RunFilter) ([]Run, error)
 		if !ok || (!scope.active && !a.Admin()) || !Allowed(a, "read", x.TargetID, x.SchemaID, scope.environment, gs) {
 			continue
 		}
+		candidates = append(candidates, x)
+	}
+	if e = rows.Err(); e != nil {
+		return nil, e
+	}
+	rows.Close()
+	out := []Run{}
+	for _, x := range candidates {
+		if e = s.runProjectAccess(ctx, s.db, a, x.ID, &x); e != nil {
+			if ce, ok := e.(*Error); ok && (ce.Status == 403 || ce.Status == 404) {
+				continue
+			}
+			return nil, e
+		}
 		if seen >= o && len(out) < l {
 			out = append(out, x)
 		}
 		seen++
 	}
-	return out, rows.Err()
+	return out, nil
 }
 func (s *Service) RunLogs(ctx context.Context, a Actor, rid string, p Page, channel string) ([]RunLog, error) {
 	if _, e := s.Run(ctx, a, rid); e != nil {

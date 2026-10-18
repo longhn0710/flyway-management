@@ -39,6 +39,10 @@ func page(r *http.Request) core.Page {
 }
 func pathID(r *http.Request) string { return chi.URLParam(r, "id") }
 func (h phase2) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if strings.HasPrefix(r.URL.Path, "/api/v2/") {
+		h.externalFail(w, r, err)
+		return
+	}
 	var e *core.Error
 	if !errors.As(err, &e) {
 		h.logger.Error("API operation failed", "request_id", middleware.GetReqID(r.Context()))
@@ -59,13 +63,13 @@ func (h phase2) fail(w http.ResponseWriter, r *http.Request, err error) {
 func (h phase2) ready(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if h.s == nil {
-			writeError(w, 503, "NOT_READY", "Identity service is unavailable.")
+			h.fail(w, r, &core.Error{Status: 503, Code: "NOT_READY", Message: "Identity service is unavailable."})
 			return
 		}
 		w.Header().Set("X-Request-ID", middleware.GetReqID(r.Context()))
 		w.Header().Set("Cache-Control", "no-store")
 		budget := 20 * time.Second
-		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" || strings.HasSuffix(r.URL.Path, "/flyway-info/refresh") {
+		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" || strings.HasSuffix(r.URL.Path, "/flyway-info/refresh") || strings.HasSuffix(r.URL.Path, "/preflights") {
 			budget = 50 * time.Second
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), budget)
@@ -102,6 +106,17 @@ func (h phase2) authenticated(next http.Handler) http.Handler {
 		if a.Kind == "user" && mutating(r.Method) {
 			if !h.sameOrigin(r) || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-CSRF-Token")), []byte(a.CSRF)) != 1 {
 				h.fail(w, r, &core.Error{Status: 403, Code: "CSRF_REJECTED", Message: "Request origin or CSRF token is invalid."})
+				return
+			}
+		}
+		if a.Kind == "service" && mutating(r.Method) && strings.HasPrefix(r.URL.Path, "/api/v1/") {
+			scoped, e := h.s.ScopedToken(r.Context(), a)
+			if e != nil {
+				h.fail(w, r, e)
+				return
+			}
+			if scoped {
+				h.fail(w, r, &core.Error{Status: 403, Code: "TOKEN_AUDIENCE", Message: "Project-scoped tokens may mutate only the project deployment API."})
 				return
 			}
 		}

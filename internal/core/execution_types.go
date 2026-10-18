@@ -48,6 +48,8 @@ type RunContext struct {
 	InitiatedBy   string `json:"initiated_by,omitempty"`
 }
 type RunInput struct {
+	external *externalAdmission
+
 	TargetID           string     `json:"target_id"`
 	SchemaID           string     `json:"schema_id"`
 	ExecutionAccountID string     `json:"execution_account_id"`
@@ -69,6 +71,13 @@ type RunSnapshot struct {
 	Account             AccountSnapshot   `json:"account"`
 }
 type Run struct {
+	ProjectID                string         `json:"project_id,omitempty"`
+	DeploymentTargetID       string         `json:"deployment_target_id,omitempty"`
+	DeploymentTargetRevision int            `json:"deployment_target_revision,omitempty"`
+	ExternalSource           ExternalSource `json:"external_source,omitempty"`
+	Completed                bool           `json:"completed"`
+	RecordAvailable          bool           `json:"record_available"`
+
 	ArtifactName string `json:"artifact_name"`
 	StatusURL    string `json:"status_url"`
 	LogsURL      string `json:"logs_url"`

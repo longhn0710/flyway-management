@@ -85,6 +85,18 @@ export interface ApiToken {
   last_used_at: string;
   revoked: boolean;
 }
+export interface TokenDeploymentScope {
+  deployment_target_id: string;
+  read: boolean;
+  upload: boolean;
+  preflight: boolean;
+  execute: boolean;
+}
+export interface TokenInput {
+  name: string;
+  expires_at: string;
+  deployment_scopes?: TokenDeploymentScope[];
+}
 export interface TokenCreated {
   token: string;
   metadata: ApiToken;
@@ -125,8 +137,18 @@ export interface Health {
 export interface ApiResponse<T> {
   data: T;
 }
+interface ApiPagedResponse<T> extends ApiResponse<T> {
+  page?: { limit?: number; next_cursor?: string };
+}
 export interface ApiErrorBody {
   error?: { code?: string; message?: string; field?: string };
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  instance?: string;
+  code?: string;
+  field?: string;
 }
 export class ApiError extends Error {
   constructor(
@@ -153,6 +175,29 @@ export function setUnauthorizedHandler(handler: (() => void) | undefined) {
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return apiBase<T>(path, init, "/api/v1");
+}
+
+export async function apiV2<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  return apiBase<T>(path, init, "/api/v2");
+}
+
+async function apiBase<T>(
+  path: string,
+  init: RequestInit,
+  base: string,
+): Promise<T> {
+  return (await apiEnvelope<T>(path, init, base)).data;
+}
+
+async function apiEnvelope<T>(
+  path: string,
+  init: RequestInit,
+  base: string,
+): Promise<ApiPagedResponse<T>> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
   if (init.body && !(init.body instanceof FormData))
@@ -164,7 +209,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   ) {
     headers.set("X-CSRF-Token", csrfToken);
   }
-  const response = await fetch(`/api/v1${path}`, {
+  const response = await fetch(`${base}${path}`, {
     ...init,
     headers,
     credentials: "same-origin",
@@ -181,16 +226,18 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       onUnauthorized?.();
     throw new ApiError(
       response.status,
-      body?.error?.code ?? "HTTP_ERROR",
-      body?.error?.message ?? `Request failed (${response.status})`,
-      body?.error?.field,
+      body?.error?.code ?? body?.code ?? "HTTP_ERROR",
+      body?.error?.message ??
+        body?.detail ??
+        `Request failed (${response.status})`,
+      body?.error?.field ?? body?.field,
     );
   }
-  if (response.status === 204) return undefined as T;
-  const body = (await response.json()) as ApiResponse<T>;
+  if (response.status === 204) return { data: undefined as T };
+  const body = (await response.json()) as ApiPagedResponse<T>;
   if (!body || !("data" in body))
     throw new Error("API response does not match the expected contract");
-  return body.data;
+  return body;
 }
 export async function apiList<T>(path: string, pageSize = 200): Promise<T[]> {
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 200)
@@ -206,6 +253,35 @@ export async function apiList<T>(path: string, pageSize = 200): Promise<T[]> {
       throw new Error("API list response does not match the expected contract");
     all.push(...page);
     if (page.length < pageSize) return all;
+  }
+}
+export async function apiV2List<T>(path: string, pageSize = 200): Promise<T[]> {
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 200)
+    throw new RangeError("API page size must be between 1 and 200");
+  const [resource, query = ""] = path.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.delete("offset");
+  params.delete("cursor");
+  const all: T[] = [];
+  const seen = new Set<string>();
+  let cursor = "";
+  for (;;) {
+    params.set("limit", String(pageSize));
+    if (cursor) params.set("cursor", cursor);
+    const page = await apiEnvelope<T[]>(
+      `${resource}?${params.toString()}`,
+      {},
+      "/api/v2",
+    );
+    if (!Array.isArray(page.data))
+      throw new Error("API list response does not match the expected contract");
+    all.push(...page.data);
+    const next = page.page?.next_cursor;
+    if (!next) return all;
+    if (seen.has(next))
+      throw new Error("API returned a repeated pagination cursor");
+    seen.add(next);
+    cursor = next;
   }
 }
 export async function getHealth(signal?: AbortSignal): Promise<Health> {

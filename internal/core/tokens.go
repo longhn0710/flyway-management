@@ -119,6 +119,8 @@ type Token struct {
 	Revoked    bool   `json:"revoked"`
 }
 type TokenInput struct {
+	DeploymentScopes []TokenDeploymentScope `json:"deployment_scopes,omitempty"`
+
 	Name      string `json:"name"`
 	ExpiresAt string `json:"expires_at"`
 }
@@ -198,12 +200,45 @@ func (s *Service) IssueToken(ctx context.Context, t Trace, serviceID, rotateID s
 			if revoked {
 				return conflict("Token has already been revoked or rotated.")
 			}
+			if in.DeploymentScopes == nil {
+				rows, err := tx.QueryContext(ctx, `SELECT deployment_target_id,can_read,can_upload,can_preflight,can_execute FROM token_deployment_scopes WHERE token_id=? ORDER BY deployment_target_id`, rotateID)
+				if err != nil {
+					return err
+				}
+				for rows.Next() {
+					var g TokenDeploymentScope
+					if err = rows.Scan(&g.DeploymentTargetID, &g.Read, &g.Upload, &g.Preflight, &g.Execute); err != nil {
+						rows.Close()
+						return err
+					}
+					in.DeploymentScopes = append(in.DeploymentScopes, g)
+				}
+				err = rows.Err()
+				rows.Close()
+				if err != nil {
+					return err
+				}
+			}
 			if _, e = tx.ExecContext(ctx, "UPDATE api_tokens SET revoked=1 WHERE id=?", rotateID); e != nil {
 				return e
 			}
 		}
 		_, e = tx.ExecContext(ctx, "INSERT INTO api_tokens(id,service_id,name,prefix,secret_hash,created_at,expires_at) VALUES(?,?,?,?,?,?,?)", tid, serviceID, in.Name, raw[:11], digest(raw), now(), ex.Unix())
-		return e
+		if e != nil {
+			return e
+		}
+		if len(in.DeploymentScopes) > 200 {
+			return invalid("deployment_scopes", "At most 200 scopes are allowed.")
+		}
+		for _, g := range in.DeploymentScopes {
+			if !g.Read && (g.Upload || g.Preflight || g.Execute) {
+				return invalid("deployment_scopes", "Actions require read.")
+			}
+			if _, e = tx.ExecContext(ctx, `INSERT INTO token_deployment_scopes VALUES(?,?,?,?,?,?)`, tid, g.DeploymentTargetID, g.Read, g.Upload, g.Preflight, g.Execute); e != nil {
+				return e
+			}
+		}
+		return nil
 	})
 	if e != nil {
 		return IssuedToken{}, e

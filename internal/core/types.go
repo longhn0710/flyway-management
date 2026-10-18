@@ -132,6 +132,11 @@ func (s *Service) mutation(ctx context.Context, t Trace, action, target string, 
 	if err = audit(ctx, tx, t, action, target, "success"); err != nil {
 		return err
 	}
+	if action == "migration.cancel" {
+		if err = s.freezeCompletedRecords(ctx, tx); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 func requireAdmin(a Actor) error {

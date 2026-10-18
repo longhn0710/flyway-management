@@ -476,10 +476,10 @@ test("Projects and native Info: real APIs, read-only refresh, RBAC, browser work
       page.getByRole("link", { name: "APPLICATION_UAT", exact: true }),
     ).toHaveCount(0);
     await page
-      .getByRole("tab", { name: "Migration history", exact: true })
+      .getByRole("tab", { name: "Legacy history", exact: true })
       .click();
     await expect(
-      page.getByText("History uses current project membership", {
+      page.getByText("Legacy history is grouped using current project membership", {
         exact: false,
       }),
     ).toBeVisible();

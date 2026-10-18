@@ -254,6 +254,9 @@ test("service account grants, one-time token display, rotation and revocation", 
   await page
     .getByLabel("Expiration")
     .fill(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16));
+  await page
+    .getByLabel("Issue legacy token without project Deployment Target scopes")
+    .check();
   await page.getByRole("button", { name: "Create token" }).click();
   const once = page.getByRole("dialog");
   await expect(once).toContainText("Copy your API token now");

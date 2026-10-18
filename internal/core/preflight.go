@@ -253,6 +253,9 @@ func validateMigrationPlan(plan executionPlan) error {
 }
 func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Preflight, error) {
 	p := preflightBase()
+	if e := s.checkAdmission(ctx, s.db, t.Actor, in, "preflight"); e != nil {
+		return p, e
+	}
 	if e := s.Authorize(ctx, t.Actor, "operate", in.TargetID, in.SchemaID); e != nil {
 		return p, e
 	}

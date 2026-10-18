@@ -255,6 +255,9 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 }
 func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allowHeld ...bool) (executionPlan, error) {
 	plan := executionPlan{}
+	if e := s.workerProjectAdmission(ctx, q, a, run); e != nil {
+		return plan, e
+	}
 	var engine string
 	if e := q.QueryRowContext(ctx, "SELECT engine FROM database_targets WHERE id=?", run.TargetID).Scan(&engine); e != nil {
 		return plan, e
@@ -424,6 +427,9 @@ func (s *Service) finishRepair(ctx context.Context, rid, outcome, reason string,
 		return e
 	}
 	if _, e = tx.ExecContext(ctx, `INSERT INTO audit_events(actor_id,actor_type,actor_name,action,target,timestamp,outcome,request_id) SELECT actor_id,actor_kind,actor_name,'migration.repair',id,?,?,request_id FROM migration_runs WHERE id=?`, now(), outcome, rid); e != nil {
+		return e
+	}
+	if e = s.freezeCompletedRecords(ctx, tx); e != nil {
 		return e
 	}
 	return tx.Commit()

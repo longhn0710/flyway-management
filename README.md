@@ -99,12 +99,17 @@ make check           # build, vet, Go tests incl native restart, lint, frontend 
 make test-e2e        # Chromium E2E against the embedded binary and isolated temporary data
 make test-race       # Go race tests
 make security        # npm audit and Go vulnerability checks
+make test-openapi    # real-process HTTP acceptance plus OpenAPI request/response validation
 ```
 
 Install Chromium once with `cd web && npx playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Browser artifacts are ignored under `web/test-results/`. The standard checks use temporary fixtures and do not modify an existing installation or external infrastructure. [Phase 3 verification](docs/phase3-verification.md) records implementation evidence and open acceptance gates; the [Phase 2 report](docs/phase2-verification.md) remains the historical baseline. Separately authorized [Oracle Free application acceptance](docs/oracle-free-lab-acceptance.md) verifies real preflight and a V2 manager job against the isolated disposable lab. Oracle 19c/21c and live AD, Entra ID and Keycloak acceptance remain open.
 
 The [canonical product specification](flyway-manager-product-spec.md) remains unchanged. Existing design tokens, shared components and navigation follow [the approved handoff](docs/design/design-system.md). Implemented business pages use real APIs with loading, empty, error and denied states. Fixture authentication and migration results have been removed. The Stitch project was not modified.
 
+
+The native HTTP acceptance and generic example client require Python dependencies: create a virtual environment, activate it, then run `python3 -m pip install -r scripts/external-api-requirements.txt -r scripts/openapi-requirements.txt`.
+
+The [project deployment API v2](docs/external-api.md) supports scoped service tokens, Project-owned Deployment Targets, immutable SQL ZIP uploads, durable preflights, asynchronous runs, logs, and frozen execution records. Configure targets and token scopes in the existing Project and Service Account screens. Existing v1 deployment writes remain available for streams that have not been adopted by a Project.
 
 ## Flyway runtime and migration execution
 

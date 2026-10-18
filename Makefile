@@ -1,4 +1,4 @@
-.PHONY: install dev-web dev-api build run check test-e2e test-race security
+.PHONY: install dev-web dev-api build run check test-e2e test-race test-openapi security
 
 # Pin the patched toolchain even when the caller sets GOTOOLCHAIN=local.
 export GOTOOLCHAIN := go1.26.9
@@ -37,3 +37,7 @@ test-race: build
 security:
 	npm --prefix web audit --audit-level=moderate
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./cmd/... ./internal/... ./web
+
+# Install the pinned Python requirements before running this contract gate.
+test-openapi: build
+	python3 scripts/validate-external-openapi.py

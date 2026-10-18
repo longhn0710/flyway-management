@@ -64,8 +64,14 @@ func NewRouter(options RouterOptions) http.Handler {
 		}
 		writeJSON(w, status, envelope[map[string]any]{Data: data})
 	})
-	phase2{s: options.Service, logger: logger, database: options.Database}.register(r)
+	h := phase2{s: options.Service, logger: logger, database: options.Database}
+	h.register(r)
+	r.Route("/api/v2", func(r chi.Router) { r.Use(h.ready, h.authenticated); h.registerExternal(r) })
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v2/") {
+			h.externalFail(w, r, &core.Error{Status: 404, Code: "NOT_FOUND", Message: "API route not found."})
+			return
+		}
 		if isAPIPath(r.URL.Path) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "API route not found.")
 			return
@@ -73,6 +79,10 @@ func NewRouter(options RouterOptions) http.Handler {
 		serveFrontend(w, r, options.Assets)
 	})
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v2/") {
+			h.externalFail(w, r, &core.Error{Status: 405, Code: "METHOD_NOT_ALLOWED", Message: "HTTP method is not supported for this route."})
+			return
+		}
 		if isAPIPath(r.URL.Path) {
 			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "HTTP method is not supported for this route.")
 			return

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Flyway Manager API
-  version: 0.6.0
-  description: Standalone identity, engine-aware registry, immutable artifacts and controlled asynchronous Flyway execution. All JSON successes use {data:...}; errors use {error:{code,message,field?}}.
+  version: 0.7.0
+  description: Standalone identity, engine-aware registry, immutable artifacts and controlled asynchronous Flyway execution. V1 JSON successes use {data:...}; errors use {error:{code,message,field?}}. Project-centric v2 routes use RFC9457 problem responses and project/deployment scopes; execution records are raw immutable JSON.
     JSON mutation bodies are limited to 1 MiB and unknown fields are rejected. Browser mutations require same Origin
     plus per-session CSRF, except first-run/login require Origin plus their credentials. Bearer tokens never create
     web sessions and cannot access administration. Lists with limit/offset are filtered by authorization before
@@ -34,39 +34,612 @@ paths:
                 - data
         default:
           $ref: '#/components/responses/Error'
-  /system:
+  /api/v2/projects:
+    servers:
+    - url: /
     get:
-      summary: Authenticated system capability flags
-      operationId: get_system
-      security:
-      - Session: []
-      - Bearer: []
+      operationId: external_list_projects
+      summary: List projects visible to the authenticated principal
       responses:
         '200':
-          description: Success.
+          description: Project collection
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   data:
-                    type: object
-                    properties:
-                      capabilities:
-                        type: object
-                        properties: {}
-                      installation_id:
-                        type: string
-                      schema_version:
-                        type: integer
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExternalProject'
+                  page:
+                    $ref: '#/components/schemas/ExternalPage'
+                required:
+                - data
+                - page
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+  /api/v2/projects/{projectID}:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_project
+      summary: Get a project
+      responses:
+        '200':
+          description: Project returned in data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalProject'
                 required:
                 - data
         default:
-          $ref: '#/components/responses/Error'
-        '401':
-          $ref: '#/components/responses/Error'
-        '403':
-          $ref: '#/components/responses/Error'
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_list_deployment_targets
+      responses:
+        '200':
+          description: Deployment targets returned in data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExternalDeploymentTarget'
+                  page:
+                    $ref: '#/components/schemas/ExternalPage'
+                required:
+                - data
+                - page
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: cursor
+        in: query
+        schema:
+          type: string
+    post:
+      operationId: external_create_deployment_target
+      security:
+      - Session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalDeploymentTargetInput'
+      responses:
+        '201':
+          description: Created target.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalDeploymentTarget'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deploymentTargetID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_deployment_target
+      responses:
+        '200':
+          description: Deployment target returned in data.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalDeploymentTarget'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+    patch:
+      operationId: external_update_deployment_target
+      security:
+      - Session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalDeploymentTargetInput'
+      responses:
+        '200':
+          description: Updated target.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalDeploymentTarget'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+      parameters:
+      - name: If-Match
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Quoted current revision, such as "1". Body revision and immutable destination must also match.
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/grants:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deploymentTargetID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_list_deployment_target_grants
+      security:
+      - Session: []
+      responses:
+        '200':
+          description: Configured principal grants.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExternalDeploymentGrantInput'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+    put:
+      operationId: external_set_deployment_target_grant
+      security:
+      - Session: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalDeploymentGrantInput'
+      responses:
+        '200':
+          description: Grant updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Ok'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/artifacts:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deploymentTargetID
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      operationId: external_upload_artifact
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - files
+              - deployment_target_revision
+              - input_sha256
+              properties:
+                files:
+                  type: string
+                  format: binary
+                  description: Exactly one ZIP archive.
+                deployment_target_revision:
+                  type: integer
+                  minimum: 1
+                input_sha256:
+                  type: string
+                  pattern: ^[0-9a-fA-F]{64}$
+                external_source:
+                  type: string
+                  description: Optional JSON object of reported CI provenance.
+      responses:
+        '201':
+          description: Immutable project-bound artifact.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalArtifact'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/artifacts/{artifactID}:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: artifactID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_artifact
+      responses:
+        '200':
+          description: Artifact metadata.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalArtifact'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/preflights:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deploymentTargetID
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      operationId: external_preflight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalRunInput'
+      responses:
+        '200':
+          description: Readiness assessment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalPreflight'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/preflights/{preflightID}:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: preflightID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_preflight
+      responses:
+        '200':
+          description: Persisted preflight assessment.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalPreflight'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/migration-runs:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: deploymentTargetID
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      operationId: external_submit_migration_run
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalSubmitInput'
+      responses:
+        '202':
+          description: Run accepted for asynchronous processing.
+          headers:
+            Location:
+              schema:
+                type: string
+            Retry-After:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalRun'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/migration-runs:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    - name: cursor
+      in: query
+      schema:
+        type: string
+    get:
+      operationId: external_list_migration_runs
+      responses:
+        '200':
+          description: Paginated project run history.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExternalRun'
+                  page:
+                    $ref: '#/components/schemas/ExternalPage'
+                required:
+                - data
+                - page
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/migration-runs/{runID}:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: runID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_migration_run
+      responses:
+        '200':
+          description: Run state.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ExternalRun'
+                required:
+                - data
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/migration-runs/{runID}/logs:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: runID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    - name: cursor
+      in: query
+      schema:
+        type: string
+    get:
+      operationId: external_get_run_logs
+      responses:
+        '200':
+          description: Paginated execution logs.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RunLog'
+                  page:
+                    $ref: '#/components/schemas/ExternalPage'
+                required:
+                - data
+                - page
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/migration-runs/{runID}/record:
+    servers:
+    - url: /
+    parameters:
+    - name: projectID
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: runID
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      operationId: external_get_immutable_execution_record
+      responses:
+        '200':
+          description: Immutable JSON execution record with ETag.
+          headers:
+            ETag:
+              schema:
+                type: string
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalExecutionRecord'
+        default:
+          $ref: '#/components/responses/ExternalProblem'
   /auth/status:
     get:
       summary: Enabled providers and one-time setup status
@@ -2828,6 +3401,405 @@ components:
       scheme: bearer
       bearerFormat: opaque fm_ token
   schemas:
+    ExternalProject:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          type: string
+          enum:
+          - active
+          - archived
+        members:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/ProjectMember'
+        id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - description
+      - status
+      - created_at
+      - updated_at
+      - members
+    ExternalDeploymentTargetInput:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - target_id
+      - schema_id
+      - execution_account_id
+      - environment
+      - active
+      properties:
+        name: &v2schemaid001
+          type: string
+          minLength: 1
+          maxLength: 100
+        target_id: &v2schemaid002
+          type: string
+        schema_id: &v2schemaid003
+          type: string
+        execution_account_id: &v2schemaid004
+          type: string
+        environment: &v2schemaid005
+          type: string
+          enum:
+          - DEV
+          - SIT
+          - UAT
+          - PROD
+        active: &v2schemaid006
+          type: boolean
+        revision: &v2schemaid007
+          type: integer
+          minimum: 0
+    ExternalDeploymentGrantInput:
+      type: object
+      additionalProperties: false
+      required:
+      - principal_kind
+      - principal_id
+      - read
+      - upload
+      - preflight
+      - execute
+      properties:
+        principal_kind:
+          type: string
+          enum:
+          - user
+          - service
+        principal_id:
+          type: string
+        read:
+          type: boolean
+        upload:
+          type: boolean
+        preflight:
+          type: boolean
+        execute:
+          type: boolean
+    ExternalTokenDeploymentScope:
+      type: object
+      additionalProperties: false
+      required:
+      - deployment_target_id
+      - read
+      - upload
+      - preflight
+      - execute
+      properties:
+        deployment_target_id:
+          type: string
+        read:
+          type: boolean
+        upload:
+          type: boolean
+        preflight:
+          type: boolean
+        execute:
+          type: boolean
+    ExternalRunInput:
+      type: object
+      additionalProperties: false
+      required:
+      - artifact_id
+      - deployment_target_revision
+      properties:
+        artifact_id:
+          type: string
+        preflight_id:
+          type: string
+        deployment_target_revision:
+          type: integer
+          minimum: 1
+        external_source:
+          $ref: '#/components/schemas/ExternalSource'
+    ExternalProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        field:
+          type: string
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+    ExternalSource:
+      type: object
+      additionalProperties: false
+      properties:
+        system:
+          type: string
+        execution_id:
+          type: string
+        execution_url:
+          type: string
+        workflow:
+          type: string
+        repository_url:
+          type: string
+        revision:
+          type: string
+      description: Optional caller-reported provenance, at most 4096 UTF-8 bytes encoded as JSON. Authenticated actor is recorded
+        separately. URL fields are descriptive text.
+    ExternalPage:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+        next_cursor:
+          type: string
+          description: Opaque cursor bound to caller and resource. Omitted on the last page. Restart invalidates cursors; start
+            collection again.
+      required:
+      - limit
+    ExternalDeploymentTarget:
+      type: object
+      properties:
+        name: *v2schemaid001
+        target_id: *v2schemaid002
+        schema_id: *v2schemaid003
+        execution_account_id: *v2schemaid004
+        environment: *v2schemaid005
+        active: *v2schemaid006
+        revision: *v2schemaid007
+        id:
+          type: string
+        project_id:
+          type: string
+        database_name:
+          type: string
+        schema_name:
+          type: string
+        account_name:
+          type: string
+        can_read:
+          type: boolean
+        can_upload:
+          type: boolean
+        can_preflight:
+          type: boolean
+        can_execute:
+          type: boolean
+      required:
+      - id
+      - project_id
+      - name
+      - environment
+      - target_id
+      - schema_id
+      - execution_account_id
+      - active
+      - revision
+      - database_name
+      - schema_name
+      - account_name
+      - can_read
+      - can_upload
+      - can_preflight
+      - can_execute
+    ExternalArtifact:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        deployment_target_id:
+          type: string
+        deployment_target_revision:
+          type: integer
+        input_sha256:
+          type: string
+          description: Verified SHA-256 of the original ZIP bytes.
+        sha256:
+          type: string
+          description: Existing normalized SQL inventory digest.
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactFile'
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactInput'
+        total_bytes:
+          type: integer
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        external_source:
+          $ref: '#/components/schemas/ExternalSource'
+        uploader_id:
+          type: string
+        uploader_kind:
+          type: string
+        uploader_name:
+          type: string
+      required:
+      - id
+      - project_id
+      - deployment_target_id
+      - deployment_target_revision
+      - input_sha256
+      - sha256
+      - files
+      - inputs
+      - total_bytes
+      - created_at
+      - external_source
+      - uploader_id
+      - uploader_kind
+      - uploader_name
+    ExternalPreflight:
+      type: object
+      properties:
+        id:
+          type: string
+        project_id:
+          type: string
+        deployment_target_id:
+          type: string
+        deployment_target_revision:
+          type: integer
+        artifact_id:
+          type: string
+        destination:
+          $ref: '#/components/schemas/ExternalDeploymentTarget'
+        created_at:
+          $ref: '#/components/schemas/DateTime'
+        expires_at:
+          $ref: '#/components/schemas/DateTime'
+        ready:
+          type: boolean
+        live_status:
+          type: string
+        blockers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Blocker'
+        warnings:
+          type: array
+          items:
+            type: string
+        assessment:
+          $ref: '#/components/schemas/Preflight'
+        actor:
+          type: object
+          properties:
+            id:
+              type: string
+            kind:
+              type: string
+            name:
+              type: string
+          required:
+          - id
+          - kind
+          - name
+        external_source:
+          $ref: '#/components/schemas/ExternalSource'
+      required:
+      - id
+      - project_id
+      - deployment_target_id
+      - deployment_target_revision
+      - artifact_id
+      - destination
+      - created_at
+      - expires_at
+      - ready
+      - live_status
+      - blockers
+      - warnings
+      - assessment
+      - actor
+      - external_source
+    ExternalRun:
+      allOf:
+      - $ref: '#/components/schemas/Run'
+      - type: object
+        properties:
+          project_id:
+            type: string
+          deployment_target_id:
+            type: string
+          deployment_target_revision:
+            type: integer
+          external_source:
+            $ref: '#/components/schemas/ExternalSource'
+          completed:
+            type: boolean
+            description: True only when job processing and any Repair assessment have settled.
+          record_available:
+            type: boolean
+          record_url:
+            type: string
+        required:
+        - project_id
+        - deployment_target_id
+        - deployment_target_revision
+        - external_source
+        - completed
+        - record_available
+        - record_url
+    ExternalExecutionRecord:
+      allOf:
+      - $ref: '#/components/schemas/RunRecord'
+      - type: object
+        properties:
+          record_version:
+            type: integer
+            const: 1
+          finalized_at:
+            $ref: '#/components/schemas/DateTime'
+          audit:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+        required:
+        - record_version
+        - finalized_at
+        - audit
+    ExternalSubmitInput:
+      allOf:
+      - $ref: '#/components/schemas/ExternalRunInput'
+      - required:
+        - preflight_id
     Error:
       type: object
       properties:
@@ -3271,6 +4243,11 @@ components:
           type: string
           maxLength: 100
         expires_at: *id006
+        deployment_scopes:
+          type: array
+          description: Optional v2 project deployment-target grants. Tokens without this field retain legacy v1 behavior and have no v2 access.
+          items:
+            $ref: '#/components/schemas/ExternalTokenDeploymentScope'
       required:
       - expires_at
     IssuedToken:
@@ -3753,6 +4730,15 @@ components:
             type: object
             additionalProperties: true
   responses:
+    ExternalProblem:
+      description: Problem response. 400 malformed request; 401 invalid/missing token; 403 action denied; 404 absent/inaccessible/nesting
+        mismatch; 409 stale revision, held stream, blocked/expired preflight or idempotency conflict; 412 stale If-Match; 413
+        size limit; 415 non-ZIP/media type; 422 invalid package/checksum; 428 missing If-Match; 429 upload capacity; 503 runtime
+        unavailable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ExternalProblem'
     Error:
       description: Typed API error with safe message and optional field.
       content:

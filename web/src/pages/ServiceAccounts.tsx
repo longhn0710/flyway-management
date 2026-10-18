@@ -5,11 +5,14 @@ import ScopeEditor from "../components/ScopeEditor";
 import {
   api,
   apiList,
+  apiV2List,
   ApiError,
   type ApiToken,
   type Grant,
   type ServiceAccount,
   type TokenCreated,
+  type TokenDeploymentScope,
+  type TokenInput,
   type User,
 } from "../lib/contracts";
 import { useIdentity } from "../lib/identity-context";
@@ -289,6 +292,10 @@ function ServiceDetail({
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [tokenName, setTokenName] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [legacyToken, setLegacyToken] = useState(false);
+  const [deploymentScopes, setDeploymentScopes] = useState<
+    Record<string, Omit<TokenDeploymentScope, "deployment_target_id">>
+  >({});
   const [minExpiry] = useState(() =>
     new Date(Date.now() + 60000).toISOString().slice(0, 16),
   );
@@ -302,6 +309,36 @@ function ServiceDetail({
       api<Grant[]>(
         `/access/service-accounts/${encodeURIComponent(account.id)}/grants`,
       ),
+  });
+  const projectTargets = useQuery({
+    queryKey: ["token-deployment-targets"],
+    enabled: canManage,
+    queryFn: async () => {
+      const projects = await apiV2List<{ id: string; name: string }>(
+        "/projects",
+      );
+      const groups = await Promise.all(
+        projects.map(async (project) => ({
+          project,
+          targets: await apiV2List<{
+            id: string;
+            name: string;
+            environment: string;
+            target_id: string;
+            schema_id: string;
+            database_name?: string;
+            schema_name?: string;
+            can_read: boolean;
+            can_upload: boolean;
+            can_preflight: boolean;
+            can_execute: boolean;
+          }>(`/projects/${encodeURIComponent(project.id)}/deployment-targets`),
+        })),
+      );
+      return groups.flatMap(({ project, targets }) =>
+        targets.map((target) => ({ project, target })),
+      );
+    },
   });
   const update = useMutation({
     mutationFn: () =>
@@ -328,17 +365,30 @@ function ServiceDetail({
   });
   const createToken = useMutation({
     gcTime: 0,
-    mutationFn: () =>
-      api<TokenCreated>(
+    mutationFn: () => {
+      const input: TokenInput = {
+        name: tokenName,
+        expires_at: new Date(expiry).toISOString(),
+        deployment_scopes: legacyToken
+          ? undefined
+          : Object.entries(deploymentScopes)
+              .filter(
+                ([, scope]) =>
+                  scope.read ||
+                  scope.upload ||
+                  scope.preflight ||
+                  scope.execute,
+              )
+              .map(([deployment_target_id, scope]) => ({
+                deployment_target_id,
+                ...scope,
+              })),
+      };
+      return api<TokenCreated>(
         `/access/service-accounts/${encodeURIComponent(account.id)}/tokens`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: tokenName,
-            expires_at: new Date(expiry).toISOString(),
-          }),
-        },
-      ),
+        { method: "POST", body: JSON.stringify(input) },
+      );
+    },
     onSuccess: (value) => {
       setTokenName("");
       setExpiry("");
@@ -349,6 +399,9 @@ function ServiceDetail({
       });
     },
   });
+  const hasDeploymentScope = Object.values(deploymentScopes).some(
+    (scope) => scope.read || scope.upload || scope.preflight || scope.execute,
+  );
   return (
     <Panel
       title={
@@ -429,6 +482,11 @@ function ServiceDetail({
         <ShieldCheck size={15} />
         Service-account grants support read and operate. PROD access requires an
         explicit grant.
+      </Notice>
+      <Notice title="Combined authorization">
+        Database/schema grants remain required for the service account. Each
+        token’s selected Deployment Target actions further restrict that access,
+        and PROD operation still requires its explicit database/schema grant.
       </Notice>
       <h3>API tokens</h3>
       <p className="small muted">
@@ -535,6 +593,99 @@ function ServiceDetail({
             />
           </Field>
         </div>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={legacyToken}
+            onChange={(event) => setLegacyToken(event.target.checked)}
+            disabled={!canManage}
+          />
+          Issue legacy token without project Deployment Target scopes
+        </label>
+        {!legacyToken && (
+          <fieldset
+            className="project-scope-list"
+            disabled={
+              !canManage || projectTargets.isPending || projectTargets.isError
+            }
+          >
+            <legend>Deployment Target token scopes</legend>
+            <p className="small muted">
+              Select the actions this token may request. Unselected targets are
+              inaccessible to this token.
+            </p>
+            {projectTargets.isPending ? (
+              <div className="skeleton" role="status" />
+            ) : projectTargets.isError ? (
+              <Notice tone="error">
+                Could not load project Deployment Targets:{" "}
+                {projectTargets.error.message}
+              </Notice>
+            ) : projectTargets.data.length === 0 ? (
+              <p className="small">
+                No Deployment Targets are available. Choose the explicit legacy
+                option if this token is intended for the existing v1 API.
+              </p>
+            ) : (
+              projectTargets.data.map(({ project, target }) => {
+                const selected = deploymentScopes[target.id] ?? {
+                  read: false,
+                  upload: false,
+                  preflight: false,
+                  execute: false,
+                };
+                return (
+                  <div className="scope-row" key={target.id}>
+                    <strong>
+                      {project.name} · {target.name}
+                    </strong>
+                    <span className="small muted">
+                      {target.environment} ·{" "}
+                      {target.database_name || target.target_id} /{" "}
+                      {target.schema_name || target.schema_id}
+                    </span>
+                    <div className="inline wrap">
+                      {(
+                        ["read", "upload", "preflight", "execute"] as const
+                      ).map((action) => (
+                        <label className="checkbox" key={action}>
+                          <input
+                            type="checkbox"
+                            checked={selected[action]}
+                            onChange={(event) =>
+                              setDeploymentScopes((old) => {
+                                const next = {
+                                  ...selected,
+                                  [action]: event.target.checked,
+                                };
+                                if (
+                                  action !== "read" &&
+                                  !next.read &&
+                                  event.target.checked
+                                )
+                                  next.read = true;
+                                if (
+                                  action === "read" &&
+                                  !event.target.checked
+                                ) {
+                                  next.upload = false;
+                                  next.preflight = false;
+                                  next.execute = false;
+                                }
+                                return { ...old, [target.id]: next };
+                              })
+                            }
+                          />
+                          {action}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </fieldset>
+        )}
         {createToken.isError && (
           <Notice tone="error">{createToken.error.message}</Notice>
         )}
@@ -542,7 +693,14 @@ function ServiceDetail({
           type="submit"
           variant="primary"
           disabled={
-            !canManage || createToken.isPending || !tokenName.trim() || !expiry
+            !canManage ||
+            createToken.isPending ||
+            !tokenName.trim() ||
+            !expiry ||
+            (!legacyToken &&
+              (!hasDeploymentScope ||
+                projectTargets.isPending ||
+                projectTargets.isError))
           }
         >
           {createToken.isPending ? "Creating…" : "Create token"}
