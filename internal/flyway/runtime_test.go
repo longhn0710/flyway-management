@@ -173,6 +173,44 @@ func TestMutatingCommandWithUnverifiedOutputIsAmbiguous(t *testing.T) {
 	}
 }
 
+func TestOracleRuntimeFailureNeverInvokesRecoveryOrReplay(t *testing.T) {
+	for _, output := range []string{
+		`{"operation":"migrate","error":{"message":"ORA-00955: object already exists"},"flywayVersion":"10.0.0"}`,
+		`{"truncated":`,
+	} {
+		t.Run(output, func(t *testing.T) {
+			marker := filepath.Join(t.TempDir(), "commands")
+			quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'" }
+			body := "printf '%s\\n' \"$1\" >> " + quote(marker) + "\nprintf '%s' " + quote(output) + "\nprintf '%s' 'original Oracle diagnostic' >&2\nexit 7"
+			r, _ := fakeRuntime(t, body, 3)
+			result := r.Execute(context.Background(), testRequest("migrate"))
+			expected := output
+			if json.Valid([]byte(output)) {
+				var payload any
+				_ = json.Unmarshal([]byte(output), &payload)
+				canonical, _ := json.Marshal(payload)
+				expected = string(canonical)
+			}
+			if result.Success || result.ExitCode != 7 || result.Stdout != expected || result.Stderr != "original Oracle diagnostic" {
+				t.Fatalf("original failure evidence lost: %+v", result)
+			}
+			calls, err := os.ReadFile(marker)
+			if err != nil || string(calls) != "migrate\n" {
+				t.Fatalf("runtime invoked recovery or replay: %q, %v", calls, err)
+			}
+		})
+	}
+}
+
+func TestRuntimeRejectsCleanBaselineAndUndo(t *testing.T) {
+	for _, command := range []string{"clean", "baseline", "undo"} {
+		result := New(Config{}, t.TempDir()).Execute(context.Background(), testRequest(command))
+		if result.Success || result.Stderr != "unsupported Flyway command" {
+			t.Fatalf("unsafe command %s accepted: %+v", command, result)
+		}
+	}
+}
+
 func TestInstallCopiesVerifiedDistributionAndPreservesExistingPin(t *testing.T) {
 	sourceRuntime, source := fakeRuntime(t, `printf '{"operation":"info","schemaVersion":null,"migrations":[],"flywayVersion":"10.0.0"}'`, 3)
 	dataDir := filepath.Join(t.TempDir(), "application-data")

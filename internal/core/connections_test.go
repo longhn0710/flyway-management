@@ -306,7 +306,7 @@ func (r *revokeAfterMigrationRunner) Execute(ctx context.Context, request flyway
 	}
 	return result
 }
-func TestAllowlistRevocationAfterMigrationPreventsAutomaticRepairSQL(t *testing.T) {
+func TestAllowlistRevocationAfterMigrationKeepsFailureHeldWithoutRepair(t *testing.T) {
 	f, engine, target, schema, account := executionFixture(t)
 	f.s.execution.runner = &revokeAfterMigrationRunner{fakeEngine: engine, revoke: func() {
 		_, e := f.db.SQL.Exec("INSERT INTO connection_settings VALUES(?,?,20)", target.ID, account.ID)
@@ -318,9 +318,10 @@ func TestAllowlistRevocationAfterMigrationPreventsAutomaticRepairSQL(t *testing.
 	run, e := f.s.SubmitRun(testCtx, f.trace(), input, "revoked-before-repair")
 	must(t, e)
 	final := waitRun(t, f, run.ID)
-	if final.Status != "NEEDS_REVIEW" || final.RepairOutcome != "UNSAFE" {
+	if final.Status != "NEEDS_REVIEW" || final.RepairOutcome != "SKIPPED" {
 		t.Fatal(final)
 	}
+	f.s.StopExecution()
 	for _, call := range engine.calls {
 		if strings.HasSuffix(call, ":repair") {
 			t.Fatal("repair SQL ran after revocation")

@@ -509,6 +509,13 @@ test("controlled fake Flyway completes the real UI workflow through download and
     ).data as { id: string; run_id: string }[];
     const recorded = history.find((run) => run.id === runID);
     expect(recorded).toBeDefined();
+    const commands = (await readFile(runtime.marker, "utf8"))
+      .trim()
+      .split("\n");
+    expect(commands.filter((command) => command === "migrate")).toHaveLength(1);
+    expect(
+      commands.every((command) => ["info", "validate", "migrate"].includes(command)),
+    ).toBe(true);
     await expect(
       page.getByRole("link", { name: recorded!.run_id || recorded!.id }),
     ).toBeVisible();
@@ -520,7 +527,7 @@ test("controlled fake Flyway completes the real UI workflow through download and
   }
 });
 
-test("controlled fake Flyway keeps a failed migration failed after one safe repair without SQL retry", async ({
+test("controlled fake Flyway holds an Oracle failure without Repair or SQL retry", async ({
   browser,
 }) => {
   const runtime = await createFakeRuntime("repair");
@@ -536,16 +543,18 @@ test("controlled fake Flyway keeps a failed migration failed after one safe repa
       { timeout: 20_000 },
     );
     await expect(
-      page.getByText("Repair completed; migration remains failed"),
+      page.getByText("NEEDS_REVIEW", { exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
     await expect(
-      page.getByText("The original migration SQL was not rerun."),
+      page
+        .getByText("No automatic Repair or SQL retry is performed.", { exact: false })
+        .first(),
     ).toBeVisible();
-    const commands = (await readFile(runtime.marker, "utf8"))
-      .trim()
-      .split("\n");
-    expect(commands.filter((command) => command === "migrate")).toHaveLength(1);
-    expect(commands.filter((command) => command === "repair")).toHaveLength(1);
+    await expect
+      .poll(async () => (await readFile(runtime.marker, "utf8")).trim().split("\n"))
+      .toEqual([
+        "info", "validate", "info", "validate", "migrate", "info", "validate",
+      ]);
     await expect(
       page
         .getByText("Oracle DDL may have partially committed", { exact: false })
