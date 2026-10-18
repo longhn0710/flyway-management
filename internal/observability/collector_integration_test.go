@@ -85,12 +85,19 @@ func TestCollectorLiveMutualTLSAndIndependentAllowlist(t *testing.T) {
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
 	listener.Close()
+	metricsListener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	metricsPort := metricsListener.Addr().(*net.TCPAddr).Port
+	metricsListener.Close()
 	raw, err := os.ReadFile("../../deploy/observability/collector.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
 	config := string(raw)
 	replacements := map[string]string{
+		"port: 8888":                 "port: " + strconv.Itoa(metricsPort),
 		"0.0.0.0:4318":               "127.0.0.1:" + strconv.Itoa(port),
 		"/run/collector-tls/tls.crt": "/fixture/server.pem",
 		"/run/collector-tls/tls.key": "/fixture/server.key",
@@ -194,6 +201,15 @@ func TestCollectorLiveMutualTLSAndIndependentAllowlist(t *testing.T) {
 			}
 		case <-time.After(50 * time.Millisecond):
 		}
+	}
+	metricsResponse, err := http.Get("http://127.0.0.1:" + strconv.Itoa(metricsPort) + "/metrics")
+	if err != nil {
+		t.Fatal("internal collector metrics unavailable")
+	}
+	metrics, _ := io.ReadAll(io.LimitReader(metricsResponse.Body, 1<<20))
+	metricsResponse.Body.Close()
+	if !bytes.Contains(metrics, []byte("otelcol_receiver_accepted_log_records")) || !bytes.Contains(metrics, []byte("otelcol_exporter_sent_log_records")) {
+		t.Fatal("collector transport counters missing")
 	}
 	if !foundProject || !foundProof {
 		t.Fatal("collector did not forward controlled event and independent allowlist proof")

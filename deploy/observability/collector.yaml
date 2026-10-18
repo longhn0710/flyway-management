@@ -63,7 +63,13 @@ service:
       level: warn
       encoding: json
     metrics:
-      level: none
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
   pipelines:
     logs/manager:
       receivers: [otlp/manager]

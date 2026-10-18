@@ -1,12 +1,12 @@
 # Elastic Cloud Manager events — Phase 9
 
-Status: implemented locally; **external ingestion NOT_VERIFIED; deployment NOT_AUTHORIZED**. This feature adds an optional secondary destination. SQLite remains authoritative. It changes no migration, recovery, hold, credential or schema semantics. The existing deployment stays untouched.
+Status: implemented locally; **external ingestion NOT_VERIFIED**. The user authorized scoped Collector/network/TLS/authenticated OTLP acceptance on 2026-10-18; the existing Manager deployment/configuration remains outside that authorization. This feature adds an optional secondary destination. SQLite remains authoritative. It changes no migration, recovery, hold, credential or schema semantics. The existing deployment stays untouched.
 
 ## Destination and current evidence
 
 The supplied project is **My Observability project**, Elastic Cloud Observability, GCP `asia-southeast1`. Kibana is `https://my-observability-project-d9be29.kb.asia-southeast1.gcp.elastic.cloud`; the managed OTLP origin is `https://my-observability-project-d9be29.ingest.asia-southeast1.gcp.elastic.cloud:443`. Previous operator-host checks verified TLS connectivity: Kibana HTTP 200 after Cloud login redirect; unauthenticated OTLP root HTTP 400. Neither proves authenticated OTLP or indexed search.
 
-Metadata-only inspection on 2026-10-18 found `flyway-manager/flyway-manager-elastic-api-key` with an `api-key` data entry. No value was displayed or decoded. Extra Secret entries are unused. The collector injects only `api-key`; Manager never receives the Elastic credential. Project ID/type (Serverless versus Hosted), account privileges, Elasticsearch query URL, trial status, quota and current retention remain unverified.
+Metadata-only inspection on 2026-10-18 found `flyway-manager/flyway-manager-elastic-api-key` with an `api-key` data entry. No value was displayed or decoded. Extra Secret entries are unused. The collector injects only `api-key`; Manager never receives the Elastic credential. The user subsequently identified the product as **Elastic Cloud Serverless Observability**. Cloud project ID, account privileges, Elasticsearch query URL, trial status, quota and current retention remain unverified. The user authorized bounded authenticated OTLP proof using this writer key; indexed search must use a separate approved read-only Kibana session/search credential, without broadening writer privileges.
 
 Elastic documents managed OTLP for Serverless and Hosted; transport acceptance can precede indexing failure, and managed inputs do not offer index-level API-key scoping. The operator must approve that actual privilege boundary. See [managed OTLP](https://www.elastic.co/docs/reference/opentelemetry/managed-inputs/managed-otlp-endpoint) and [authentication/delivery](https://www.elastic.co/docs/reference/opentelemetry/managed-inputs/authentication-delivery-and-failure-handling).
 
@@ -70,3 +70,7 @@ External acceptance remains mandatory after deployment approval:
 7. Save a small dashboard in the verified Kibana space: success/failure, activity over time, NEEDS_REVIEW/held outcomes, authentication/authorization failures, instance/database/schema activity and run/correlation troubleshooting. Use actual discovered field paths; saved objects and dashboard identity remain pending.
 
 No Elastic dashboard, real searchable event, authenticated ingestion, deployed outage proof, trial or retention acceptance is claimed here. See [deployment proposal](../deploy/observability/README.md).
+
+Collector internal counters bind only to `127.0.0.1:8888` and can be inspected through an authorized pod port-forward. No Service or NetworkPolicy exposes this diagnostic listener; it has no event payloads. Receiver accepted/exporter sent/failed counters separate internal receipt and transport completion from indexing.
+
+Namespace RBAC inspection found existing clusterwide administrators/editors and platform controllers can create workloads/Secrets. These principals can mount namespace Secrets and remain within the homelab trust boundary; no anonymous/authenticated-all writer binding or new privilege was introduced. Group membership was not independently audited.

@@ -17,3 +17,5 @@ Operator provisions TLS materials in a private 0700 directory with 0600 files, v
 The collector configuration has no credentials: its environment expands only the Secret-sourced Elastic key at runtime. Use no debug exporter or payload/HTTP-header logging. Its receiver authenticates dedicated client certs and drops foreign service/environment/version records; its independent field allowlist removes arbitrary bodies/attributes. It cannot authorize individual user claims and does not mount the registry.
 
 Before any apply, record the rendered object inventory, immutable image/config hash, Secret metadata, Cilium enforcement and resource capacity. Acceptance must include actual indexed search and dashboard evidence. A collector-only readiness result cannot authorize the existing Manager configuration change or establish ingestion acceptance.
+
+Collector internal counters bind only to `127.0.0.1:8888` and can be inspected through an authorized pod port-forward. No Service or NetworkPolicy exposes this diagnostic listener; it has no event payloads. Receiver accepted/exporter sent/failed counters separate internal receipt and transport completion from indexing.
