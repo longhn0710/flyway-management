@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, getHealth } from "./contracts";
+import { ApiError, apiV2, getHealth } from "./contracts";
 afterEach(() => vi.unstubAllGlobals());
 describe("Go health API client", () => {
   it("reads the live response envelope and forwards cancellation", async () => {
@@ -47,6 +47,43 @@ describe("Go health API client", () => {
       message: "SQLite unavailable",
     });
   });
+  it.each([
+    [
+      403,
+      "PROJECT_ACTION_DENIED",
+      "This identity cannot execute this deployment target.",
+      "deployment_target_id",
+    ],
+    [
+      409,
+      "DEPLOYMENT_TARGET_STALE",
+      "Deployment Target changed; assess again.",
+      "revision",
+    ],
+  ])(
+    "reads RFC 9457 v2 error fields (%s)",
+    async (status, code, detail, field) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              type: "about:blank",
+              title: status === 403 ? "Forbidden" : "Conflict",
+              status,
+              detail,
+              code,
+              field,
+            }),
+            { status },
+          ),
+        ),
+      );
+      await expect(
+        apiV2("/projects/project/deployment-targets/dt"),
+      ).rejects.toMatchObject({ status, code, message: detail, field });
+    },
+  );
   it("handles a non-JSON gateway failure", async () => {
     vi.stubGlobal(
       "fetch",

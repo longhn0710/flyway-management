@@ -110,6 +110,15 @@ export default function RunDetails() {
       !!run.data?.repair_outcome && run.data.repair_outcome !== "PENDING",
   });
   const row = run.data;
+  const attribution = row as
+    | (Run & {
+        project_id?: string;
+        deployment_target_id?: string;
+        external_source?: unknown;
+        completed?: boolean;
+        record_available?: boolean;
+      })
+    | undefined;
   const files = useQuery({
     queryKey: ["run-files", id, row?.status],
     queryFn: () =>
@@ -221,14 +230,33 @@ export default function RunDetails() {
             {row.failure && (
               <Notice tone="error" title="Original migration failure">
                 <dl className="key-values">
-                  <div><dt>Failed SQL</dt><dd>{row.failure.script || "Not identified"}</dd></div>
-                  <div><dt>Failed version</dt><dd>{row.failure.version || "Not reported"}</dd></div>
-                  <div><dt>Flyway error code</dt><dd>{row.failure.error_code || "Not reported"}</dd></div>
-                  <div><dt>Original CLI exit code</dt><dd>{row.failure.exit_code}</dd></div>
+                  <div>
+                    <dt>Failed SQL</dt>
+                    <dd>{row.failure.script || "Not identified"}</dd>
+                  </div>
+                  <div>
+                    <dt>Failed version</dt>
+                    <dd>{row.failure.version || "Not reported"}</dd>
+                  </div>
+                  <div>
+                    <dt>Flyway error code</dt>
+                    <dd>{row.failure.error_code || "Not reported"}</dd>
+                  </div>
+                  <div>
+                    <dt>Original CLI exit code</dt>
+                    <dd>{row.failure.exit_code}</dd>
+                  </div>
                 </dl>
-                <div className="code-card"><pre>{row.failure.message}</pre></div>
-                {row.failure.identity_reason && <p>{row.failure.identity_reason}</p>}
-                <p>Repair changes history, does not roll back Oracle DDL, and cannot turn this failed migration into success.</p>
+                <div className="code-card">
+                  <pre>{row.failure.message}</pre>
+                </div>
+                {row.failure.identity_reason && (
+                  <p>{row.failure.identity_reason}</p>
+                )}
+                <p>
+                  Repair changes history, does not roll back Oracle DDL, and
+                  cannot turn this failed migration into success.
+                </p>
               </Notice>
             )}
             {row.status === "FAILED" && (
@@ -241,13 +269,16 @@ export default function RunDetails() {
             )}
             {row.status === "NEEDS_REVIEW" ||
             row.status === "BLOCKED" ||
-            (row.target?.engine === "postgresql" && row.status === "CANCELLED") ? (
+            (row.target?.engine === "postgresql" &&
+              row.status === "CANCELLED") ? (
               <Notice
                 tone="warning"
                 title={
-                  row.target?.engine === "postgresql" && row.status === "CANCELLED"
+                  row.target?.engine === "postgresql" &&
+                  row.status === "CANCELLED"
                     ? "Migration cancelled"
-                    : row.target?.engine === "postgresql" && row.status === "BLOCKED"
+                    : row.target?.engine === "postgresql" &&
+                        row.status === "BLOCKED"
                       ? "Migration blocked"
                       : "Execution requires review"
                 }
@@ -257,7 +288,8 @@ export default function RunDetails() {
                     ? `${row.reason || "The PostgreSQL execution outcome could not be confirmed."} The run remains held for operator review. Earlier scripts may already be committed. No automatic retry or Repair is performed.`
                     : row.status === "CANCELLED"
                       ? "Cancelled before execution. No migration SQL ran, so no retry or Repair is needed."
-                      : row.reason || "The migration was blocked before dispatch."
+                      : row.reason ||
+                        "The migration was blocked before dispatch."
                   : row.reason ||
                     "The execution outcome is not safe to retry automatically."}
               </Notice>
@@ -326,12 +358,20 @@ export default function RunDetails() {
                 <Panel
                   title="Run snapshot"
                   aside={
-                    <a
-                      className="button secondary"
-                      href={`/api/v1/migration-runs/${encodeURIComponent(id)}/record`}
-                    >
-                      Download run record
-                    </a>
+                    attribution?.record_available === false ? (
+                      <Button disabled>Record not ready</Button>
+                    ) : (
+                      <a
+                        className="button secondary"
+                        href={
+                          attribution?.project_id
+                            ? `/api/v2/projects/${encodeURIComponent(attribution.project_id)}/migration-runs/${encodeURIComponent(id)}/record`
+                            : `/api/v1/migration-runs/${encodeURIComponent(id)}/record`
+                        }
+                      >
+                        Download run record
+                      </a>
+                    )
                   }
                 >
                   <dl className="key-values">
@@ -403,6 +443,38 @@ export default function RunDetails() {
                         </p>
                       </dd>
                     </div>
+                    {attribution?.project_id && (
+                      <div>
+                        <dt>Project attribution</dt>
+                        <dd>
+                          <Link
+                            to={`/projects/${encodeURIComponent(attribution.project_id)}?tab=history`}
+                          >
+                            {attribution.project_id}
+                          </Link>
+                          {attribution.deployment_target_id && (
+                            <>
+                              {" "}
+                              · deployment target{" "}
+                              <code>{attribution.deployment_target_id}</code>
+                            </>
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt>Run completion</dt>
+                      <dd>
+                        {attribution?.completed
+                          ? "Completed"
+                          : settled(row)
+                            ? "Settled"
+                            : "In progress"}
+                        {attribution?.record_available === false
+                          ? " · immutable record not yet available"
+                          : ""}
+                      </dd>
+                    </div>
                     <div>
                       <dt>Flyway version</dt>
                       <dd>{row.flyway_version || "—"}</dd>
@@ -435,6 +507,18 @@ export default function RunDetails() {
                         .join(" · ")}
                     </p>
                   )}
+                  {attribution?.external_source !== undefined &&
+                    attribution.external_source !== null && (
+                      <Notice title="External source metadata · reported by caller">
+                        <p>
+                          This metadata describes the submitting integration and
+                          is not verified by Flyway Manager.
+                        </p>
+                        <pre className="code-card">
+                          {JSON.stringify(attribution.external_source, null, 2)}
+                        </pre>
+                      </Notice>
+                    )}
                 </Panel>
                 {repair.data && repair.data.outcome !== "SKIPPED" && (
                   <Notice
