@@ -338,6 +338,10 @@ func TestExternalProjectAPIUsesNativeWorkerAndPersistsImmutableEvidence(t *testi
 	if finished["completed"] != true || finished["status"] != "SUCCEEDED" || finished["record_available"] != true {
 		t.Fatalf("run did not settle with immutable record: %+v", finished)
 	}
+	history := externalCall(t, client, p.baseURL, http.MethodGet, "/api/v2/projects/"+projectID+"/migration-runs?limit=1", token, "", nil, nil)
+	if !bytes.Contains(externalData(t, history, http.StatusOK), []byte(runID)) {
+		t.Fatal("project history omitted its attributed run")
+	}
 	if strings.Contains(fmt.Sprint(finished), "native-oracle-password") {
 		t.Fatal("run response exposed execution credential")
 	}
