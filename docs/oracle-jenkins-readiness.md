@@ -307,3 +307,125 @@ Any failed/unsafe/unknown Repair, identity/hash/history drift, unexpected Pendin
 set, expired/revoked approval or uncertain POST outcome stops further submission.
 Preserve NEEDS_REVIEW/hold and reconcile the existing attempt; never create a
 second key to force execution.
+
+## Finish acceptance: historical B and new corrected-version C
+
+Preparation updated 2026-10-19. PR #13's production code and SYS-qualified
+helper hash are unchanged by this planning update. Full CI previously passed
+at bdab6af8; require the updated head's checks to pass before merge. Targeted helper
+reproduction/SYS-resolution tests, WAL backup CLI tests and populated v9→v10
+original-key restore tests were rerun successfully. Helm lint/template passed
+without a GitOps edit. The new demo branch's 26 packaging/client tests passed.
+No live SQL was executed during this preparation; the Oracle observations above
+belong to the preceding read-only review. Current C-user absence, the future
+published fixed digest and the live DB/key restore remain execution gates, not
+facts claimed by this proposal.
+
+### Smallest historical reconciliation design — not implemented or authorized
+
+PR #13 cannot reconcile B as-is. Implementing one narrowly scoped **Manager-owned
+reconciliation attempt linked to the exact original failed Run ID** is the
+smallest supported path; this is separate from the new-failure acceptance below.
+It must:
+
+1. Require explicit DBA authority for this settled run, the original frozen ZIP,
+   current target/account/revision/runtime, DBID/PDB/schema, current successful
+   physical history, exactly one matching failed V6 row/CRC and native info/
+   validate isolating only that failure. Use the original frozen SQL for Repair,
+   never corrected SQL that could realign successful history. A current baseline
+   cannot manufacture missing historical physical evidence; record that limit
+   and the DBA's inspection explicitly.
+2. Under the existing stream lock, recheck current evidence/authority and run
+   native Repair **once through Manager**, with no migrate. Persist intent and
+   separate native command/result/before-after evidence and audit linked to the
+   old run. Verify only failed V6 was removed; every successful physical row and
+   object-catalogue fingerprint is unchanged; info/validate succeeds. An
+   interrupted, failed, unsafe or unknown attempt remains held without retry.
+3. Keep original run Dn45dSyyZbrXzR-JhnScYi, its UNSAFE assessment, frozen record,
+   SQL bytes and Jenkins #11 FAILURE unchanged. Append a new immutable
+   reconciliation result with its own ID/time; do not update the old
+   repair_operations row or insert pretend evidence into the old record.
+4. Keep the stream held after verified reconciliation. Let the existing exact-
+   artifact review/approval use the new linked verified evidence for this
+   historical failure, then execute only approved corrected V6. Its original
+   package had no V7; any later V7 is a separate reviewed release.
+
+This requires a small explicit implementation and fault/restart/concurrency
+checks; no such endpoint or append-only reconciliation result exists in PR #13.
+It is not a generic hold-clear, history editor, Repair retry engine or user-facing
+Flyway CLI. Do not authorize or perform an ad hoc CLI/SQLite workaround in its
+place. **Historical B remains untouched in the proposed C acceptance scope.**
+
+### Exact fresh-C real acceptance package
+
+Use existing Oracle FREE/FREEPDB1, DBID 1514744704, proposed new local account/
+schema **FWM_WZ260_C**. Create it only if absent; otherwise STOP rather than reuse
+or clear it. Proposed setup is USERS quota 8 MiB, a privately generated password,
+the same six schema privileges already reviewed for B, and only this extra
+metadata privilege: `GRANT SELECT ON SYS.V_$DATABASE TO FWM_WZ260_C CONTAINER=CURRENT`.
+No roles, DBA/ANY DICTIONARY privileges, other-schema grants or changes to B.
+After authorization, verify all SYS-qualified probe queries **as C**, not just
+as SYS. Own history plus existing PUBLIC access to SYS.ALL_OBJECTS/ALL_TABLES/
+DUAL needs no extra dictionary grant.
+
+Use existing Manager Project `vxfQISv7e-d1Wjhyt1HBE9`, database target
+`oracle-free-lab`, new Deployment Target `oracle-dev-recovery-c` and mapped
+account `Jenkins recovery C execution account`, DEV. Record generated IDs and
+pin the exact C destination before any submit. Use a dedicated service account
+and token scoped only to C, at most two hours, revoked after evidence capture.
+Never give its token B authority. Human DBA approval and normal Jenkins input
+remain required.
+
+The [prepared manifest](evidence/oracle-recovery-c-proposal-20261019.json) records
+all SQL hashes, source paths, draft SQL, local preparation commits and setup
+scope. The deterministic packages are:
+
+| Phase | File count | ZIP SHA-256 | Required real result |
+| --- | ---: | --- | --- |
+| Seed V1–V5 + five repeatables | 10 | `3bced62f03203099b2fd853c0860f118e87165c77baaaedcc1e9e58097cd881b` | Jenkins SUCCESS; exactly ten native migrations and ten Success rows. |
+| Invalid V6 + pending V7 | 12 | `2f023b6879fc1a4dc5026f7f9e56c3fc769629a702bafe4cd7bbcb8a70c3e65c` | One V6 attempt, ORA-00957, Jenkins FAILURE, no V7 execution; automatic native Repair executes once and SUCCEEDED; only failed V6 history removed, ten earlier rows unchanged, stream held. |
+| Correct only V6 | 12 | `c8817b90f1d5dba84b98ff916b3db41a090d385ed9fdb714aa02745ae2bf3cd1` | After fresh exact-ZIP DBA approval: only V6 then V7 execute; twelve Success rows; earlier ten physical rows unchanged; hold released only after verification. |
+
+The existing V1–V3, V5 and five effective repeatables are byte-identical to the
+reviewed demo sources. New V4 creates only `FWM_RECOVERY_V4_MARKER(ID NUMBER)`;
+V7 creates only `FWM_RECOVERY_V7_MARKER(ID NUMBER)`. Invalid/corrected V6 uses the
+same reviewed table and filename as B, scoped by C's account; the correction
+removes the duplicate `id NUMBER` column. V2 seeds the same three demo rows as
+the original package. There are no cross-schema references or destructive SQL.
+Seed creates the existing customer/configuration objects, sequence, PL/SQL,
+views, trigger and V5 note table, plus V4. No successful file changes between
+phases; V7 is frozen in the failing package before correction is approved.
+
+Local branch `demo/oracle-recovery-c-20261019` contains three prepared SQL commits;
+none was pushed. After the approved fixed release exists, the only required
+non-SQL demo changes are reviewed release/schema-10 pins and protected C mapping/
+exact-package approvals. Rebase/recreate the SQL commits on those approved pins,
+retain ZIP hashes above, and record actual pushed Git SHAs. Push seed first and
+wait for its result, then failure, then the correction after DBA review. Do not
+push all phases ahead and accidentally build the final HEAD as the seed.
+
+Use the existing Jenkins multibranch job/Jenkinsfile, no new platform or pipeline
+framework. Verify/scoped identity, upload, preflight, normal authenticated approval,
+HTTP 202, stable phase-specific key, poll, logs and frozen record follow existing
+controls. Permit one migrate attempt per phase; no new key/retry after uncertain
+submission. Require VERIFIED/ready/no blockers and exact history/Pending set at
+each gate. The invalid phase must show real native Repair SUCCEEDED, not merely
+an eligibility assessment or subprocess fixture. Any unexpected state stops the
+remaining phases and preserves NEEDS_REVIEW/hold and all evidence.
+
+For every phase retain Git SHA, real build URL, original ZIP hash, destination/
+Artifact/Preflight/Run IDs, native migrate/Repair outputs, independent Oracle
+history/objects/data, logs, immutable record/ETag and audit. The failed C run's
+frozen record must remain byte-identical after correction; its original Jenkins
+build stays FAILURE. B and FWM_LAB history/records/grants stay unchanged. No
+cleanup, manual Repair, Clean, Baseline, hold removal or extra migrations.
+
+The single proposed operational authorization covers: merge reviewed PR #13;
+standard CI publication; a quiet-window DB/key backup and isolated network-none
+restore with the actual published digest; digest-only GitOps rollout after those
+checks pass; narrow C provisioning/grants/application mapping and short-lived
+token; approved demo-only source/pin pushes; and the exact three C SQL phases
+through normal Manager/Jenkins approval controls. The image digest is deliberately
+not invented before publication. Source/CI/digest/restore/identity/metadata gates
+remain mandatory inside that authorization; any mismatch stops before SQL.
+It excludes all historical B reconciliation execution and implementation.
