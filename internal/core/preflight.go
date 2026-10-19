@@ -24,6 +24,7 @@ type executionPlan struct {
 	password      []byte
 	configuration string
 	caPEM         string
+	correction    *correctionApproval
 }
 
 func streamConfiguration(snap RunSnapshot) string {
@@ -113,6 +114,16 @@ func readStoredFiles(ctx context.Context, q queryer, query string, args ...any) 
 	return out, rows.Err()
 }
 func (s *Service) applicableFiles(ctx context.Context, q queryer, in RunInput) ([]storedFile, error) {
+	if in.correction != nil {
+		return s.correctionFiles(ctx, q, in, in.correction.FailedRunID)
+	}
+	approval, err := s.correctionApproval(ctx, q, in, "")
+	if err != nil {
+		return nil, err
+	}
+	if approval != nil {
+		return s.correctionFiles(ctx, q, in, approval.FailedRunID)
+	}
 	var target, schema string
 	if e := q.QueryRowContext(ctx, "SELECT target_id,schema_id FROM artifacts WHERE id=?", in.ArtifactID).Scan(&target, &schema); e != nil {
 		return nil, translate(e)
@@ -191,8 +202,15 @@ func (s *Service) localPlan(ctx context.Context, q queryer, a Actor, in RunInput
 		return fail(e)
 	}
 	if e == nil {
-		if held {
-			return fail(conflict("Stream requires reconciliation: " + reason))
+		if held && in.correction == nil {
+			approval, err := s.correctionApproval(ctx, q, in, "")
+			if err != nil {
+				return fail(err)
+			}
+			plan.correction = approval
+			if approval == nil {
+				return fail(conflict("Stream requires reconciliation: " + reason))
+			}
 		}
 		if config != plan.configuration || pin != s.execution.pin {
 			return fail(conflict("Stream configuration or pinned Flyway runtime changed. Existing streams never switch silently."))
@@ -252,6 +270,10 @@ func validateMigrationPlan(plan executionPlan) error {
 	return nil
 }
 func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Preflight, error) {
+	return s.preflight(ctx, t, in, false)
+}
+
+func (s *Service) preflight(ctx context.Context, t Trace, in RunInput, streamLocked bool) (Preflight, error) {
 	p := preflightBase()
 	if e := s.checkAdmission(ctx, s.db, t.Actor, in, "preflight"); e != nil {
 		return p, e
@@ -275,11 +297,13 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 		return p, nil
 	}
 	lock := s.execution.stream(in.TargetID, in.SchemaID)
-	if !lock.TryLock() {
-		p.block("STREAM_BUSY", "Stream is executing or validating another request.")
-		return p, nil
+	if !streamLocked {
+		if !lock.TryLock() {
+			p.block("STREAM_BUSY", "Stream is executing or validating another request.")
+			return p, nil
+		}
+		defer lock.Unlock()
 	}
-	defer lock.Unlock()
 	ready := s.Runtime(ctx)
 	p.RuntimeVersion = ready.Version
 	if !ready.Ready {
@@ -318,6 +342,11 @@ func (s *Service) Preflight(ctx context.Context, t Trace, in RunInput) (Prefligh
 	if p.Ready {
 		if e = resolvedSnapshot(plan, info.JSON); e != nil {
 			p.block("INCOMPLETE_FLYWAY_LOCATIONS", safeExecutionError(e))
+		}
+	}
+	if p.Ready {
+		if e = s.verifyCorrectionEvidence(ctx, plan, plan.correction); e != nil {
+			p.block("CORRECTION_APPROVAL_STALE", safeExecutionError(e))
 		}
 	}
 	if p.Ready {

@@ -124,6 +124,33 @@ type SchemaPrivilegeMetadata struct {
 	Privilege string
 }
 
+// Evidence is a bounded snapshot used to bind recovery decisions to one
+// Oracle database and its current schema state.
+type Evidence struct {
+	DBID               string       `json:"dbid"`
+	DatabaseUniqueName string       `json:"database_unique_name"`
+	PDBName            string       `json:"pdb_name"`
+	Service            string       `json:"service"`
+	SessionUser        string       `json:"session_user"`
+	CurrentSchema      string       `json:"current_schema"`
+	ObjectsSHA256      string       `json:"objects_sha256"`
+	History            []HistoryRow `json:"history"`
+}
+
+// HistoryRow preserves the physical Flyway history row, including nullable checksums.
+type HistoryRow struct {
+	Rank          int    `json:"rank"`
+	Version       string `json:"version"`
+	Description   string `json:"description"`
+	Type          string `json:"type"`
+	Script        string `json:"script"`
+	Checksum      *int64 `json:"checksum"`
+	InstalledBy   string `json:"installed_by"`
+	InstalledOn   string `json:"installed_on"`
+	ExecutionTime int    `json:"execution_time"`
+	Success       bool   `json:"success"`
+}
+
 // Probe returns a clear unavailable result when the package is used without
 // flyway.Runtime. Production callers should call Runtime.ProbeOracle.
 func Probe(ctx context.Context, cfg Config) (Result, error) {

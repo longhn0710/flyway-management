@@ -374,6 +374,58 @@ paths:
                 - data
         default:
           $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-reviews:
+    servers: [{url: /}]
+    parameters:
+    - {name: projectID, in: path, required: true, schema: {type: string}}
+    - {name: deploymentTargetID, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: review_oracle_correction
+      summary: Human DBA correction reviews after verified automatic Oracle Repair
+      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/OracleCorrectionReviewInput'}
+      responses:
+        '200':
+          description: Immutable correction evidence or single-use approval; stream remains held.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/OracleCorrectionReview'}
+        default:
+          $ref: '#/components/responses/ExternalProblem'
+  /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-approvals:
+    servers: [{url: /}]
+    parameters:
+    - {name: projectID, in: path, required: true, schema: {type: string}}
+    - {name: deploymentTargetID, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: approve_oracle_correction
+      summary: Human DBA correction approvals after verified automatic Oracle Repair
+      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/OracleCorrectionApprovalInput'}
+      responses:
+        '201':
+          description: Immutable correction evidence or single-use approval; stream remains held.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: {$ref: '#/components/schemas/OracleCorrectionApproval'}
+        default:
+          $ref: '#/components/responses/ExternalProblem'
   /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/preflights:
     servers:
     - url: /
@@ -3401,6 +3453,80 @@ components:
       scheme: bearer
       bearerFormat: opaque fm_ token
   schemas:
+    OracleCorrectionReviewInput:
+      type: object
+      additionalProperties: false
+      required: [failed_run_id, artifact_id, deployment_target_revision]
+      properties:
+        failed_run_id: {type: string}
+        artifact_id: {type: string}
+        deployment_target_revision: {type: integer, minimum: 1}
+    OracleCorrectionApprovalInput:
+      type: object
+      additionalProperties: false
+      required: [preflight_id, input_sha256, partial_ddl_reviewed, note]
+      properties:
+        preflight_id: {type: string}
+        input_sha256: {type: string, pattern: '^[a-f0-9]{64}$'}
+        partial_ddl_reviewed: {type: boolean, const: true}
+        note: {type: string, minLength: 1, maxLength: 2000}
+    OracleCorrectionReview:
+      type: object
+      required: [id, project_id, deployment_target_id, deployment_target_revision, artifact_id, correction_of_run_id, review_only, ready, live_status, blockers, assessment, oracle_evidence, created_at, expires_at]
+      properties:
+        id: {type: string}
+        project_id: {type: string}
+        deployment_target_id: {type: string}
+        deployment_target_revision: {type: integer}
+        artifact_id: {type: string}
+        correction_of_run_id: {type: string}
+        review_only: {type: boolean, const: true}
+        ready: {type: boolean}
+        live_status: {type: string, enum: [VERIFIED, NOT_VERIFIED]}
+        blockers: {type: array, items: {$ref: '#/components/schemas/Blocker'}}
+        assessment: {$ref: '#/components/schemas/Preflight'}
+        oracle_evidence: {$ref: '#/components/schemas/OracleCorrectionEvidence'}
+        created_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time}
+    OracleCorrectionEvidence:
+      type: object
+      required: [dbid, database_unique_name, pdb_name, service, session_user, current_schema, objects_sha256, history]
+      properties:
+        dbid: {type: string}
+        database_unique_name: {type: string}
+        pdb_name: {type: string}
+        service: {type: string}
+        session_user: {type: string}
+        current_schema: {type: string}
+        objects_sha256: {type: string}
+        history:
+          type: array
+          items:
+            type: object
+            required: [rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success]
+            properties:
+              rank: {type: integer}
+              version: {type: string}
+              description: {type: string}
+              type: {type: string}
+              script: {type: string}
+              checksum: {type: [integer, 'null']}
+              installed_by: {type: string}
+              installed_on: {type: string}
+              execution_time: {type: integer}
+              success: {type: boolean}
+    OracleCorrectionApproval:
+      type: object
+      required: [id, failed_run_id, input_sha256, approved_by, expires_at, stream_held, single_use]
+      properties:
+        id: {type: string}
+        failed_run_id: {type: string}
+        input_sha256: {type: string}
+        approved_by: {type: string}
+        expires_at: {type: string, format: date-time}
+        stream_held: {type: boolean, const: true}
+        single_use: {type: boolean, const: true}
+
     ExternalProject:
       type: object
       properties:
@@ -4451,6 +4577,15 @@ components:
     Preflight:
       type: object
       properties:
+        correction_evidence:
+          type: object
+          required: [approval_id, approved_by, before, after]
+          properties:
+            approval_id: {type: string}
+            approved_by: {type: string}
+            before: {$ref: '#/components/schemas/OracleCorrectionEvidence'}
+            after: {$ref: '#/components/schemas/OracleCorrectionEvidence'}
+
         ready: {type: boolean}
         local_ready: {type: boolean}
         live_status: {type: string, enum: [VERIFIED, NOT_VERIFIED, FAILED]}

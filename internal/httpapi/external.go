@@ -127,6 +127,12 @@ func (h phase2) registerExternal(r chi.Router) {
 	r.Get("/projects/{projectID}/artifacts/{artifactID}", externalResult(h, func(r *http.Request) (any, error) {
 		return h.s.ExternalArtifact(r.Context(), actor(r), chi.URLParam(r, "projectID"), chi.URLParam(r, "artifactID"))
 	}))
+	r.Post("/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-reviews", externalBody[core.CorrectionReviewInput](h, 200, func(r *http.Request, in core.CorrectionReviewInput) (any, error) {
+		return h.s.ReviewOracleCorrection(r.Context(), trace(r), chi.URLParam(r, "projectID"), chi.URLParam(r, "deploymentTargetID"), in)
+	}))
+	r.Post("/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-approvals", externalBody[core.CorrectionApprovalInput](h, 201, func(r *http.Request, in core.CorrectionApprovalInput) (any, error) {
+		return h.s.ApproveOracleCorrection(r.Context(), trace(r), chi.URLParam(r, "projectID"), chi.URLParam(r, "deploymentTargetID"), in)
+	}))
 	r.Post("/projects/{projectID}/deployment-targets/{deploymentTargetID}/preflights", externalBody[core.ExternalRunInput](h, 200, func(r *http.Request, in core.ExternalRunInput) (any, error) {
 		return h.s.ExternalPreflight(r.Context(), trace(r), chi.URLParam(r, "projectID"), chi.URLParam(r, "deploymentTargetID"), in)
 	}))

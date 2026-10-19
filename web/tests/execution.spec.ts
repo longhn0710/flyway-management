@@ -77,7 +77,7 @@ async function createFakeRuntime(scenario: "success" | "repair") {
   await mkdir(join(root, "lib"), { recursive: true });
   await mkdir(join(root, "jre", "bin"), { recursive: true });
   const version = "10.20.0";
-  const infoPending = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","filepath":"/private/flyway-run-fixture/sql/V1__browser.sql","state":"Pending","installedOn":"","installedBy":"","installedRank":1}],"flywayVersion":"${version}"}'`;
+  const infoPending = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","filepath":"/private/flyway-run-fixture/sql/V1__browser.sql","state":"Pending","installedOn":"","installedBy":"","installedRank":0}],"flywayVersion":"${version}"}'`;
   const infoSuccess = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Success","installedOn":"2026-10-16T00:00:00Z","installedBy":"BROWSER_DEPLOY","installedRank":1,"checksum":123}],"flywayVersion":"${version}"}'`;
   const infoFailed = `printf '%s\\n' '{"operation":"info","schemaVersion":null,"migrations":[{"category":"Versioned","version":"1","description":"browser","type":"SQL","script":"V1__browser.sql","state":"Failed","installedOn":"","installedBy":"BROWSER_DEPLOY","installedRank":1}],"flywayVersion":"${version}"}'`;
   const validateFailed = `printf '%s\\n' '{"operation":"validate","validationSuccessful":false,"invalidMigrations":[{"version":"1","filepath":"V1__browser.sql","errorDetails":{"errorCode":"FAILED_VERSIONED_MIGRATION"}}],"validateCount":1,"flywayVersion":"${version}"}'`;
@@ -100,6 +100,25 @@ async function createFakeRuntime(scenario: "success" | "repair") {
       "*) exit 2 ;;",
       "esac",
     ].join("\n") + "\n";
+  // Read-only Oracle evidence for this controlled native-protocol fixture.
+  // -1573270711 is Flyway's CRC32 of the exact uploaded SQL, excluding CR/LF.
+  const encoded = (value: string) => Buffer.from(value).toString("base64");
+  const identity = [
+    "1514744704", "fixture", "E2E", "E2E", "FAKE_SCHEMA", "FAKE_SCHEMA",
+  ].map(encoded).join("\t");
+  const failedHistory = [
+    "HISTORY", "1", encoded("1"), encoded("browser"), encoded("SQL"),
+    encoded("V1__browser.sql"), "-1573270711", encoded("FAKE_SCHEMA"),
+    encoded("2026-10-16T00:00:00Z"), "0", "0",
+  ].join("\t");
+  const evidenceScript = [
+    "#!/bin/sh",
+    "cat >/dev/null",
+    `MARKER='${marker}'`,
+    `printf '%s\\n' 'READY' 'CONNECTED' 'IDENTITY\t${identity}' 'OBJECTS\t${"0".repeat(64)}'`,
+    `if grep -q '^migrate$' "$MARKER" && ! grep -q '^repair$' "$MARKER"; then printf '%s\\n' '${failedHistory}'; fi`,
+    "printf '%s\\n' 'DONE'",
+  ].join("\n") + "\n";
   const files: Record<string, Buffer> = {
     flyway: Buffer.from(script),
     "drivers/ojdbc11-test.jar": Buffer.from(
@@ -108,7 +127,7 @@ async function createFakeRuntime(scenario: "success" | "repair") {
     "lib/flyway-database-oracle-test.jar": Buffer.from(
       "test-only flyway oracle module placeholder",
     ),
-    "jre/bin/java": Buffer.from("#!/bin/sh\nexit 0\n"),
+    "jre/bin/java": Buffer.from(evidenceScript),
   };
   for (const [relative, content] of Object.entries(files)) {
     const destination = join(root, relative);
@@ -238,7 +257,7 @@ async function createAuthorizedStream(page: Page, baseURL: string) {
     {
       target_id: target.id,
       name: "Fake deployer",
-      username: "FAKE_DEPLOY",
+      username: "FAKE_SCHEMA",
       schema_ids: [schema.id],
       password: "oracle-fake-secret",
     },

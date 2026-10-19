@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Offline contract check for the demo Jenkins poller against Manager outcomes.
+"""Offline poll contract tests against the current Git-to-Oracle demo helper.
 
 Usage: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-oracle-jenkins-contract.py /path/to/demo-flyway-manager
 
-This imports and invokes the demo repository's actual API helper. All Manager
-responses are mocked and all report files are written under temporary dirs.
+The real demo helper is imported from its workspace checkout. Manager GETs,
+native log streaming, and evidence collection are mocked; all state is temporary.
 """
 import argparse
 import importlib.util
@@ -36,71 +36,108 @@ def make_contract_test(api):
         def setUp(self):
             self.temp = tempfile.TemporaryDirectory()
             self.addCleanup(self.temp.cleanup)
-            self.root = Path(self.temp.name)
-            self.cfg_path = self.root / "manager-config.json"
-            self.cfg_path.write_text(json.dumps({
-                "environment": "develop",
-                "manager_environment": "DEV",
+            self.state = Path(self.temp.name) / "state"
+            self.state.mkdir()
+            self.cfg = {
                 "manager_url": "https://manager.example",
-                "target_id": "target1",
-                "schema_id": "schema1",
-                "execution_account_id": "exec1",
-                "expected_schema_name": "APP",
-                "approvers": ["dba@example.com"],
-            }))
-            self.env = mock.patch.dict(os.environ, {
-                "FM_CONFIG_FILE": str(self.cfg_path),
-                "FM_TOKEN": "fm_contract_test",
-            })
-            self.env.start()
-            self.addCleanup(self.env.stop)
-            self.request = {
-                "target_id": "target1",
-                "schema_id": "schema1",
-                "execution_account_id": "exec1",
-                "artifact_id": "artifact1",
-                "context": {"external_run_id": "build-1", "commit_sha": "a" * 40},
+                "project_id": "project1",
+                "deployment_target_id": "deployment1",
             }
+            self.request = {
+                "artifact_id": "artifact1",
+                "deployment_target_revision": 7,
+                "external_source": {"execution_url": "https://jenkins.example/job/7"},
+            }
+            self.submitted = dict(self.request, id="run1", project_id="project1",
+                                  deployment_target_id="deployment1")
+            api.save(self.state / "request.json", self.request)
+            api.save(self.state / "submission.json", {"data": self.submitted})
+            self.client = mock.Mock()
+            self.client.request.side_effect = lambda method, route, **kwargs: {
+                "data": self.run,
+            }
+            self.args = SimpleNamespace(
+                command="poll", environment="develop", release=self.state,
+                state=self.state, timeout=1, interval=0.2,
+            )
 
-        def poll(self, status, migration, repair):
-            state = self.root / f"reports-{status}-{migration}-{repair}"
-            state.mkdir()
-            run = dict(self.request, id="run1", status=status,
-                       migration_outcome=migration, repair_outcome=repair)
-            api.save(state / "request.json", self.request)
-            api.save(state / "submission.json", {"data": run})
-            client = mock.Mock()
-            client.request.return_value = {"data": run}
-            args = SimpleNamespace(command="poll", environment="develop",
-                                   release=self.root, state=state,
-                                   timeout=1, interval=1)
-            with mock.patch.object(api, "Client", return_value=client), \
-                    mock.patch.object(api.time, "sleep"):
-                result = api.run_command(args)
-            client.request.assert_called_once_with("GET", "/migration-runs/run1")
-            self.assertEqual(api.load(state / "poll.json")["data"], run)
+        def run_poll(self, run):
+            self.run = dict(self.submitted, status="SUCCEEDED", completed=True,
+                            migration_outcome="SUCCEEDED", repair_outcome="SKIPPED")
+            self.run.update(run)
+            env = mock.patch.dict(os.environ, {"FM_MANAGER_ACCESS_AUTHORIZED": "true"})
+            fake_time = [100.0]
+
+            def monotonic():
+                fake_time[0] += 0.3
+                return fake_time[0]
+
+            with env, \
+                    mock.patch.object(api, "config", return_value=self.cfg), \
+                    mock.patch.object(api, "Client", return_value=self.client), \
+                    mock.patch.object(api, "stream_logs") as logs, \
+                    mock.patch.object(api, "collect") as collect, \
+                    mock.patch.object(api.time, "sleep") as sleep, \
+                    mock.patch.object(api.time, "monotonic", side_effect=monotonic):
+                try:
+                    result = api.run_command(self.args)
+                except Exception as exc:  # caller asserts exact terminal/timeout result
+                    result = exc
+            expected_route = "/projects/project1/migration-runs/run1"
+            self.assertTrue(self.client.request.called, f"poller stopped before GET: {result!r}")
+            self.assertTrue(all(call.args[0] == "GET" and call.args[1] == expected_route
+                                for call in self.client.request.call_args_list))
+            self.assertEqual(api.load(self.state / "poll.json")["data"], self.run)
+            if self.run.get("completed") is True:
+                collect.assert_called_once()
+                self.assertEqual(collect.call_args.args[0], self.client)
+                logs.assert_called()
+            else:
+                collect.assert_not_called()
+                if self.run["status"] in ("QUEUED", "PREFLIGHT", "RUNNING", "REPAIRING"):
+                    self.assertTrue(sleep.called, "active run should be polled again until the bound")
             return result
 
-        def test_failed_migration_stays_pipeline_failure_even_after_repair(self):
-            with self.assertRaisesRegex(ValueError, r"run FAILED; stop"):
-                self.poll("FAILED", "FAILED", "SUCCEEDED")
+        def test_failed_migration_remains_failure_after_successful_repair(self):
+            result = self.run_poll({"status": "FAILED", "completed": True,
+                                    "migration_outcome": "FAILED", "repair_outcome": "SUCCEEDED"})
+            self.assertIsInstance(result, ValueError)
+            self.assertIn("terminal migration failed", str(result))
 
-        def test_review_and_unsafe_repair_fail_closed(self):
-            for repair in ("FAILED", "UNSAFE"):
-                with self.subTest(repair=repair):
-                    with self.assertRaisesRegex(ValueError, r"run NEEDS_REVIEW; stop"):
-                        self.poll("NEEDS_REVIEW", "FAILED", repair)
+        def test_failed_unsafe_and_unknown_repair_outcomes_fail(self):
+            for status, repair in (("NEEDS_REVIEW", "FAILED"),
+                                   ("NEEDS_REVIEW", "UNSAFE"),
+                                   ("NEEDS_REVIEW", "UNKNOWN"),
+                                   ("BLOCKED", "UNKNOWN")):
+                with self.subTest(status=status, repair=repair):
+                    result = self.run_poll({"status": status, "completed": True,
+                                            "migration_outcome": "FAILED",
+                                            "repair_outcome": repair})
+                    self.assertIsInstance(result, ValueError)
+                    self.assertIn("terminal migration failed", str(result))
 
-        def test_repairing_failed_migration_does_not_pass_early(self):
-            with self.assertRaisesRegex(ValueError, r"run REPAIRING; stop"):
-                self.poll("REPAIRING", "FAILED", "SUCCEEDED")
+        def test_repairing_waits_and_bounded_timeout_preserves_same_run(self):
+            result = self.run_poll({"status": "REPAIRING", "completed": False,
+                                    "migration_outcome": "FAILED", "repair_outcome": "PENDING"})
+            self.assertIsInstance(result, ValueError)
+            self.assertIn("bounded poll timeout", str(result))
+            self.assertGreaterEqual(self.client.request.call_count, 1)
 
-        def test_only_successful_migration_with_skipped_repair_passes(self):
-            self.assertIsNone(self.poll("SUCCEEDED", "SUCCEEDED", "SKIPPED"))
+        def test_only_terminal_success_returns_success(self):
+            result = self.run_poll({"status": "SUCCEEDED", "completed": True,
+                                    "migration_outcome": "SUCCEEDED", "repair_outcome": "SKIPPED"})
+            self.assertIsNone(result)
 
-        def test_success_status_with_other_outcomes_is_rejected(self):
-            with self.assertRaisesRegex(ValueError, "unexpected success outcomes"):
-                self.poll("SUCCEEDED", "FAILED", "SUCCEEDED")
+        def test_success_status_with_failed_migration_still_fails(self):
+            result = self.run_poll({"status": "SUCCEEDED", "completed": True,
+                                    "migration_outcome": "FAILED", "repair_outcome": "SUCCEEDED"})
+            self.assertIsInstance(result, ValueError)
+
+        def test_unknown_run_status_fails_closed(self):
+            result = self.run_poll({"status": "UNRECOGNIZED", "completed": False,
+                                    "migration_outcome": "UNKNOWN", "repair_outcome": "UNKNOWN"})
+            self.assertIsInstance(result, ValueError)
+            self.assertIn("unknown run status", str(result))
 
     return JenkinsPollContractTest
 
@@ -108,10 +145,9 @@ def make_contract_test(api):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("demo_repo", type=Path,
-                        help="existing demo-flyway-manager repository checkout")
+                        help="checkout of the demo repository")
     args = parser.parse_args()
-    repo = args.demo_repo.resolve(strict=True)
-    api = load_demo_helper(repo)
+    api = load_demo_helper(args.demo_repo.resolve(strict=True))
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(make_contract_test(api))
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     return 0 if result.wasSuccessful() else 1
