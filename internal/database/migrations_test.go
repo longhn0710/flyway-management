@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
+	"os"
+	"reflect"
+
+	"flyway-manager/internal/secrets"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -457,7 +462,7 @@ INSERT INTO migration_runs(id,target_id,schema_id,artifact_id,execution_account_
 VALUES('run','target-1','schema-1','artifact','account-1','user','user','User','Admin','','','WEB','request','{"target_id":"target-1"}','{"snapshot":"before-009"}','pin',2,'SUCCEEDED','','SKIPPED','','11.20.0');`); err != nil {
 		t.Fatal(err)
 	}
-	if version, err := migrateFS(context.Background(), db, migrationFixture(t, nil)); err != nil || version != 10 {
+	if version, err := migrateFS(context.Background(), db, migrationSet(t, 9)); err != nil || version != 9 {
 		t.Fatalf("upgrade v8 to v9: version=%d err=%v", version, err)
 	}
 	for table, want := range map[string]int{"projects": 2, "project_members": 1, "artifacts": 1, "artifact_blobs": 1, "migration_runs": 1, "project_stream_owners": 0, "project_identity_memberships": 0, "audit_events": 1} {
@@ -532,4 +537,164 @@ VALUES('run','target-1','schema-1','artifact','account-1','user','user','User','
 			t.Fatalf("execution record guard for %q returned %v", statement, err)
 		}
 	}
+}
+
+// Exercise the deployed v9 boundary separately from the older v8 attribution
+// fixture. VACUUM INTO creates a consistent backup; only its isolated copy upgrades.
+func TestV10BackupRestorePreservesV9AndEncryptedCredentials(t *testing.T) {
+	db := legacyV7DB(t)
+	defer db.Close()
+	if _, err := migrateFS(context.Background(), db, migrationSet(t, 9)); err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join(t.TempDir(), "master.key")
+	store, err := secrets.NewLocal(keyPath, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain := []byte("disposable-fixture-password")
+	sealed, err := store.Seal("account-1", plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(`UPDATE credential_secrets SET payload=? WHERE account_id='account-1'`, sealed); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO users(id,username,display_name,provider,subject,password_hash,role,active,created_at) VALUES('user','user','User','local','user','hash','Admin',1,1);
+ INSERT INTO account_schema_grants(account_id,schema_id,target_id) VALUES('account-1','schema-1','target-1');
+ INSERT INTO projects VALUES('project','Project','','active',1,1);
+ INSERT INTO project_stream_owners VALUES('target-1','schema-1','project');
+ INSERT INTO deployment_targets VALUES('dt','project','DEV','DEV','target-1','schema-1','account-1',1,1,1,1);
+ INSERT INTO artifacts VALUES('artifact','target-1','schema-1','user','user','User',1,'hash',0,'[]');
+ INSERT INTO artifact_blobs VALUES('artifact',0,'V6__failed.sql','hash',X'01020304');
+ INSERT INTO project_artifacts VALUES('artifact','project','dt',1,'input-hash','{}','user','user','upload','request-hash');
+ INSERT INTO migration_preflights VALUES('preflight','project','dt','artifact',1,'user','user','fingerprint',1,1,2,'{}');
+ INSERT INTO migration_streams(target_id,schema_id,configuration,runtime_pin,held,reason) VALUES('target-1','schema-1','{}','pin',1,'historical UNSAFE');
+ INSERT INTO migration_runs(id,target_id,schema_id,artifact_id,execution_account_id,actor_id,actor_kind,actor_name,actor_role,actor_session,actor_token,source,request_id,request,snapshot,runtime_pin,created_at,status,migration_outcome,repair_outcome,reason,flyway_version)
+ VALUES('run','target-1','schema-1','artifact','account-1','user','user','User','Admin','','','WEB','request','{}','{"snapshot":"immutable"}','pin',2,'NEEDS_REVIEW','FAILED','UNSAFE','original ORA-00957','13.10.3');
+ INSERT INTO project_migration_runs VALUES('run','project','dt',1,'preflight','{}','request-hash');
+ INSERT INTO execution_records VALUES('run',3,'record-hash','{"original":"failed"}');
+ INSERT INTO audit_events(actor_id,actor_type,actor_name,action,target,timestamp,outcome,request_id) VALUES('user','user','User','migration.repair','run',3,'UNSAFE','request');`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = installationID(context.Background(), db); err != nil {
+		t.Fatal(err)
+	}
+	before := snapshotTables(t, db)
+	sourceBefore := snapshotTables(t, db)
+	dir := t.TempDir()
+	backup := filepath.Join(dir, "manager.db")
+	if _, err = db.Exec(`VACUUM INTO ?`, backup); err != nil {
+		t.Fatal(err)
+	}
+	keyBytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restoredKey := filepath.Join(dir, "master.key")
+	if err = os.WriteFile(restoredKey, keyBytes, 0600); err != nil {
+		t.Fatal(err)
+	}
+	clear(keyBytes)
+	restored, err := Open(context.Background(), dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restored.Close()
+	if restored.SchemaVersion != 10 {
+		t.Fatal(restored.SchemaVersion)
+	}
+	after := snapshotTables(t, restored.SQL)
+	delete(before, "schema_migrations")
+	delete(after, "schema_migrations")
+	if got := after["oracle_correction_approvals"]; string(got) != "[]" {
+		t.Fatalf("upgrade invented approvals: %s", got)
+	}
+	delete(after, "oracle_correction_approvals")
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("v10 changed pre-existing rows, credential bytes, held state or frozen evidence")
+	}
+	restoredStore, err := secrets.NewLocal(restoredKey, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ciphertext []byte
+	if err = restored.SQL.QueryRow(`SELECT payload FROM credential_secrets WHERE account_id='account-1'`).Scan(&ciphertext); err != nil {
+		t.Fatal(err)
+	}
+	decrypted, err := restoredStore.Open("account-1", ciphertext)
+	if err != nil || !bytes.Equal(decrypted, plain) {
+		t.Fatal("restored original key did not decrypt preserved credential", err)
+	}
+	clear(decrypted)
+	var integrity string
+	if err = restored.SQL.QueryRow("PRAGMA integrity_check").Scan(&integrity); err != nil || integrity != "ok" {
+		t.Fatal(integrity, err)
+	}
+	var violations int
+	if err = restored.SQL.QueryRow("SELECT count(*) FROM pragma_foreign_key_check").Scan(&violations); err != nil || violations != 0 {
+		t.Fatal(violations, err)
+	}
+	if _, err = migrateFS(context.Background(), restored.SQL, migrationSet(t, 9)); err == nil {
+		t.Fatal("older v9 binary accepted upgraded database")
+	}
+	if !reflect.DeepEqual(snapshotTables(t, db), sourceBefore) {
+		t.Fatal("source changed")
+	}
+	var version int
+	if err = db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 9 {
+		t.Fatal("backup source changed", version, err)
+	}
+}
+
+func snapshotTables(t *testing.T, db *sql.DB) map[string]json.RawMessage {
+	t.Helper()
+	rows, err := db.Query(`SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := []string{}
+	for rows.Next() {
+		var name string
+		if err = rows.Scan(&name); err != nil {
+			t.Fatal(err)
+		}
+		names = append(names, name)
+	}
+	if err = rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	rows.Close()
+	result := map[string]json.RawMessage{}
+	for _, name := range names {
+		rows, err = db.Query(`SELECT * FROM "` + strings.ReplaceAll(name, `"`, `""`) + `" ORDER BY rowid`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		columns, err := rows.Columns()
+		if err != nil {
+			t.Fatal(err)
+		}
+		records := [][]any{}
+		for rows.Next() {
+			record := make([]any, len(columns))
+			dest := make([]any, len(columns))
+			for i := range record {
+				dest[i] = &record[i]
+			}
+			if err = rows.Scan(dest...); err != nil {
+				t.Fatal(err)
+			}
+			records = append(records, record)
+		}
+		if err = rows.Err(); err != nil {
+			t.Fatal(err)
+		}
+		rows.Close()
+		result[name], err = json.Marshal(records)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return result
 }

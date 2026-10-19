@@ -25,7 +25,7 @@ import (
 var oracleEvidenceClass []byte
 
 const oracleEvidenceMagic uint32 = 0x4f524345
-const oracleEvidenceClassSHA256 = "66afd8f08b42ca9012ca005fe2e45268c76239eef6af246a9260c8c75958b71c"
+const oracleEvidenceClassSHA256 = "a0a10a2551dfb825ef7144ea38199553db77629ffc921c3b953d8f7db7288827"
 
 var evidenceIdentifier = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_$#]{0,127}$`)
 
