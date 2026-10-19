@@ -89,9 +89,11 @@ public final class OracleEvidenceProbe {
     }
 
     private static String readIdentity(Connection connection, int timeout) throws Exception {
-        String query = "SELECT (SELECT DBID FROM V$DATABASE), (SELECT DB_UNIQUE_NAME FROM V$DATABASE), "
+        // Resolve trusted dictionary objects explicitly: a migration account can
+        // create private views that shadow PUBLIC synonyms.
+        String query = "SELECT (SELECT DBID FROM SYS.V_$DATABASE), (SELECT DB_UNIQUE_NAME FROM SYS.V_$DATABASE), "
                 + "SYS_CONTEXT('USERENV','CON_NAME'), SYS_CONTEXT('USERENV','SERVICE_NAME'), "
-                + "SYS_CONTEXT('USERENV','SESSION_USER'), SYS_CONTEXT('USERENV','CURRENT_SCHEMA') FROM DUAL";
+                + "SYS_CONTEXT('USERENV','SESSION_USER'), SYS_CONTEXT('USERENV','CURRENT_SCHEMA') FROM SYS.DUAL";
         try (Statement statement = statement(connection, timeout);
              ResultSet rows = statement.executeQuery(query)) {
             if (!rows.next()) throw new SQLException("Oracle identity query returned no row");
@@ -104,7 +106,7 @@ public final class OracleEvidenceProbe {
 
     private static void readObjects(Connection connection, int timeout, String schema) throws Exception {
         String query = "SELECT OBJECT_ID, OBJECT_NAME, OBJECT_TYPE, STATUS, "
-                + "TO_CHAR(LAST_DDL_TIME,'YYYY-MM-DD HH24:MI:SS') FROM ALL_OBJECTS WHERE OWNER='"
+                + "TO_CHAR(LAST_DDL_TIME,'YYYY-MM-DD HH24:MI:SS') FROM SYS.ALL_OBJECTS WHERE OWNER='"
                 + schema.toUpperCase() + "' ORDER BY OBJECT_ID, OBJECT_NAME, OBJECT_TYPE";
         List<String> canonicalRows = new ArrayList<>();
         try (Statement statement = statement(connection, timeout);
@@ -136,7 +138,7 @@ public final class OracleEvidenceProbe {
     private static void readHistory(Connection connection, int timeout, String schema, String table,
                                     String sessionUser) throws Exception {
         String owner = schema.toUpperCase();
-        String metadataQuery = "SELECT COUNT(*) FROM ALL_TABLES WHERE OWNER='" + owner
+        String metadataQuery = "SELECT COUNT(*) FROM SYS.ALL_TABLES WHERE OWNER='" + owner
                 + "' AND TABLE_NAME='" + table + "'";
         try (Statement statement = statement(connection, timeout);
              ResultSet rows = statement.executeQuery(metadataQuery)) {

@@ -27,9 +27,15 @@ public class StubOracleDriver implements Driver {
  static Object statement(){return Proxy.newProxyInstance(StubOracleDriver.class.getClassLoader(),new Class[]{Statement.class},(o,m,a)->{
   if(m.getName().equals("execute")) { if(!a[0].equals("SET TRANSACTION READ ONLY"))throw new SQLException("not read only", "", 900); return false; }
   if(m.getName().equals("executeQuery")){String q=(String)a[0];
-   if(q.contains("V$DATABASE"))return rs(new Object[][]{{"12345","ORCL","FREEPDB1","FREEPDB1",System.getProperty("stub.user","APP"),"APP"}});
-   if(q.contains("FROM ALL_OBJECTS"))return rs(new Object[][]{});
-   if(q.contains("FROM ALL_TABLES")){if(!q.contains("TABLE_NAME='flyway_schema_history'"))throw new SQLException("table name not preserved","",900);return rs(new Object[][]{{Boolean.getBoolean("stub.present")?1:0}});}
+   // Simulate an own-schema V$DATABASE view shadowing the public synonym.
+   if(q.contains("FROM V$DATABASE"))return rs(new Object[][]{{"99999","FORGED","FREEPDB1","FREEPDB1","APP","APP"}});
+   if(q.contains("SYS.V_$DATABASE")){
+    if(!q.endsWith("FROM SYS.DUAL"))throw new SQLException("unqualified DUAL","",900);
+    if(Boolean.getBoolean("stub.denyIdentity"))throw new SQLException("dictionary access denied","",942);
+    return rs(new Object[][]{{"12345","ORCL","FREEPDB1","FREEPDB1",System.getProperty("stub.user","APP"),"APP"}});
+   }
+   if(q.contains("FROM SYS.ALL_OBJECTS"))return rs(new Object[][]{});
+   if(q.contains("FROM SYS.ALL_TABLES")){if(!q.contains("TABLE_NAME='flyway_schema_history'"))throw new SQLException("table name not preserved","",900);return rs(new Object[][]{{Boolean.getBoolean("stub.present")?1:0}});}
    if(q.startsWith("SELECT \"installed_rank\", \"version\", \"description\", \"type\", \"script\", \"checksum\", \"installed_by\", TO_CHAR(\"installed_on\",'YYYY-MM-DD\"T\"HH24:MI:SS.FF9'")){
     if(!q.contains("FROM \"APP\".\"flyway_schema_history\" ORDER BY \"installed_rank\""))throw new SQLException("quoted Flyway identifiers missing","",900);
     return rs(new Object[][]{{1,"1","first","SQL","V1__first.sql",null,"APP","2026-06-07T08:09:10.123456789",4,"1"}}); }
@@ -106,7 +112,7 @@ func TestOracleEvidenceHelperArtifactIsReproducible(t *testing.T) {
 	}
 }
 
-func TestOracleEvidenceHelperQuotesFlywayColumnsAndDistinguishesInvisibleHistory(t *testing.T) {
+func TestOracleEvidenceHelperUsesSYSMetadataAndQuotedHistory(t *testing.T) {
 	javac, err := exec.LookPath("javac")
 	if err != nil {
 		t.Skip("javac unavailable")
@@ -131,13 +137,14 @@ func TestOracleEvidenceHelperQuotesFlywayColumnsAndDistinguishesInvisibleHistory
 	if err = os.WriteFile(filepath.Join(service, "java.sql.Driver"), []byte("StubOracleDriver\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	run := func(schema string, present bool, transport string) (string, error) {
+	run := func(schema string, present bool, transport string, denyIdentity ...bool) (string, error) {
 		req := Request{Host: "localhost", Port: 1521, Transport: transport, Service: "FREEPDB1", Schema: schema, HistorySchema: schema, HistoryTable: "flyway_schema_history", Username: "APP", Password: "not-printed"}
 		payload, e := encodeOracleEvidenceInput(req, time.Second, time.Second)
 		if e != nil {
 			return "", e
 		}
-		p := exec.Command(java, "-Dstub.present="+strconv.FormatBool(present), "-Dstub.user=APP", "-cp", work, "OracleEvidenceProbe")
+		deny := len(denyIdentity) > 0 && denyIdentity[0]
+		p := exec.Command(java, "-Dstub.denyIdentity="+strconv.FormatBool(deny), "-Dstub.present="+strconv.FormatBool(present), "-Dstub.user=APP", "-cp", work, "OracleEvidenceProbe")
 		p.Stdin = bytes.NewReader(payload)
 		out, e := p.CombinedOutput()
 		clear(payload)
@@ -151,8 +158,12 @@ func TestOracleEvidenceHelperQuotesFlywayColumnsAndDistinguishesInvisibleHistory
 		t.Fatalf("stubbed real Flyway table query failed: %v (%s)", err, output)
 	}
 	evidence, err := readOracleEvidenceProtocol(strings.NewReader(output))
-	if err != nil || len(evidence.History) != 1 || evidence.History[0].Script != "V1__first.sql" || evidence.History[0].InstalledOn != "2026-06-07T08:09:10.123456789" || evidence.History[0].Checksum != nil {
+	if err != nil || evidence.DBID != "12345" || len(evidence.History) != 1 || evidence.History[0].Script != "V1__first.sql" || evidence.History[0].InstalledOn != "2026-06-07T08:09:10.123456789" || evidence.History[0].Checksum != nil {
 		t.Fatalf("quoted lowercase Flyway history query was not retained exactly: %#v %v (%s)", evidence, err, output)
+	}
+	output, err = run("APP", true, "TCP", true)
+	if _, protocolErr := readOracleEvidenceProtocol(strings.NewReader(output)); err != nil || protocolErr == nil || !strings.Contains(output, "QUERY_ERROR\tORA-00942") || strings.Contains(output, "IDENTITY") {
+		t.Fatalf("missing SYS dictionary privilege used a fallback identity: %v (%s)", err, output)
 	}
 	output, err = run("APP", false, "TCP")
 	if err != nil {

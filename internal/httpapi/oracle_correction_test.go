@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
@@ -761,4 +762,116 @@ func (f *correctionHTTPFixture) gitRelease(t *testing.T, files map[string]string
 	}
 	f.commits[key] = commit
 	return commit
+}
+
+func TestOracleCorrectionConcurrentSubmissionsConsumeApprovalOnce(t *testing.T) {
+	f := newCorrectionHTTPFixture(t)
+	failed := prepareCorrectionFailure(t, f)
+	aid, sha := f.upload(t, fixedCorrectionFiles(), "fixed-concurrent")
+	review := decodeData[map[string]any](t, f.review(t, failed, aid), 200)
+	approval := decodeData[map[string]any](t, f.approve(t, review["id"].(string), sha), 201)
+	actor, err := f.f.service.AuthenticateToken(context.Background(), f.token, "service")
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := core.ExternalRunInput{ArtifactID: aid, DeploymentTargetRevision: 1}
+	pre, err := f.f.service.ExternalPreflight(context.Background(), core.Trace{Actor: actor}, f.d.ProjectID, f.d.ID, input)
+	if err != nil || pre["ready"] != true {
+		t.Fatal(pre, err)
+	}
+	input.PreflightID = pre["id"].(string)
+	payload, err := json.Marshal(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	type result struct {
+		key    string
+		status int
+		id     string
+		err    error
+	}
+	submit := func(key string) result {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, "POST", f.server.URL+fmt.Sprintf("/api/v2/projects/%s/deployment-targets/%s/migration-runs", f.d.ProjectID, f.d.ID), bytes.NewReader(payload))
+		if err != nil {
+			return result{err: err}
+		}
+		req.Header.Set("Authorization", "Bearer "+f.token)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Idempotency-Key", key)
+		response, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return result{err: err}
+		}
+		defer response.Body.Close()
+		var body struct {
+			Data struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		err = json.NewDecoder(response.Body).Decode(&body)
+		return result{key: key, status: response.StatusCode, id: body.Data.ID, err: err}
+	}
+	// Hold the native fixture so the winner cannot finish/release the stream
+	// before the competing request tests the already consumed approval.
+	results := func() []result {
+		f.runner.mu.Lock()
+		defer f.runner.mu.Unlock()
+		start := make(chan struct{})
+		done := make(chan result, 2)
+		for _, key := range []string{"correction-concurrent-a", "correction-concurrent-b"} {
+			go func(key string) { <-start; done <- submit(key) }(key)
+		}
+		close(start)
+		return []result{<-done, <-done}
+	}()
+	var winner result
+	accepted, rejected := 0, 0
+	for _, r := range results {
+		if r.err != nil {
+			t.Fatal(r.err)
+		}
+		switch r.status {
+		case 202:
+			accepted++
+			winner = r
+		case 409:
+			rejected++
+		default:
+			t.Fatalf("unexpected concurrent response: %+v", r)
+		}
+	}
+	if accepted != 1 || rejected != 1 || winner.id == "" {
+		t.Fatal(results)
+	}
+	var run map[string]any
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); {
+		run = decodeData[map[string]any](t, f.f.v2("GET", fmt.Sprintf("/projects/%s/migration-runs/%s", f.d.ProjectID, winner.id), nil), 200)
+		if run["completed"] == true {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if run["status"] != "SUCCEEDED" {
+		t.Fatal(run)
+	}
+	replay := submit(winner.key)
+	if replay.err != nil || replay.status != 202 || replay.id != winner.id {
+		t.Fatalf("same-key replay changed run: %+v", replay)
+	}
+	var consumed string
+	if err = f.f.db.SQL.QueryRow(`SELECT consumed_run_id FROM oracle_correction_approvals WHERE id=?`, approval["id"]).Scan(&consumed); err != nil || consumed != winner.id {
+		t.Fatal(consumed, err)
+	}
+	f.runner.mu.Lock()
+	defer f.runner.mu.Unlock()
+	if f.runner.attempts["V6__step.sql"] != 2 || f.runner.attempts["V7__step.sql"] != 1 {
+		t.Fatal("correction SQL repeated", f.runner.attempts)
+	}
+	for name, count := range f.runner.applied {
+		if count != 1 {
+			t.Fatal("successful SQL repeated", name, count)
+		}
+	}
 }

@@ -1,0 +1,336 @@
+{
+  "status": "PREPARED_NOT_AUTHORIZED_NOT_EXECUTED",
+  "schema": "FWM_WZ260_C",
+  "database": "FREE/FREEPDB1",
+  "dbid": "1514744704",
+  "packages": [
+    {
+      "case": "01-seed",
+      "prepared_git_commit": "496c4d464e11274e108f390c1c3aaca5cfc8aa37",
+      "zip_sha256": "3bced62f03203099b2fd853c0860f118e87165c77baaaedcc1e9e58097cd881b",
+      "file_count": 10,
+      "files": [
+        {
+          "kind": "repeatable",
+          "path": "R__10_customer_label.sql",
+          "sha256": "7dae10bb9aca075982309d9cd376b188e3103d351478cd321724dbf422a3fd05",
+          "size": 212,
+          "source": "migrations/repeatable/functions/R__10_customer_label.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__20_upsert_customer.sql",
+          "sha256": "20992b489e09dba5b0ba267ee4ff9cacb4670f2ad538699d88ba33b6a1933c56",
+          "size": 812,
+          "source": "migrations/repeatable/procedures/R__20_upsert_customer.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__30_active_customers.sql",
+          "sha256": "884d9fbc5a9b422a953a90748f1b79514f0568dc6d69aa247b8eb7038c4c76ef",
+          "size": 223,
+          "source": "migrations/repeatable/views/R__30_active_customers.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__40_notification_policy.sql",
+          "sha256": "51783b69440acd38b7239343b4346c3fb3a655a0863e1dbf9dbdbce01039c6c7",
+          "size": 192,
+          "source": "environment/develop/repeatable/R__40_notification_policy.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__50_customer_timestamps.sql",
+          "sha256": "d64f9eb0110a02dff45c8276ea1dbab2a846df875a483b00b252592313eec58e",
+          "size": 135,
+          "source": "migrations/repeatable/triggers/R__50_customer_timestamps.sql",
+          "version": ""
+        },
+        {
+          "kind": "versioned",
+          "path": "V1__create_customer_configuration.sql",
+          "sha256": "a6ebc98e53ad6c2f40c2bfaf8e357bac8ee9bf40f7f80ab5023c5b212859197c",
+          "size": 808,
+          "source": "migrations/schema-model/V1__create_customer_configuration.sql",
+          "version": "1"
+        },
+        {
+          "kind": "versioned",
+          "path": "V2__seed_customer_configuration.sql",
+          "sha256": "2ee83cdfc7c4072013cb6faf43199282344b615372a6cd86f71845273a1a8f4b",
+          "size": 446,
+          "source": "migrations/seeds/V2__seed_customer_configuration.sql",
+          "version": "2"
+        },
+        {
+          "kind": "versioned",
+          "path": "V3__add_customer_contact.sql",
+          "sha256": "d6bedc94b30971c4ce205d6fe93541bc04c4226d0fbe5c8ad96d812cda5d673c",
+          "size": 116,
+          "source": "migrations/schema-model/V3__add_customer_contact.sql",
+          "version": "3"
+        },
+        {
+          "kind": "versioned",
+          "path": "V4__create_recovery_marker.sql",
+          "sha256": "129f22e8884fb448565928a2e6204a52880968306a55254e986420e342611fc6",
+          "size": 55,
+          "source": "migrations/schema-model/V4__create_recovery_marker.sql",
+          "version": "4"
+        },
+        {
+          "kind": "versioned",
+          "path": "V5__create_cicd_demo_note.sql",
+          "sha256": "e6839e531b2ec267d79d138549306f09f202b198c3ad5c856e95c796b1fb7489",
+          "size": 144,
+          "source": "migrations/schema-model/V5__create_cicd_demo_note.sql",
+          "version": "5"
+        }
+      ]
+    },
+    {
+      "case": "02-failure",
+      "prepared_git_commit": "7fd8432b7f994e635cb4eaf35e49d6db5653b0bb",
+      "zip_sha256": "2f023b6879fc1a4dc5026f7f9e56c3fc769629a702bafe4cd7bbcb8a70c3e65c",
+      "file_count": 12,
+      "files": [
+        {
+          "kind": "repeatable",
+          "path": "R__10_customer_label.sql",
+          "sha256": "7dae10bb9aca075982309d9cd376b188e3103d351478cd321724dbf422a3fd05",
+          "size": 212,
+          "source": "migrations/repeatable/functions/R__10_customer_label.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__20_upsert_customer.sql",
+          "sha256": "20992b489e09dba5b0ba267ee4ff9cacb4670f2ad538699d88ba33b6a1933c56",
+          "size": 812,
+          "source": "migrations/repeatable/procedures/R__20_upsert_customer.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__30_active_customers.sql",
+          "sha256": "884d9fbc5a9b422a953a90748f1b79514f0568dc6d69aa247b8eb7038c4c76ef",
+          "size": 223,
+          "source": "migrations/repeatable/views/R__30_active_customers.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__40_notification_policy.sql",
+          "sha256": "51783b69440acd38b7239343b4346c3fb3a655a0863e1dbf9dbdbce01039c6c7",
+          "size": 192,
+          "source": "environment/develop/repeatable/R__40_notification_policy.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__50_customer_timestamps.sql",
+          "sha256": "d64f9eb0110a02dff45c8276ea1dbab2a846df875a483b00b252592313eec58e",
+          "size": 135,
+          "source": "migrations/repeatable/triggers/R__50_customer_timestamps.sql",
+          "version": ""
+        },
+        {
+          "kind": "versioned",
+          "path": "V1__create_customer_configuration.sql",
+          "sha256": "a6ebc98e53ad6c2f40c2bfaf8e357bac8ee9bf40f7f80ab5023c5b212859197c",
+          "size": 808,
+          "source": "migrations/schema-model/V1__create_customer_configuration.sql",
+          "version": "1"
+        },
+        {
+          "kind": "versioned",
+          "path": "V2__seed_customer_configuration.sql",
+          "sha256": "2ee83cdfc7c4072013cb6faf43199282344b615372a6cd86f71845273a1a8f4b",
+          "size": 446,
+          "source": "migrations/seeds/V2__seed_customer_configuration.sql",
+          "version": "2"
+        },
+        {
+          "kind": "versioned",
+          "path": "V3__add_customer_contact.sql",
+          "sha256": "d6bedc94b30971c4ce205d6fe93541bc04c4226d0fbe5c8ad96d812cda5d673c",
+          "size": 116,
+          "source": "migrations/schema-model/V3__add_customer_contact.sql",
+          "version": "3"
+        },
+        {
+          "kind": "versioned",
+          "path": "V4__create_recovery_marker.sql",
+          "sha256": "129f22e8884fb448565928a2e6204a52880968306a55254e986420e342611fc6",
+          "size": 55,
+          "source": "migrations/schema-model/V4__create_recovery_marker.sql",
+          "version": "4"
+        },
+        {
+          "kind": "versioned",
+          "path": "V5__create_cicd_demo_note.sql",
+          "sha256": "e6839e531b2ec267d79d138549306f09f202b198c3ad5c856e95c796b1fb7489",
+          "size": 144,
+          "source": "migrations/schema-model/V5__create_cicd_demo_note.sql",
+          "version": "5"
+        },
+        {
+          "kind": "versioned",
+          "path": "V6__case2_duplicate_column.sql",
+          "sha256": "8d162571b3c65793f41fc8a1a1af683007bf9fe61063ddf66068018916e36d1c",
+          "size": 67,
+          "source": "migrations/schema-model/V6__case2_duplicate_column.sql",
+          "version": "6"
+        },
+        {
+          "kind": "versioned",
+          "path": "V7__create_recovery_successor.sql",
+          "sha256": "2c298457c5361d4011fc2d0aba325c5b8eee67cf983c0a93cdbd71c6bdbaacd8",
+          "size": 55,
+          "source": "migrations/schema-model/V7__create_recovery_successor.sql",
+          "version": "7"
+        }
+      ]
+    },
+    {
+      "case": "03-correction",
+      "prepared_git_commit": "408a17f0fd34644882211d65a86792c1310a3264",
+      "zip_sha256": "c8817b90f1d5dba84b98ff916b3db41a090d385ed9fdb714aa02745ae2bf3cd1",
+      "file_count": 12,
+      "files": [
+        {
+          "kind": "repeatable",
+          "path": "R__10_customer_label.sql",
+          "sha256": "7dae10bb9aca075982309d9cd376b188e3103d351478cd321724dbf422a3fd05",
+          "size": 212,
+          "source": "migrations/repeatable/functions/R__10_customer_label.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__20_upsert_customer.sql",
+          "sha256": "20992b489e09dba5b0ba267ee4ff9cacb4670f2ad538699d88ba33b6a1933c56",
+          "size": 812,
+          "source": "migrations/repeatable/procedures/R__20_upsert_customer.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__30_active_customers.sql",
+          "sha256": "884d9fbc5a9b422a953a90748f1b79514f0568dc6d69aa247b8eb7038c4c76ef",
+          "size": 223,
+          "source": "migrations/repeatable/views/R__30_active_customers.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__40_notification_policy.sql",
+          "sha256": "51783b69440acd38b7239343b4346c3fb3a655a0863e1dbf9dbdbce01039c6c7",
+          "size": 192,
+          "source": "environment/develop/repeatable/R__40_notification_policy.sql",
+          "version": ""
+        },
+        {
+          "kind": "repeatable",
+          "path": "R__50_customer_timestamps.sql",
+          "sha256": "d64f9eb0110a02dff45c8276ea1dbab2a846df875a483b00b252592313eec58e",
+          "size": 135,
+          "source": "migrations/repeatable/triggers/R__50_customer_timestamps.sql",
+          "version": ""
+        },
+        {
+          "kind": "versioned",
+          "path": "V1__create_customer_configuration.sql",
+          "sha256": "a6ebc98e53ad6c2f40c2bfaf8e357bac8ee9bf40f7f80ab5023c5b212859197c",
+          "size": 808,
+          "source": "migrations/schema-model/V1__create_customer_configuration.sql",
+          "version": "1"
+        },
+        {
+          "kind": "versioned",
+          "path": "V2__seed_customer_configuration.sql",
+          "sha256": "2ee83cdfc7c4072013cb6faf43199282344b615372a6cd86f71845273a1a8f4b",
+          "size": 446,
+          "source": "migrations/seeds/V2__seed_customer_configuration.sql",
+          "version": "2"
+        },
+        {
+          "kind": "versioned",
+          "path": "V3__add_customer_contact.sql",
+          "sha256": "d6bedc94b30971c4ce205d6fe93541bc04c4226d0fbe5c8ad96d812cda5d673c",
+          "size": 116,
+          "source": "migrations/schema-model/V3__add_customer_contact.sql",
+          "version": "3"
+        },
+        {
+          "kind": "versioned",
+          "path": "V4__create_recovery_marker.sql",
+          "sha256": "129f22e8884fb448565928a2e6204a52880968306a55254e986420e342611fc6",
+          "size": 55,
+          "source": "migrations/schema-model/V4__create_recovery_marker.sql",
+          "version": "4"
+        },
+        {
+          "kind": "versioned",
+          "path": "V5__create_cicd_demo_note.sql",
+          "sha256": "e6839e531b2ec267d79d138549306f09f202b198c3ad5c856e95c796b1fb7489",
+          "size": 144,
+          "source": "migrations/schema-model/V5__create_cicd_demo_note.sql",
+          "version": "5"
+        },
+        {
+          "kind": "versioned",
+          "path": "V6__case2_duplicate_column.sql",
+          "sha256": "02b7a87fc9c76cb6b83be27f3e00337ab5a102c07f677d7ff8c32444872a0fbd",
+          "size": 52,
+          "source": "migrations/schema-model/V6__case2_duplicate_column.sql",
+          "version": "6"
+        },
+        {
+          "kind": "versioned",
+          "path": "V7__create_recovery_successor.sql",
+          "sha256": "2c298457c5361d4011fc2d0aba325c5b8eee67cf983c0a93cdbd71c6bdbaacd8",
+          "size": 55,
+          "source": "migrations/schema-model/V7__create_recovery_successor.sql",
+          "version": "7"
+        }
+      ]
+    }
+  ],
+  "draft_sql": {
+    "V4__create_recovery_marker.sql": "CREATE TABLE fwm_recovery_v4_marker (\n    id NUMBER\n);\n",
+    "V6__case2_duplicate_column.sql": "CREATE TABLE fwm_cicd_v6_invalid (\n    id NUMBER\n);\n",
+    "V7__create_recovery_successor.sql": "CREATE TABLE fwm_recovery_v7_marker (\n    id NUMBER\n);\n"
+  },
+  "invalid_v6_sql": "CREATE TABLE fwm_cicd_v6_invalid (\n    id NUMBER,\n    id NUMBER\n);\n",
+  "application_scope": {
+    "project_id": "vxfQISv7e-d1Wjhyt1HBE9",
+    "new_deployment_target_name": "oracle-dev-recovery-c",
+    "new_execution_account_name": "Jenkins recovery C execution account",
+    "environment": "DEV",
+    "existing_target_id": "oracle-free-lab",
+    "preserve_historical_run": "Dn45dSyyZbrXzR-JhnScYi",
+    "preserve_schema": "FWM_WZ260_B"
+  },
+  "proposed_oracle_scope": {
+    "create_only_if_user_absent": "FWM_WZ260_C",
+    "default_tablespace": "USERS",
+    "quota_bytes": 8388608,
+    "system_privileges": [
+      "CREATE SESSION",
+      "CREATE TABLE",
+      "CREATE SEQUENCE",
+      "CREATE PROCEDURE",
+      "CREATE VIEW",
+      "CREATE TRIGGER"
+    ],
+    "object_privilege": "SELECT ON SYS.V_$DATABASE CONTAINER=CURRENT",
+    "roles": [],
+    "password": "GENERATE_PRIVATELY_AT_EXECUTION_NEVER_LOG",
+    "drop_or_cleanup": false
+  }
+}
