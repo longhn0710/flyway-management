@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"flyway-manager/internal/flyway"
+	"fmt"
 	"path"
 	"reflect"
 	"strings"
@@ -41,11 +42,11 @@ func repairEligibility(before, after, validation flyway.Result) string {
 		return e.Error()
 	}
 	for _, entry := range prior {
-		if entry.Version == nil || *entry.Version == "" || strings.EqualFold(entry.State, "Outdated") || strings.EqualFold(entry.State, "Superseded") {
-			return "Repeatable or superseded history requires separate repair acceptance; unrelated checksum realignment cannot be excluded."
+		if strings.EqualFold(entry.State, "Outdated") {
+			return "Outdated repeatable history makes Repair unsafe."
 		}
 	}
-	if !historyStable(prior, next, true) {
+	if !repairHistoryProgress(prior, next) {
 		return "Unrelated or ambiguous history changes make repair unsafe."
 	}
 	failed := []historyEntry{}
@@ -116,7 +117,7 @@ func repairHistoryRestored(before, after json.RawMessage) bool {
 			if row.Version != nil {
 				version = *row.Version
 			}
-			key := version + "/" + row.Script + "/" + row.State
+			key := version + "/" + row.Script + "/" + row.State + "/" + row.InstalledOn + "/" + fmt.Sprint(row.InstalledRank)
 			if _, exists := out[key]; exists {
 				return nil
 			}
@@ -148,4 +149,79 @@ func removedFailedVersion(repaired, failedInfo json.RawMessage) bool {
 		} `json:"migrationsRemoved"`
 	}
 	return version != "" && json.Unmarshal(repaired, &result) == nil && len(result.Removed) == 1 && result.Removed[0].Version == version
+}
+
+// Match the entire resolver view after removing only the confirmed failed row.
+// Physical checksum-bearing rows are verified separately by the JDBC probe.
+func repairResolverRestored(failed, after json.RawMessage) bool {
+	rows, err := history(failed)
+	if err != nil {
+		return false
+	}
+	count := 0
+	for i, r := range rows {
+		if strings.EqualFold(r.State, "Failed") {
+			count++
+			r.State = "Pending"
+			r.InstalledOn = ""
+			r.InstalledBy = ""
+			r.InstalledRank = 0
+			r.Checksum = nil
+			rows[i] = r
+		}
+	}
+	if count != 1 {
+		return false
+	}
+	raw, _ := json.Marshal(map[string]any{"migrations": rows})
+	return repairHistoryRestored(raw, after)
+}
+
+func repairHistoryProgress(before, after []historyEntry) bool {
+	if len(before) != len(after) {
+		return false
+	}
+	// Multisets preserve every historical application of a repeatable, including
+	// multiple Superseded rows for the same script and distinct installation times.
+	exact := map[string]int{}
+	progress := map[string]historyEntry{}
+	canonical := func(r historyEntry) string { raw, _ := json.Marshal(r); return string(raw) }
+	for _, r := range after {
+		exact[canonical(r)]++
+		if r.Version != nil && *r.Version != "" && (r.State == "Success" || r.State == "Failed") {
+			key := r.Script + "/" + *r.Version
+			if _, ok := progress[key]; ok {
+				return false
+			}
+			progress[key] = r
+		}
+	}
+	for _, r := range before {
+		key := canonical(r)
+		if exact[key] > 0 {
+			exact[key]--
+			continue
+		}
+		if r.State != "Pending" || r.Version == nil || *r.Version == "" {
+			return false
+		}
+		n, ok := progress[r.Script+"/"+*r.Version]
+		if !ok {
+			return false
+		}
+		native := canonical(n)
+		if exact[native] == 0 {
+			return false
+		}
+		n.State = "Pending"
+		n.InstalledOn = ""
+		n.InstalledBy = ""
+		n.InstalledRank = 0
+		n.Checksum = nil
+		if !reflect.DeepEqual(r, n) {
+			return false
+		}
+		exact[native]--
+	}
+	return true
 }

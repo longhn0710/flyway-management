@@ -58,3 +58,98 @@ Preflights expire after ten minutes and bind the actor, artifact, revision, effe
 ## Verification
 
 Install both `scripts/external-api-requirements.txt` and `scripts/openapi-requirements.txt`, then run `make check test-race test-e2e test-openapi security`. The OpenAPI gate starts a fresh real Manager process, drives it through HTTP with isolated SQLite, and validates actual requests/responses against the specification. Its native Flyway fixture simulates SQL outcomes. Real Oracle SQL execution remains a separate, explicitly authorized acceptance gate.
+
+## Oracle failed migration correction
+
+SQLite migration 010 adds one single-use approval table; migrations 001–009,
+encrypted credentials and existing immutable records are unchanged.
+
+A confirmed Oracle failure automatically receives one guarded Repair assessment.
+Successful historical repeatables do not disqualify it. Before Repair, Manager
+requires exactly one confirmed failed version, native validation isolating that
+failure, and stable physical checksum-bearing history. Earlier successes in the
+same batch must match frozen SQL and native migrate's successful-file list.
+After Repair, native output must report only that failed version removed with no
+alignment/deletion, physical successful rows must be identical, and info/validate
+must restore the resolver view with the failed version and successors Pending.
+The original migration stays FAILED and the original Jenkins build stays FAILURE.
+The stream stays held. Repair never rolls back SQL or retries it.
+
+The execution account must support the pinned JDBC probe's fixed read-only
+queries: `V$DATABASE` DBID/DB_UNIQUE_NAME, authenticated session identity,
+`ALL_OBJECTS`, `ALL_TABLES`, and the configured Flyway history table. The primary
+path uses the schema's own account. Insufficient metadata privilege or unavailable
+probe evidence makes Repair UNSAFE and keeps the stream held; Manager grants
+nothing. No broad dictionary role is required by the implementation. Existing
+v1/v2 endpoints and standard client payloads remain supported. A legacy successful
+Repair without physical evidence cannot authorize a correction retroactively.
+
+After inspecting native failure/logs and independently handling any partial DDL,
+a human Admin or Operator with current Project/target/database execute authority
+uploads the candidate corrected ZIP through the ordinary v2 artifact endpoint.
+It must contain every file from the failed run's frozen locations, including V7
+and repeatables. Exactly the failed version's bytes may differ; version/path and
+all other bytes must be unchanged. No arbitrary hold-clear or Repair endpoint is
+added. The failed artifact, SQL, run and frozen record remain immutable.
+
+With normal session/CSRF headers, request a read-only review:
+
+```http
+POST /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-reviews
+Content-Type: application/json
+
+{"failed_run_id":"<original-failed-run>","artifact_id":"<corrected-candidate>","deployment_target_revision":1}
+```
+
+The HTTP 200 response is a **review-only** preflight, retrievable through the
+existing preflight GET. Require ready=true, live_status=VERIFIED and blockers=[].
+It includes current physical history, database identity and an object-catalogue
+fingerprint. It is not an executable preflight. After inspecting the exact SQL
+and current state, approve the original ZIP checksum:
+
+```http
+POST /api/v2/projects/{projectID}/deployment-targets/{deploymentTargetID}/correction-approvals
+Content-Type: application/json
+
+{"preflight_id":"<review-id>","input_sha256":"<corrected-ZIP-SHA256>","partial_ddl_reviewed":true,"note":"DBA reviewed native failure and partial DDL; current schema is ready for this exact correction."}
+```
+
+HTTP 201 returns a single-use approval expiring with the review (at most ten
+minutes). Service accounts cannot review or approve. Approval rechecks current
+Oracle evidence and destination/authority; it does not release the hold or run SQL.
+The developer may then push the exact reviewed bytes and Jenkins may upload that
+same ZIP under a new Artifact ID, using its existing scoped token and approval
+controls. The ordinary preflight → HTTP 202 submission → poll → logs/record client
+contract is unchanged. Approval matches the ZIP checksum within the exact Project
+and Deployment Target, not the uploader or Artifact ID. It is consumed atomically
+by one Run ID and is rechecked against the worker's live evidence and current DBA
+permissions before migration. Changed database/history/catalogue, mappings,
+credentials, target revision, runtime, expired authority or another migration
+attempt requires a new DBA review. A verified successful corrected V6 → V7 run,
+including unchanged prior physical
+history, releases the hold. Its frozen preflight retains the approval ID, DBA and
+before/after physical evidence. V1–V5 and unchanged repeatables are not executed
+again.
+
+Repair FAILED/UNSAFE/unknown outcomes remain NEEDS_REVIEW and held. There is no
+automatic Repair retry, SQL retry, history editor or failed-Repair remediation
+workflow. A restart holds interrupted work and never replays a consumed attempt.
+Object metadata and history are evidence, not a snapshot of all application data;
+the DBA's partial-DDL/data inspection remains explicit. Operationally exclude
+external schema writers during review/submission/execution; Manager stream locks
+do not lock external Oracle writers.
+
+Local coverage: `TestOracleV1V7CorrectionThroughHTTPAndPublishedCIClient` exercises
+local Git commits/pushes to a disposable bare repository,
+the actual HTTP handlers and published Python client against a stateful native
+protocol fixture, with five prior repeatables, unchanged successful history, failed V6,
+pending V7, verified Repair, held stream, DBA review and one corrected execution.
+A second fixture covers V1–V5 committing earlier in the failing V1–V7 batch.
+Guard tests cover stale evidence, unauthorized approval, unrelated file changes,
+consumption, expiry, worker recheck, failed Repair and hidden checksum realignment.
+These are simulated Oracle fixtures; no live Oracle or Jenkins execution is
+claimed by these tests. The real Jenkins reference helper also has six offline
+completion/Repair-outcome contract checks. Run them against an authorized local
+demo checkout with `python3 scripts/test-oracle-jenkins-contract.py /path/to/demo`.
+The HTTP fixture/client tests run in the ordinary Go/CI suite; CI does not fetch
+the private demo repository or require additional credentials.

@@ -47,6 +47,11 @@ def main():
                         "^TestExternalProjectAPIUsesNativeWorkerAndPersistsImmutableEvidence$", "-count=1"],
                        env={**os.environ, "FWM_EXTERNAL_EVIDENCE_FILE": str(path)}, check=True)
         verify(path)
+        correction_path = Path(directory) / "correction-http-evidence.json"
+        subprocess.run(["go", "test", "./internal/httpapi", "-run",
+                        "^TestOracleV1V7CorrectionThroughHTTPAndPublishedCIClient$", "-count=1"],
+                       env={**os.environ, "FWM_CORRECTION_EVIDENCE_FILE": str(correction_path)}, check=True)
+        verify(correction_path)
 
 
 if __name__ == "__main__":

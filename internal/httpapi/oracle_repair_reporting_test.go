@@ -11,6 +11,7 @@ import (
 	"flyway-manager/internal/artifact"
 	"flyway-manager/internal/core"
 	"flyway-manager/internal/flyway"
+	"flyway-manager/internal/oracle"
 )
 
 // This runner follows Flyway's native JSON shape closely and pauses inside
@@ -157,4 +158,15 @@ func waitHTTPRun(t *testing.T, f *apiFixture, id string) core.Run {
 	}
 	t.Fatalf("run did not settle after automatic Repair: %s", id)
 	return core.Run{}
+}
+
+func (r *oracleRepairHTTPRunner) OracleEvidence(_ context.Context, req flyway.Request) (oracle.Evidence, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := oracle.Evidence{DBID: "1514744704", DatabaseUniqueName: "fixture", PDBName: req.Service, Service: req.Service, SessionUser: req.Username, CurrentSchema: req.Schema, ObjectsSHA256: "fixture", History: []oracle.HistoryRow{}}
+	if r.failed {
+		crc := sqlCRC(req.Files["V1__fail.sql"])
+		out.History = append(out.History, oracle.HistoryRow{Rank: 1, Version: "1", Script: "V1__fail.sql", Checksum: &crc, Success: false})
+	}
+	return out, nil
 }

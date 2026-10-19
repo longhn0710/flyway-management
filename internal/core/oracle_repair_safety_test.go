@@ -113,7 +113,7 @@ func TestOracleMandatoryRepairOutcomesPreserveOriginalFailure(t *testing.T) {
 			}
 			var held bool
 			must(t, f.db.SQL.QueryRow(`SELECT held FROM migration_streams WHERE target_id=? AND schema_id=?`, target.ID, schema.ID).Scan(&held))
-			if held != (wantState == "NEEDS_REVIEW") {
+			if !held {
 				t.Fatal("wrong stream hold", held)
 			}
 			repair, err := f.s.RunRepair(testCtx, f.admin, run.ID)
@@ -130,7 +130,7 @@ func TestOracleMandatoryRepairOutcomesPreserveOriginalFailure(t *testing.T) {
 			if fault == "eligible" && (!strings.Contains(string(repair.After), `"Pending"`) || engine.failed[schema.Name] != "") {
 				t.Fatal("eligible Repair did not restore history", repair)
 			}
-			if held && engine.failed[schema.Name] == "" {
+			if wantRepair != "SUCCEEDED" && engine.failed[schema.Name] == "" {
 				t.Fatal("unsafe failure silently repaired")
 			}
 			executions, err := f.s.RunExecutions(testCtx, f.admin, run.ID)

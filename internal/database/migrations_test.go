@@ -67,7 +67,7 @@ func migrationFixture(t *testing.T, additions map[string]string) fstest.MapFS {
 }
 
 func TestParseMigrationsRejectsMissingAndInvalidVersions(t *testing.T) {
-	for _, name := range []string{"011_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
+	for _, name := range []string{"012_gap.sql", "000_zero.sql", "002_.sql", "bad.sql"} {
 		t.Run(name, func(t *testing.T) {
 			entries, err := fs.ReadDir(migrationFixture(t, map[string]string{name: "SELECT 1"}), "migrations")
 			if err != nil {
@@ -121,7 +121,7 @@ func TestMigrationsRejectInconsistentHistory(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer db.Close()
-			files := migrationFixture(t, map[string]string{"010_second.sql": "CREATE TABLE second(value TEXT)", "011_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
+			files := migrationFixture(t, map[string]string{"011_second.sql": "CREATE TABLE second(value TEXT)", "012_third.sql": "CREATE TABLE IF NOT EXISTS third(value TEXT)"})
 			if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {
 				t.Fatal(err)
 			}
@@ -189,7 +189,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { db.Close() }()
-	files := migrationFixture(t, map[string]string{"010_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "011_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
+	files := migrationFixture(t, map[string]string{"011_second.sql": "CREATE TABLE second(value TEXT); INSERT INTO second VALUES('persisted');", "012_third.sql": "CREATE TABLE partial(value TEXT); INVALID SQL"})
 	if _, err := migrateFS(context.Background(), db.SQL, files); err == nil {
 		t.Fatal("expected SQL failure")
 	}
@@ -197,7 +197,7 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if err := db.SQL.QueryRow("SELECT count(*) FROM sqlite_master WHERE name IN ('second', 'partial')").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("partial schema survived: %d %v", count, err)
 	}
-	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 9 {
+	if err := db.SQL.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 10 {
 		t.Fatalf("partial ledger survived: %d %v", count, err)
 	}
 	// A failed startup must be safe to reopen using the previous schema.
@@ -212,8 +212,8 @@ func TestMigrationFailureRollsBackSchemaAndLedgerThenRecovers(t *testing.T) {
 	if db.InstallationID != id {
 		t.Fatal("failed migration changed installation metadata")
 	}
-	files["migrations/011_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
-	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 11 {
+	files["migrations/012_third.sql"].Data = []byte("CREATE TABLE third(value TEXT)")
+	if version, err := migrateFS(context.Background(), db.SQL, files); err != nil || version != 12 {
 		t.Fatalf("retry: version %d, %v", version, err)
 	}
 	if _, err := migrateFS(context.Background(), db.SQL, files); err != nil {
@@ -239,6 +239,7 @@ func TestVersionThreeUpgradePreservesRegistryAndAudit(t *testing.T) {
 	delete(files, "migrations/007_sit_environment.sql")
 	delete(files, "migrations/008_engine_profiles.sql")
 	delete(files, "migrations/009_project_deployments.sql")
+	delete(files, "migrations/010_oracle_corrections.sql")
 	if version, err := migrateFS(context.Background(), legacy, files); err != nil || version != 3 {
 		t.Fatal(version, err)
 	}
@@ -259,7 +260,7 @@ func TestVersionThreeUpgradePreservesRegistryAndAudit(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer upgraded.Close()
-	if upgraded.SchemaVersion != 9 || upgraded.InstallationID != "prior-installation" {
+	if upgraded.SchemaVersion != 10 || upgraded.InstallationID != "prior-installation" {
 		t.Fatal("installation changed")
 	}
 	var version int
@@ -289,6 +290,7 @@ func openVersionSix(t *testing.T) *sql.DB {
 	delete(files, "migrations/007_sit_environment.sql")
 	delete(files, "migrations/008_engine_profiles.sql")
 	delete(files, "migrations/009_project_deployments.sql")
+	delete(files, "migrations/010_oracle_corrections.sql")
 	if v, err := migrateFS(context.Background(), db, files); err != nil || v != 6 {
 		t.Fatalf("create v6 fixture: version=%d err=%v", v, err)
 	}
@@ -318,7 +320,7 @@ VALUES('run','target','schema','artifact','account','user','user','User','Admin'
 		t.Fatal(err)
 	}
 	files := migrationFixture(t, nil)
-	if v, err := migrateFS(context.Background(), db, files); err != nil || v != 9 {
+	if v, err := migrateFS(context.Background(), db, files); err != nil || v != 10 {
 		t.Fatalf("upgrade: version=%d err=%v", v, err)
 	}
 	var env string
@@ -455,7 +457,7 @@ INSERT INTO migration_runs(id,target_id,schema_id,artifact_id,execution_account_
 VALUES('run','target-1','schema-1','artifact','account-1','user','user','User','Admin','','','WEB','request','{"target_id":"target-1"}','{"snapshot":"before-009"}','pin',2,'SUCCEEDED','','SKIPPED','','11.20.0');`); err != nil {
 		t.Fatal(err)
 	}
-	if version, err := migrateFS(context.Background(), db, migrationFixture(t, nil)); err != nil || version != 9 {
+	if version, err := migrateFS(context.Background(), db, migrationFixture(t, nil)); err != nil || version != 10 {
 		t.Fatalf("upgrade v8 to v9: version=%d err=%v", version, err)
 	}
 	for table, want := range map[string]int{"projects": 2, "project_members": 1, "artifacts": 1, "artifact_blobs": 1, "migration_runs": 1, "project_stream_owners": 0, "project_identity_memberships": 0, "audit_events": 1} {

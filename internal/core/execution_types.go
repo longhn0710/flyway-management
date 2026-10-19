@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flyway-manager/internal/artifact"
 	"flyway-manager/internal/flyway"
+	"flyway-manager/internal/oracle"
 	"sync"
 	"time"
 )
@@ -48,7 +49,8 @@ type RunContext struct {
 	InitiatedBy   string `json:"initiated_by,omitempty"`
 }
 type RunInput struct {
-	external *externalAdmission
+	external   *externalAdmission
+	correction *correctionReview
 
 	TargetID           string     `json:"target_id"`
 	SchemaID           string     `json:"schema_id"`
@@ -110,17 +112,25 @@ type Diagnostic struct {
 	Status string `json:"status"`
 	Detail string `json:"detail"`
 }
+type CorrectionEvidence struct {
+	ApprovalID string          `json:"approval_id"`
+	ApprovedBy string          `json:"approved_by"`
+	Before     oracle.Evidence `json:"before"`
+	After      oracle.Evidence `json:"after"`
+}
+
 type Preflight struct {
-	Ready          bool            `json:"ready"`
-	LocalReady     bool            `json:"local_ready"`
-	LiveStatus     string          `json:"live_status"`
-	Blockers       []Blocker       `json:"blockers"`
-	Warnings       []string        `json:"warnings"`
-	RuntimeVersion string          `json:"runtime_version"`
-	Files          []ArtifactFile  `json:"files"`
-	Diagnostics    []Diagnostic    `json:"diagnostics"`
-	Info           json.RawMessage `json:"info,omitempty"`
-	Validation     json.RawMessage `json:"validation,omitempty"`
+	CorrectionEvidence *CorrectionEvidence `json:"correction_evidence,omitempty"`
+	Ready              bool                `json:"ready"`
+	LocalReady         bool                `json:"local_ready"`
+	LiveStatus         string              `json:"live_status"`
+	Blockers           []Blocker           `json:"blockers"`
+	Warnings           []string            `json:"warnings"`
+	RuntimeVersion     string              `json:"runtime_version"`
+	Files              []ArtifactFile      `json:"files"`
+	Diagnostics        []Diagnostic        `json:"diagnostics"`
+	Info               json.RawMessage     `json:"info,omitempty"`
+	Validation         json.RawMessage     `json:"validation,omitempty"`
 }
 
 func (p *Preflight) block(code, message string) {

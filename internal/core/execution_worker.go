@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flyway-manager/internal/flyway"
+	"flyway-manager/internal/oracle"
 	"fmt"
 	"strings"
 	"time"
@@ -97,6 +98,21 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		block("Application stopped before migration began.")
 		return
 	}
+	var beforeOracle oracle.Evidence
+	var oracleErr error
+	if plan.snapshot.Target.Engine != "postgresql" {
+		beforeOracle, oracleErr = s.oracleEvidence(parent, plan)
+		if plan.correction != nil {
+			if oracleErr != nil {
+				block(safeExecutionError(oracleErr))
+				return
+			}
+			if e = s.verifyCorrectionEvidence(parent, plan, plan.correction); e != nil {
+				block(safeExecutionError(e))
+				return
+			}
+		}
+	}
 	// Recheck current authorization, mapping, credential version and snapshot in the
 	// transaction that commits RUNNING, immediately before launching the subprocess.
 	tx, e = s.db.BeginTx(durable, nil)
@@ -136,7 +152,17 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		if e != nil {
 			return
 		}
-		if post.Success && validated.Success && safeHistory(post.JSON) == nil && allVersionsApplied(post.JSON) && resolvedSnapshot(plan, post.JSON) == nil {
+		correctionVerified := true
+		if plan.correction != nil {
+			afterOracle, err := s.oracleEvidence(parent, plan)
+			correctionVerified = err == nil && physicalCorrectionSucceeded(beforeOracle, afterOracle, plan.files, migrated.JSON)
+			p.CorrectionEvidence = &CorrectionEvidence{ApprovalID: plan.correction.ID, ApprovedBy: plan.correction.ApprovedBy, Before: beforeOracle, After: afterOracle}
+			payload, _ := json.Marshal(p)
+			if _, err = s.db.ExecContext(durable, `UPDATE migration_runs SET preflight=? WHERE id=?`, string(payload), rid); err != nil {
+				return
+			}
+		}
+		if correctionVerified && post.Success && validated.Success && safeHistory(post.JSON) == nil && allVersionsApplied(post.JSON) && resolvedSnapshot(plan, post.JSON) == nil {
 			if e = s.changeRun(durable, rid, "SUCCEEDED", "Flyway migrate and post-migration history validation succeeded.", "SUCCEEDED", "SKIPPED", &migrated.ExitCode, false, true); e == nil {
 				completed = true
 			}
@@ -193,7 +219,21 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
+	failedOracle, evidenceErr := s.oracleEvidence(parent, plan)
 	reason := repairEligibility(info, after, failedValidation)
+	if oracleErr != nil || evidenceErr != nil {
+		if oracleErr != nil {
+			reason = safeExecutionError(oracleErr)
+		} else {
+			reason = safeExecutionError(evidenceErr)
+		}
+		reason += " Repair was not attempted."
+	}
+	identity := migrationFailure(migrationExecutionID, migrated, after.JSON)
+	if oracleErr == nil && evidenceErr == nil && !physicalRepairCandidate(beforeOracle, failedOracle, identity, plan.files, migrated.JSON) {
+		reason = "Physical Oracle history or database identity changed unexpectedly; Repair was not attempted."
+	}
+	after.JSON = withOracleEvidence(after.JSON, failedOracle)
 	if identity := migrationFailure(migrationExecutionID, migrated, after.JSON); identity.IdentityReason != "" && reason == "" {
 		reason = identity.IdentityReason
 	}
@@ -214,6 +254,13 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 			reason = "Application stopped before automatic Repair; history outcome requires reconciliation. Repair was not attempted."
 		}
 		if e = s.finishRepair(durable, rid, "UNSAFE", reason, after.JSON, nil, "", "NEEDS_REVIEW", true); e == nil {
+			completed = true
+		}
+		return
+	}
+	latest, err := s.oracleEvidence(parent, plan)
+	if err != nil || evidenceHash(latest) != evidenceHash(failedOracle) {
+		if s.finishRepair(durable, rid, "UNSAFE", "Oracle evidence changed before automatic Repair; Repair was not attempted.", after.JSON, nil, "", "NEEDS_REVIEW", true) == nil {
 			completed = true
 		}
 		return
@@ -242,14 +289,16 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 		}
 		return
 	}
-	safe := repaired.Success && repairResultSafe(repaired.JSON) && removedFailedVersion(repaired.JSON, after.JSON) && post.Success && validated.Success && repairHistoryRestored(info.JSON, post.JSON)
+	postOracle, postErr := s.oracleEvidence(parent, plan)
+	post.JSON = withOracleEvidence(post.JSON, postOracle)
+	safe := postErr == nil && physicalRepairRestored(failedOracle, postOracle) && failedOracle.ObjectsSHA256 == postOracle.ObjectsSHA256 && repaired.Success && repairResultSafe(repaired.JSON) && removedFailedVersion(repaired.JSON, after.JSON) && post.Success && validated.Success && repairResolverRestored(after.JSON, post.JSON)
 	if !safe {
 		if e = s.finishRepair(durable, rid, "FAILED", "Repair result or unchanged unrelated history could not be verified. Oracle DDL remains unreverted.", after.JSON, post.JSON, executionID, "NEEDS_REVIEW", true); e == nil {
 			completed = true
 		}
 		return
 	}
-	if e = s.finishRepair(durable, rid, "SUCCEEDED", "Failed history entry removed; migration remains FAILED. No SQL retry or rollback occurred; partial Oracle DDL may remain.", after.JSON, post.JSON, executionID, "FAILED", false); e == nil {
+	if e = s.finishRepair(durable, rid, "SUCCEEDED", "Failed history entry removed; migration remains FAILED. No SQL retry or rollback occurred; partial Oracle DDL may remain. Stream held until a DBA approves an exact corrected artifact against current evidence.", after.JSON, post.JSON, executionID, "FAILED", true); e == nil {
 		completed = true
 	}
 }
@@ -301,7 +350,15 @@ func (s *Service) planJob(ctx context.Context, q queryer, a Actor, run Run, allo
 		clear(password)
 		return executionPlan{}, e
 	}
-	if (held && (len(allowHeld) == 0 || !allowHeld[0])) || pin != s.execution.pin || configuration != streamConfiguration(snap) {
+	if held && run.ID != "" {
+		approval, err := s.correctionApproval(ctx, q, run.RunInput, run.ID)
+		if err != nil {
+			clear(password)
+			return executionPlan{}, err
+		}
+		plan.correction = approval
+	}
+	if (held && plan.correction == nil && (len(allowHeld) == 0 || !allowHeld[0])) || pin != s.execution.pin || configuration != streamConfiguration(snap) {
 		clear(password)
 		return executionPlan{}, conflict("Stream is held or its pinned execution configuration changed.")
 	}

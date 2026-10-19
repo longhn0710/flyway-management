@@ -154,6 +154,22 @@ func (s *Service) SubmitRun(ctx context.Context, t Trace, in RunInput, key strin
 		if e = s.persistRunAdmission(ctx, tx, rid, in); e != nil {
 			return e
 		}
+		if plan.correction != nil {
+			result, err := tx.ExecContext(ctx, `UPDATE oracle_correction_approvals SET consumed_run_id=? WHERE id=? AND consumed_run_id IS NULL AND expires_at>?`, rid, plan.correction.ID, now())
+			if err != nil {
+				return err
+			}
+			n, err := result.RowsAffected()
+			if err != nil {
+				return err
+			}
+			if n != 1 {
+				return conflict("Correction approval is consumed or expired.")
+			}
+			if err = audit(ctx, tx, t, "oracle.correction.consume", rid, plan.correction.ID); err != nil {
+				return err
+			}
+		}
 		if _, e = tx.ExecContext(ctx, `INSERT INTO jobs(run_id) VALUES(?)`, rid); e != nil {
 			return e
 		}
@@ -206,14 +222,14 @@ func (s *Service) claim(ctx context.Context) (string, error) {
 		return "", e
 	}
 	defer tx.Rollback()
-	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason='Stream is held for database reconciliation.',finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1)`, now()); e != nil {
+	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status='BLOCKED',reason='Stream is held for database reconciliation.',finished_at=? WHERE status='QUEUED' AND EXISTS(SELECT 1 FROM migration_streams s WHERE s.target_id=migration_runs.target_id AND s.schema_id=migration_runs.schema_id AND s.held=1) AND NOT EXISTS(SELECT 1 FROM oracle_correction_approvals c WHERE c.consumed_run_id=migration_runs.id AND c.expires_at>?)`, now(), now()); e != nil {
 		return "", e
 	}
 	if e = s.freezeCompletedRecords(ctx, tx); e != nil {
 		return "", e
 	}
 	var rid string
-	e = tx.QueryRowContext(ctx, `SELECT r.id FROM migration_runs r JOIN jobs j ON j.run_id=r.id JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id WHERE r.status='QUEUED' AND j.claimed=0 AND s.held=0 AND NOT EXISTS(SELECT 1 FROM migration_runs other JOIN jobs oj ON oj.run_id=other.id WHERE other.target_id=r.target_id AND other.schema_id=r.schema_id AND other.id<>r.id AND (oj.claimed=1 OR (other.status='QUEUED' AND other.sequence<r.sequence))) ORDER BY r.sequence LIMIT 1`).Scan(&rid)
+	e = tx.QueryRowContext(ctx, `SELECT r.id FROM migration_runs r JOIN jobs j ON j.run_id=r.id JOIN migration_streams s ON s.target_id=r.target_id AND s.schema_id=r.schema_id WHERE r.status='QUEUED' AND j.claimed=0 AND (s.held=0 OR EXISTS(SELECT 1 FROM oracle_correction_approvals c WHERE c.consumed_run_id=r.id AND c.expires_at>?)) AND NOT EXISTS(SELECT 1 FROM migration_runs other JOIN jobs oj ON oj.run_id=other.id WHERE other.target_id=r.target_id AND other.schema_id=r.schema_id AND other.id<>r.id AND (oj.claimed=1 OR (other.status='QUEUED' AND other.sequence<r.sequence))) ORDER BY r.sequence LIMIT 1`, now()).Scan(&rid)
 	if e == sql.ErrNoRows {
 		if e = tx.Commit(); e != nil {
 			return "", e
@@ -275,6 +291,11 @@ func (s *Service) changeRun(ctx context.Context, rid, state, reason, migration, 
 	}
 	if _, e = tx.ExecContext(ctx, `UPDATE migration_runs SET status=?,reason=?,migration_outcome=CASE WHEN ?='' THEN migration_outcome ELSE ? END,repair_outcome=CASE WHEN ?='' THEN repair_outcome ELSE ? END,exit_code=COALESCE(?,exit_code),finished_at=? WHERE id=?`, state, reason, migration, migration, repair, repair, exit, finished, rid); e != nil {
 		return e
+	}
+	if state == "SUCCEEDED" {
+		if _, e = tx.ExecContext(ctx, `UPDATE migration_streams SET held=0,reason='' WHERE (target_id,schema_id)=(SELECT target_id,schema_id FROM migration_runs WHERE id=?) AND EXISTS(SELECT 1 FROM oracle_correction_approvals WHERE consumed_run_id=?)`, rid, rid); e != nil {
+			return e
+		}
 	}
 	if hold {
 		if _, e = tx.ExecContext(ctx, `UPDATE migration_streams SET held=1,reason=? WHERE (target_id,schema_id)=(SELECT target_id,schema_id FROM migration_runs WHERE id=?)`, reason, rid); e != nil {

@@ -578,14 +578,11 @@ func TestRepairedFailureIsNeverAnImplicitSQLRetry(t *testing.T) {
 	next := uploadRun(t, f, target, schema, account, "V2__next.sql", "SELECT 2 FROM dual;")
 	pre, e := f.s.Preflight(testCtx, f.trace(), next)
 	must(t, e)
-	if pre.Ready || !strings.Contains(fmt.Sprint(pre.Blockers), "automatic SQL retry") {
-		t.Fatalf("implicit retry preflight %+v", pre)
+	if pre.Ready || !strings.Contains(fmt.Sprint(pre.Blockers), "Stream requires reconciliation") {
+		t.Fatalf("held stream preflight %+v", pre)
 	}
-	second, e := f.s.SubmitRun(testCtx, f.trace(), next, "next-must-not-retry")
-	must(t, e)
-	if r := waitRun(t, f, second.ID); r.Status != "BLOCKED" {
-		t.Fatalf("retried failed history %+v", r)
-	}
+	_, e = f.s.SubmitRun(testCtx, f.trace(), next, "next-must-not-retry")
+	status(t, e, 409)
 	if engine.migrateCount(schema.Name) != 1 {
 		t.Fatal("migration SQL automatically retried")
 	}
