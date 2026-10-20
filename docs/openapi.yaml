@@ -382,7 +382,7 @@ paths:
     post:
       operationId: review_oracle_correction
       summary: Human DBA correction reviews after verified automatic Oracle Repair
-      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint.
+      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint. Bounded to 50 seconds for the complete operation. HTTP 504 REQUEST_TIMEOUT or 408 REQUEST_CANCELLED never grants approval; HTTP 409 ORACLE_EVIDENCE_UNAVAILABLE identifies unavailable or unverifiable Oracle identity/history evidence; HTTP 500 AUDIT_FAILURE fails closed if mandatory audit cannot be persisted.
       requestBody:
         required: true
         content:
@@ -408,7 +408,7 @@ paths:
     post:
       operationId: approve_oracle_correction
       summary: Human DBA correction approvals after verified automatic Oracle Repair
-      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint.
+      description: Requires an active human Admin or Operator with current Project and database execution authority. Service tokens cannot review or approve. No SQL, Repair, or hold release is performed by this endpoint. Bounded to 50 seconds for the complete operation. HTTP 504 REQUEST_TIMEOUT or 408 REQUEST_CANCELLED never grants approval; HTTP 409 ORACLE_EVIDENCE_UNAVAILABLE identifies unavailable or unverifiable Oracle identity/history evidence; HTTP 500 AUDIT_FAILURE fails closed if mandatory audit cannot be persisted.
       requestBody:
         required: true
         content:

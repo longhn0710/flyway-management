@@ -84,6 +84,18 @@ nothing. No broad dictionary role is required by the implementation. Existing
 v1/v2 endpoints and standard client payloads remain supported. A legacy successful
 Repair without physical evidence cannot authorize a correction retroactively.
 
+Correction review and approval use the same bounded **50-second whole-operation**
+budget as native preflight, below the HTTP server's 60-second write deadline.
+Clients should allow at least 60 seconds for the response. An expired operation
+returns HTTP 504 `REQUEST_TIMEOUT` (cancellation: 408 `REQUEST_CANCELLED`);
+unavailable or unverifiable Oracle identity/history evidence returns 409
+`ORACLE_EVIDENCE_UNAVAILABLE` (insufficient metadata privilege is one cause).
+Mandatory audit failure returns 500 `AUDIT_FAILURE`. Failure auditing has a
+separate bounded two-second context; verification and successful review/approval
+writes remain request-bound and atomically audited. Timeout or audit failure
+never yields a VERIFIED review or an approval. Preserve the response/request ID
+and reconcile state before another attempt; do not retry migration SQL.
+
 After inspecting native failure/logs and independently handling any partial DDL,
 a human Admin or Operator with current Project/target/database execute authority
 uploads the candidate corrected ZIP through the ordinary v2 artifact endpoint.

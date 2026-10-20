@@ -226,16 +226,8 @@ func externalError(status int, code, msg, field string) error {
 	return &core.Error{Status: status, Code: code, Message: msg, Field: field}
 }
 func (h phase2) externalFail(w http.ResponseWriter, r *http.Request, err error) {
-	var ce *core.Error
-	if !errors.As(err, &ce) {
-		ce = &core.Error{Status: 500, Code: "INTERNAL_ERROR", Message: "An unexpected error occurred."}
-		h.logger.Error("external API operation failed", "request_id", trace(r).RequestID)
-	}
-	if h.s != nil && (ce.Status == 401 || ce.Status == 403 || ce.Status == 409 || (mutating(r.Method) && ce.Status >= 400 && ce.Status < 500)) {
-		if auditErr := h.s.Event(r.Context(), trace(r), "request.denied", requestPath(r), "failure"); auditErr != nil {
-			ce = &core.Error{Status: 500, Code: "INTERNAL_ERROR", Message: "Security event could not be recorded."}
-		}
-	}
+	ce := h.failure(r, err)
+
 	title := http.StatusText(ce.Status)
 	if title == "" {
 		title = "Request failed"

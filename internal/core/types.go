@@ -96,9 +96,19 @@ type queryer interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
+// AuditError distinguishes failed mandatory persistence from the operation it audits.
+// Keep the underlying database error out of API messages and logs.
+type AuditError struct{ err error }
+
+func (e *AuditError) Error() string { return "Security event could not be recorded." }
+func (e *AuditError) Unwrap() error { return e.err }
+
 func audit(ctx context.Context, q queryer, t Trace, action, target, outcome string) error {
 	_, err := q.ExecContext(ctx, `INSERT INTO audit_events(actor_id,actor_type,actor_name,action,target,timestamp,outcome,request_id) VALUES(?,?,?,?,?,?,?,?)`, t.Actor.ID, t.Actor.Kind, t.Actor.Name, action, target, now(), outcome, t.RequestID)
-	return err
+	if err != nil {
+		return &AuditError{err: err}
+	}
+	return nil
 }
 func (s *Service) Event(ctx context.Context, t Trace, action, target, outcome string) error {
 	return audit(ctx, s.db, t, action, target, outcome)

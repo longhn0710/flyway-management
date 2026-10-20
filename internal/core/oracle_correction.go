@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"flyway-manager/internal/flyway"
 	"flyway-manager/internal/oracle"
 	"hash/crc32"
@@ -35,19 +36,29 @@ type CorrectionApprovalInput struct {
 }
 
 func (s *Service) oracleEvidence(ctx context.Context, plan executionPlan) (oracle.Evidence, error) {
+	if err := ctx.Err(); err != nil {
+		return oracle.Evidence{}, err
+	}
+
 	adapter, ok := s.execution.runner.(interface {
 		OracleEvidence(context.Context, flyway.Request) (oracle.Evidence, error)
 	})
 	if !ok {
-		return oracle.Evidence{}, conflict("Read-only Oracle identity and physical history evidence is unavailable.")
+		return oracle.Evidence{}, &Error{409, "ORACLE_EVIDENCE_UNAVAILABLE", "Read-only Oracle identity and physical history evidence is unavailable.", ""}
 	}
 	e, err := adapter.OracleEvidence(ctx, requestFor(plan, "info"))
+	if ctx.Err() != nil {
+		return e, ctx.Err()
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return e, err
+	}
 	if err != nil {
 		code := regexp.MustCompile(`ORA-[0-9]{5}`).FindString(err.Error())
-		return e, conflict("Oracle identity, object catalogue or physical history could not be verified. " + code)
+		return e, &Error{409, "ORACLE_EVIDENCE_UNAVAILABLE", "Oracle identity, object catalogue or physical history could not be verified. " + code, ""}
 	}
 	if e.DBID == "" || e.DatabaseUniqueName == "" || e.PDBName == "" || e.Service == "" || e.SessionUser != plan.snapshot.Account.Username || e.CurrentSchema != plan.snapshot.Schema.Name || e.ObjectsSHA256 == "" || e.History == nil {
-		return e, conflict("Oracle evidence is incomplete or identifies another account/schema.")
+		return e, &Error{409, "ORACLE_EVIDENCE_UNAVAILABLE", "Oracle evidence is incomplete or identifies another account/schema.", ""}
 	}
 	return e, nil
 }
@@ -412,6 +423,11 @@ func (s *Service) ReviewOracleCorrection(ctx context.Context, t Trace, p, d stri
 	}
 	assessment, err := s.preflight(ctx, t, ri, true)
 	if err != nil {
+		return nil, err
+	}
+	// preflight records NOT_VERIFIED on timeout; that is not permission to
+	// probe again or persist a review with the expired operation context.
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	// Read again after native validation to bind a stable, current review snapshot.

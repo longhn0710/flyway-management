@@ -46,6 +46,9 @@ func (r *Runtime) OracleEvidence(ctx context.Context, req Request) (oracle.Evide
 	ctx, cancel := context.WithTimeout(ctx, overallTimeout)
 	defer cancel()
 	if !r.acquire(ctx) {
+		if err := ctx.Err(); err != nil {
+			return oracle.Evidence{}, err
+		}
 		return oracle.Evidence{}, errors.New("Oracle evidence runtime capacity timeout")
 	}
 	defer r.release()
@@ -93,10 +96,16 @@ func (r *Runtime) OracleEvidence(ctx context.Context, req Request) (oracle.Evide
 		_ = cmd.Process.Kill()
 	}
 	waitErr := cmd.Wait()
+	// Context cancellation is the actionable failure when CommandContext has
+	// stopped the helper. In particular, a killed JVM commonly leaves stdout
+	// as an incomplete protocol, which must not hide the caller's deadline.
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return oracle.Evidence{}, ctxErr
+	}
 	if parseErr != nil {
 		return oracle.Evidence{}, parseErr
 	}
-	if waitErr != nil || ctx.Err() != nil {
+	if waitErr != nil {
 		return oracle.Evidence{}, errors.New("Oracle evidence query did not complete")
 	}
 	if !strings.EqualFold(evidence.SessionUser, req.Username) || !strings.EqualFold(evidence.CurrentSchema, req.Schema) {

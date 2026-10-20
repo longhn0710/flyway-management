@@ -429,3 +429,28 @@ through normal Manager/Jenkins approval controls. The image digest is deliberate
 not invented before publication. Source/CI/digest/restore/identity/metadata gates
 remain mandatory inside that authorization; any mismatch stops before SQL.
 It excludes all historical B reconciliation execution and implementation.
+
+### Resume existing C after the correction-review timeout fix
+
+CASE 1 run `WM1GbaXtuEPmTPiSWwTSEf` succeeded. CASE 2 run
+`59pFGk-geSBnFBp6Wnkb9N` remains FAILED with automatic Repair SUCCEEDED;
+its stream stays held with ten unchanged Success rows and V6/V7 Pending.
+The uploaded correction Artifact `ItCwCFglMFnGuavEv0rjaC` has approved ZIP
+SHA-256 `c8817b90f1d5dba84b98ff916b3db41a090d385ed9fdb714aa02745ae2bf3cd1`.
+Its first review returned HTTP 500; no review/approval was persisted. The timeout
+fix does not authorize another live request, merge, publication, rollout or SQL.
+
+After review and separate release/deployment authorization, publish through CI,
+verify source/provenance/digest and preserve the pinned Flyway distribution.
+Back up the current SQLite database and original key separately; verify an
+isolated schema-10 restore with the new image before digest-only GitOps rollout.
+Verify the same installation and Oracle FREE/FREEPDB1 DBID 1514744704,
+FWM_WZ260_C, Project `vxfQISv7e-d1Wjhyt1HBE9`, Deployment Target
+`wwKRr7q01NuRmAynI9zQq2`, revision 1, existing account credential version 2,
+unchanged grants/quota, held stream and original frozen records. Reuse the exact
+candidate for a fresh review with a client response timeout of at least 60s.
+Require VERIFIED/ready/no blockers and only V6/V7 Pending, then obtain independent
+human DBA partial-DDL review and exact-checksum approval through the existing
+controls. Only afterward push the reviewed corrected V6 and execute V6/V7 once
+through Jenkins. Revoke temporary tokens after evidence collection. Do not rerun
+CASE 1/2, re-execute invalid V6, recreate C or change B/FWM_LAB or their history.
