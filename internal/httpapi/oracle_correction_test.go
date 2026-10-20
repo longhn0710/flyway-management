@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/crc32"
 	"net/http"
@@ -38,6 +39,8 @@ type correctionOracle struct {
 	dbid, objects      string
 	driftAfterValidate bool
 	repairFault        string
+	evidenceHook       func(context.Context) error
+	executeHook        func(context.Context, flyway.Request) error
 }
 
 func newCorrectionOracle() *correctionOracle {
@@ -55,13 +58,29 @@ func sqlVersion(name string) string {
 	}
 	return strings.TrimPrefix(strings.Split(name, "__")[0], "V")
 }
-func (r *correctionOracle) OracleEvidence(_ context.Context, req flyway.Request) (oracle.Evidence, error) {
+func (r *correctionOracle) OracleEvidence(ctx context.Context, req flyway.Request) (oracle.Evidence, error) {
+	r.mu.Lock()
+	hook := r.evidenceHook
+	r.mu.Unlock()
+	if hook != nil {
+		if err := hook(ctx); err != nil {
+			return oracle.Evidence{}, err
+		}
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	rows := append([]oracle.HistoryRow{}, r.rows...)
 	return oracle.Evidence{DBID: r.dbid, DatabaseUniqueName: "fixture", PDBName: req.Service, Service: req.Service, SessionUser: req.Username, CurrentSchema: req.Schema, ObjectsSHA256: r.objects, History: rows}, nil
 }
-func (r *correctionOracle) Execute(_ context.Context, req flyway.Request) flyway.Result {
+func (r *correctionOracle) Execute(ctx context.Context, req flyway.Request) flyway.Result {
+	r.mu.Lock()
+	hook := r.executeHook
+	r.mu.Unlock()
+	if hook != nil {
+		if err := hook(ctx, req); err != nil {
+			return flyway.Result{ExitCode: -1, TimedOut: errors.Is(err, context.DeadlineExceeded)}
+		}
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	names := []string{}

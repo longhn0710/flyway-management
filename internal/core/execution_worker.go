@@ -222,7 +222,11 @@ func (s *Service) executeJob(parent context.Context, rid string) {
 	failedOracle, evidenceErr := s.oracleEvidence(parent, plan)
 	reason := repairEligibility(info, after, failedValidation)
 	if oracleErr != nil || evidenceErr != nil {
-		if oracleErr != nil {
+		// Evidence probes now preserve cancellation; retain the established
+		// shutdown reason and never enter Repair with an expired parent.
+		if parent.Err() != nil {
+			reason = "Application stopped before automatic Repair; history outcome requires reconciliation."
+		} else if oracleErr != nil {
 			reason = safeExecutionError(oracleErr)
 		} else {
 			reason = safeExecutionError(evidenceErr)

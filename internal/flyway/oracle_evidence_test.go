@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -82,6 +83,83 @@ func TestOracleEvidenceRejectsIdentifiersBeforeRuntimeAccess(t *testing.T) {
 			t.Fatal("unsafe evidence identifier accepted")
 		}
 	}
+}
+
+func TestOracleEvidenceCancellationPreservesDeadline(t *testing.T) {
+	// The fake Java helper deliberately emits no protocol and blocks. When the
+	// request deadline kills it, stdout is truncated; that parse failure must
+	// not replace context.DeadlineExceeded.
+	r := oracleEvidenceRuntimeFixture(t, "#!/bin/sh\nsleep 5\n")
+	req := Request{Engine: "oracle", Host: "localhost", Port: 1521, Transport: "TCP", Service: "FREEPDB1", Username: "APP", Password: "secret", Schema: "APP", HistorySchema: "APP", HistoryTable: "flyway_schema_history"}
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+	started := time.Now()
+	_, err := r.OracleEvidence(ctx, req)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("OracleEvidence error = %v, want context deadline", err)
+	}
+	if elapsed := time.Since(started); elapsed > 2*time.Second {
+		t.Fatalf("canceled evidence probe took %s", elapsed)
+	}
+}
+
+func TestOracleEvidenceProcessCancellationPreservesCanceled(t *testing.T) {
+	r := oracleEvidenceRuntimeFixture(t, "#!/bin/sh\nsleep 5\n")
+	req := Request{Engine: "oracle", Host: "localhost", Port: 1521, Transport: "TCP", Service: "FREEPDB1", Username: "APP", Password: "secret", Schema: "APP", HistorySchema: "APP", HistoryTable: "flyway_schema_history"}
+	ctx, cancel := context.WithCancel(context.Background())
+	timer := time.AfterFunc(100*time.Millisecond, cancel)
+	defer func() { timer.Stop(); cancel() }()
+	_, err := r.OracleEvidence(ctx, req)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("OracleEvidence error = %v, want context canceled", err)
+	}
+}
+
+func TestOracleEvidenceAcquirePreservesCallerCancellation(t *testing.T) {
+	r := oracleEvidenceRuntimeFixture(t, "#!/bin/sh\nexit 0\n")
+	for i := 0; i < cap(r.slots); i++ {
+		r.slots <- struct{}{}
+	}
+	req := Request{Engine: "oracle", Host: "localhost", Port: 1521, Transport: "TCP", Service: "FREEPDB1", Username: "APP", Password: "secret", Schema: "APP", HistorySchema: "APP", HistoryTable: "flyway_schema_history"}
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
+	defer cancel()
+	_, err := r.OracleEvidence(ctx, req)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("OracleEvidence error = %v, want context deadline", err)
+	}
+}
+
+func oracleEvidenceRuntimeFixture(t *testing.T, javaScript string) *Runtime {
+	t.Helper()
+	root := t.TempDir()
+	files := map[string]struct {
+		data []byte
+		mode os.FileMode
+	}{
+		"flyway":                              {[]byte("#!/bin/sh\nexit 0\n"), 0700},
+		"drivers/ojdbc11-test.jar":            {[]byte("fake Oracle driver"), 0600},
+		"lib/flyway-database-oracle-test.jar": {[]byte("fake Flyway Oracle module"), 0600},
+		"jre/bin/java":                        {[]byte(javaScript), 0700},
+	}
+	manifest := ""
+	for _, name := range []string{"drivers/ojdbc11-test.jar", "flyway", "jre/bin/java", "lib/flyway-database-oracle-test.jar"} {
+		entry := files[name]
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, entry.data, entry.mode); err != nil {
+			t.Fatal(err)
+		}
+		h := sha256.Sum256(entry.data)
+		manifest += hex.EncodeToString(h[:]) + "  " + name + "\n"
+	}
+	manifestPath := filepath.Join(root, "flyway-manifest.sha256")
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0600); err != nil {
+		t.Fatal(err)
+	}
+	pin := sha256.Sum256([]byte(manifest))
+	return New(Config{Executable: filepath.Join(root, "flyway"), Version: fakeVersion, SHA256: hex.EncodeToString(pin[:])}, t.TempDir())
 }
 
 func TestOracleEvidenceHelperArtifactIsReproducible(t *testing.T) {

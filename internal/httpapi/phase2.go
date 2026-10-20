@@ -43,21 +43,7 @@ func (h phase2) fail(w http.ResponseWriter, r *http.Request, err error) {
 		h.externalFail(w, r, err)
 		return
 	}
-	var e *core.Error
-	if !errors.As(err, &e) {
-		h.logger.Error("API operation failed", "request_id", middleware.GetReqID(r.Context()))
-		writeError(w, 500, "INTERNAL_ERROR", "An unexpected error occurred.")
-		return
-	}
-	if e.Status == 401 || e.Status == 403 || e.Status == 409 || (mutating(r.Method) && e.Status >= 400 && e.Status < 500) {
-		// Rejected sensitive requests are durable events; payloads and URL queries are never logged.
-		if h.s != nil {
-			if auditErr := h.s.Event(r.Context(), trace(r), "request.denied", requestPath(r), "failure"); auditErr != nil {
-				writeError(w, 500, "INTERNAL_ERROR", "Security event could not be recorded.")
-				return
-			}
-		}
-	}
+	e := h.failure(r, err)
 	writeJSON(w, e.Status, errorEnvelope{Error: apiError{Code: e.Code, Message: e.Message, Field: e.Field}})
 }
 func (h phase2) ready(next http.Handler) http.Handler {
@@ -69,7 +55,10 @@ func (h phase2) ready(next http.Handler) http.Handler {
 		w.Header().Set("X-Request-ID", middleware.GetReqID(r.Context()))
 		w.Header().Set("Cache-Control", "no-store")
 		budget := 20 * time.Second
-		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" || strings.HasSuffix(r.URL.Path, "/flyway-info/refresh") || strings.HasSuffix(r.URL.Path, "/preflights") {
+		// Native info/validate and correction evidence share one operation
+		// deadline, with room for a failure audit before the server's 60s write
+		// deadline. Never restart the budget for individual review stages.
+		if r.URL.Path == "/api/v1/migration-preflight" || r.URL.Path == "/api/v1/runtime" || strings.HasSuffix(r.URL.Path, "/flyway-info/refresh") || strings.HasSuffix(r.URL.Path, "/preflights") || strings.HasSuffix(r.URL.Path, "/correction-reviews") || strings.HasSuffix(r.URL.Path, "/correction-approvals") {
 			budget = 50 * time.Second
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), budget)
