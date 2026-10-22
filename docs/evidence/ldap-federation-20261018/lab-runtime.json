@@ -1,0 +1,67 @@
+{
+  "namespace": "flyway-manager-identity-lab",
+  "pod": "openldap-0",
+  "uid": "ef84cefa-b6d8-44f2-87b3-d5300f3e33ed",
+  "node": "k8s-worker2",
+  "image": "docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d",
+  "container_image_id": "docker.io/osixia/openldap@sha256:b23155ca4217ea928f2fec86453aabf87168a221150f26bcdcef7f3a3c84d35d",
+  "ready": true,
+  "restarts": 0,
+  "pod_security": {
+    "fsGroup": 911,
+    "fsGroupChangePolicy": "OnRootMismatch",
+    "runAsGroup": 911,
+    "runAsNonRoot": true,
+    "runAsUser": 911,
+    "seccompProfile": {
+      "type": "RuntimeDefault"
+    }
+  },
+  "resources": {
+    "limits": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    },
+    "requests": {
+      "cpu": "100m",
+      "memory": "256Mi"
+    }
+  },
+  "pvc": "data-openldap-0",
+  "pv": "pvc-bbb84153-a8dd-4102-9720-b41093b10d48",
+  "storage": "1Gi",
+  "service": {
+    "name": "openldap",
+    "type": "ClusterIP",
+    "clusterIP": "10.104.86.255",
+    "ports": [
+      {
+        "name": "ldaps",
+        "port": 636,
+        "protocol": "TCP",
+        "targetPort": "ldaps"
+      }
+    ]
+  },
+  "secret_references": [
+    {
+      "name": "openldap-bootstrap-credentials",
+      "key": "data-root-password-hashed"
+    },
+    {
+      "name": "openldap-bootstrap-credentials",
+      "key": "config-root-password-hashed"
+    },
+    {
+      "name": "openldap-bootstrap-credentials",
+      "key": "readonly-password-hashed"
+    }
+  ],
+  "secret_values_read_or_decoded": false,
+  "shared_manager_or_keycloak_config_changed": false,
+  "keycloak_pod_service_tls_probe": "LDAP_CA_HOSTNAME_VERIFIED TLSv1.3",
+  "unauthorized_label_probe": "UNAPPROVED_LABEL_CONNECTION_TIMED_OUT; temporary probe deleted",
+  "plaintext_listener": "/proc/net/tcp LISTEN inventory: TCP6360 only; no plaintext3890",
+  "root_filesystem": "writable, approved vendor bootstrap requirement",
+  "bootstrap_failures": "Initial OCI node lacked Longhorn CSI; nodeSelector worker2. Hash file trailing newline broke LDIF; trimmed only terminal newline in original protected operator hash files; incomplete config archived on PVC. Later direct bind needed narrow self entryUUID ACL. No data reset or credential rotation."
+}

@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: flyway-manager-identity-lab
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-openldap-from-manager-and-keycloak
+  namespace: flyway-manager-identity-lab
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: openldap
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flyway-manager
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: flyway-manager
+              app.kubernetes.io/name: flyway-manager
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: keycloak
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: keycloak
+              app.kubernetes.io/name: keycloak
+      ports:
+        - protocol: TCP
+          port: 6360

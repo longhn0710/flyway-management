@@ -1,0 +1,62 @@
+{
+  "entries": [
+    {
+      "dn": "ou=people,dc=flyway,dc=lab",
+      "members": [],
+      "uid": "",
+      "uuid": "da157e5e-685b-418b-ae42-0a24ea9723c3"
+    },
+    {
+      "dn": "ou=groups,dc=flyway,dc=lab",
+      "members": [],
+      "uid": "",
+      "uuid": "e806200f-914a-416c-8248-752b0cf0be69"
+    },
+    {
+      "dn": "uid=phase9-viewer,ou=people,dc=flyway,dc=lab",
+      "members": [],
+      "uid": "phase9-viewer",
+      "uuid": "4ad5f502-8035-41cb-8f68-a1165e9175d9"
+    },
+    {
+      "dn": "uid=phase9-operator,ou=people,dc=flyway,dc=lab",
+      "members": [],
+      "uid": "phase9-operator",
+      "uuid": "e72d45a2-a8f1-4e1e-9dfe-0410fa26ace6"
+    },
+    {
+      "dn": "uid=phase9-admin,ou=people,dc=flyway,dc=lab",
+      "members": [],
+      "uid": "phase9-admin",
+      "uuid": "37c556eb-f67a-439c-9bc8-775705859c26"
+    },
+    {
+      "dn": "cn=flyway-viewer,ou=groups,dc=flyway,dc=lab",
+      "members": [
+        "uid=phase9-viewer,ou=people,dc=flyway,dc=lab"
+      ],
+      "uid": "",
+      "uuid": "122d4d5b-5f6b-418f-85e3-a30e2d0f98ff"
+    },
+    {
+      "dn": "cn=flyway-operator,ou=groups,dc=flyway,dc=lab",
+      "members": [
+        "uid=phase9-operator,ou=people,dc=flyway,dc=lab"
+      ],
+      "uid": "",
+      "uuid": "9729b145-2fd8-427f-b53a-39063c78976f"
+    },
+    {
+      "dn": "cn=flyway-admin,ou=groups,dc=flyway,dc=lab",
+      "members": [
+        "uid=phase9-admin,ou=people,dc=flyway,dc=lab"
+      ],
+      "uid": "",
+      "uuid": "bd50f45b-b081-40cf-bb35-65f620bcdfd9"
+    }
+  ],
+  "readonly_bind": true,
+  "status": "PASS",
+  "tls13": true,
+  "verified_service_hostname": true
+}

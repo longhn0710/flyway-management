@@ -1,0 +1,25 @@
+# Proposed additive policy only. It is outside the isolated lab namespace and
+# requires separate approval because it changes the existing Manager namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-identity-lab-ldaps
+  namespace: flyway-manager
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: flyway-manager
+      app.kubernetes.io/name: flyway-manager
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: flyway-manager-identity-lab
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: openldap
+      ports:
+        - protocol: TCP
+          port: 6360
