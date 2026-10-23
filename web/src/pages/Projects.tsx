@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   api,
@@ -159,6 +164,7 @@ function ProjectDetails({ id }: { id: string }) {
   const identity = useIdentity(),
     admin = identity.user.role === "Admin";
   const [editing, setEditing] = useState(false),
+    [deleting, setDeleting] = useState(false),
     [params, setParams] = useSearchParams();
   const project = useQuery({
     queryKey: ["project", id],
@@ -186,8 +192,14 @@ function ProjectDetails({ id }: { id: string }) {
         description={project.data?.description}
         actions={
           admin &&
-          project.data && (
-            <Button onClick={() => setEditing(true)}>Edit project</Button>
+          project.data &&
+          !project.isError && (
+            <>
+              <Button onClick={() => setEditing(true)}>Edit project</Button>
+              <Button variant="danger" onClick={() => setDeleting(true)}>
+                Delete project
+              </Button>
+            </>
           )
         }
       />
@@ -388,9 +400,105 @@ function ProjectDetails({ id }: { id: string }) {
               close={() => setEditing(false)}
             />
           )}
+          {deleting && (
+            <ProjectDeleteDialog
+              project={project.data}
+              close={() => setDeleting(false)}
+            />
+          )}
         </>
       )}
     </>
+  );
+}
+function ProjectDeleteDialog({
+  project,
+  close,
+}: {
+  project: Project;
+  close: () => void;
+}) {
+  const client = useQueryClient(),
+    navigate = useNavigate();
+  const [confirmation, setConfirmation] = useState("");
+  const blocked = project.members.length > 0;
+  const deletion = useMutation({
+    mutationFn: () =>
+      api<{ deleted: boolean }>(`/projects/${encodeURIComponent(project.id)}`, {
+        method: "DELETE",
+        body: JSON.stringify({ confirmation_name: confirmation }),
+      }),
+    onSuccess: () => {
+      navigate("/projects", { replace: true });
+      client.removeQueries({ queryKey: ["project", project.id], exact: true });
+      void client.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open && !deletion.isPending) close();
+      }}
+      title="Delete project"
+      description={`Delete ${project.name} from Projects.`}
+    >
+      <p>
+        Instances, schemas, accounts, SQL, migration history and audit records
+        are preserved.
+      </p>
+      {blocked && (
+        <Notice tone="warning">
+          Remove all {project.members.length} membership scopes before deleting
+          this project.
+          {project.status === "archived" &&
+            " Unarchive it first to edit membership."}
+        </Notice>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!blocked && confirmation === project.name && !deletion.isPending)
+            deletion.mutate();
+        }}
+      >
+        <Field
+          label="Confirm project name"
+          required
+          hint={
+            <>
+              Type <strong>{project.name}</strong> exactly.
+            </>
+          }
+        >
+          <input
+            required
+            autoComplete="off"
+            value={confirmation}
+            maxLength={120}
+            disabled={blocked || deletion.isPending}
+            onChange={(e) => setConfirmation(e.target.value)}
+          />
+        </Field>
+        {deletion.isError && (
+          <Notice tone="error">{deletion.error.message}</Notice>
+        )}
+        <div className="actions">
+          <Button type="button" disabled={deletion.isPending} onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={
+              blocked || confirmation !== project.name || deletion.isPending
+            }
+          >
+            {deletion.isPending ? "Deleting…" : "Delete project"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 function ProjectEditor({

@@ -169,6 +169,8 @@ Phase 4 deployment results and immutable revisions: [homelab acceptance](docs/ph
 
 Use **Projects** to group existing schema or instance references across environments. Administrators manage membership and archive/restore projects; assignment grants no access. Project history uses current membership and existing read permissions, while each run keeps its immutable original destination and actor snapshot.
 
+Administrators can delete an empty project by typing its exact current name. Projects with any membership are blocked, including archived or inactive-resource memberships. Deletion removes project metadata and records an audit event; database resources, migration history and prior audits are retained. See the [Phase 9 plan](docs/phase9-enterprise-integrations.md) for integration scope and release boundaries.
+
 Open **Flyway Info** from a schema, project resource or migration run to inspect the native migration table independently of execution logs. Recorded views show source, artifact and capture time. Authorized operators can select a mapped execution account and immutable artifact and run a bounded, read-only native `info` refresh. Migration/repair commands and stream safety checks remain unchanged. Pending/Missing and other resolver states depend on the captured migration files; the interface does not claim external artifact completeness.
 
 See [operator acceptance and verification](docs/projects-flyway-info-acceptance.md) for behavior, safety boundaries, evidence and rollout limits. These features introduce SQLite migrations 005/006/007 (schema version 7); preserve a consistent registry backup and its original encryption key before a separately authorized rollout.

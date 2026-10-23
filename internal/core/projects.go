@@ -27,6 +27,37 @@ type ProjectInput struct {
 	Members     []ProjectMember `json:"members"`
 }
 
+type ProjectDeleteInput struct {
+	ConfirmationName string `json:"confirmation_name"`
+}
+
+// DeleteProject removes only empty project metadata. Runs are target/schema-scoped
+// and audit rows retain their target identifiers. Never detach memberships here:
+// their absence is checked under the same write lock as deletion/audit.
+func (s *Service) DeleteProject(ctx context.Context, t Trace, pid string, in ProjectDeleteInput) error {
+	if e := requireAdmin(t.Actor); e != nil {
+		return e
+	}
+	return s.mutation(ctx, t, "project.delete", pid, func(tx *sql.Tx) error {
+		var name string
+		if e := tx.QueryRowContext(ctx, `SELECT name FROM projects WHERE id=?`, pid).Scan(&name); e != nil {
+			return e
+		}
+		if in.ConfirmationName != name {
+			return invalid("confirmation_name", "Type the current project name exactly to confirm deletion.")
+		}
+		var members int
+		if e := tx.QueryRowContext(ctx, `SELECT count(*) FROM project_members WHERE project_id=?`, pid).Scan(&members); e != nil {
+			return e
+		}
+		if members != 0 {
+			return conflict("Remove all project memberships before deleting. Unarchive the project first if its membership is read-only.")
+		}
+		_, e := tx.ExecContext(ctx, `DELETE FROM projects WHERE id=?`, pid)
+		return e
+	})
+}
+
 func (s *Service) projectVisible(ctx context.Context, a Actor, id string) (bool, error) {
 	if a.Admin() {
 		return true, nil
